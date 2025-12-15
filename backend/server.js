@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-const PORT = 3000; // Port untuk menjalankan server Node.js
+const PORT = process.env.PORT || 3000; // Port untuk menjalankan server Node.js
 
 // --- Path File Data ---
 const JSON_FILE_PATH = path.join(__dirname, 'projects_data.json');
