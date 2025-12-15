@@ -7,28 +7,50 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 3000; // Port untuk menjalankan server Node.js
+
+// =======================================================
+// REVISI KRITIS 1: PORT DARI ENVIRONMENT VARIABLE
+// Gunakan process.env.PORT yang disediakan oleh Railway, atau fallback ke 3000 (untuk lokal).
+// =======================================================
+const PORT = process.env.PORT || 3000; 
 
 // --- Path File Data ---
+// ... (Bagian path ini tidak berubah)
 const JSON_FILE_PATH = path.join(__dirname, 'projects_data.json');
 const SECTOR_JSON_FILE_PATH = path.join(__dirname, 'sector_data.json');
 const NEWS_JSON_FILE_PATH = path.join(__dirname, 'news_data.json'); 
-const USER_JSON_FILE_PATH = path.join(__dirname, 'user_data.json'); // Path file user data
+const USER_JSON_FILE_PATH = path.join(__dirname, 'user_data.json'); 
 const LOGS_JSON_FILE_PATH = path.join(__dirname, 'logs_data.json'); 
 const WEBGIS_JSON_FILE_PATH = path.join(__dirname, 'webgis_data.json'); 
 const TEAMS_JSON_FILE_PATH = path.join(__dirname, 'teams_data.json'); 
-// ** BARU: Path file Company data **
 const COMPANY_JSON_FILE_PATH = path.join(__dirname, 'company_data.json'); 
 
 // --- Middleware Setup ---
 app.use(cors());
-app.use(bodyParser.json({ limit: '10mb' })); // Increase limit untuk foto base64
+app.use(bodyParser.json({ limit: '10mb' })); 
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true })); 
 
 
 // =======================================================
-//                  UTILITY FUNCTIONS (PROJECTS)
+//                  UTILITY FUNCTIONS (READ/WRITE)
 // =======================================================
+
+// --- Tambahkan Pesan Peringatan Tentang Penyimpanan Data ---
+// FUNGSI UTAMA BARU: Log Peringatan
+function logStorageWarning() {
+    console.warn(`\n======================================================`);
+    console.warn(`⚠️ PERINGATAN KRITIS:`);
+    console.warn(`Aplikasi ini menggunakan fs.writeFileSync untuk menyimpan data ke file JSON.`);
+    console.warn(`Data yang ditulis di server cloud (seperti Railway) TIDAK DIJAMIN AKAN PERMANEN.`);
+    console.warn(`Data Anda MUNGKIN HILANG saat server restart atau deployment baru.`);
+    console.warn(`SOLUSI: Pindahkan penyimpanan data ke Database Eksternal (MongoDB/PostgreSQL).`);
+    console.warn(`======================================================\n`);
+}
+
+// ... (Semua fungsi Utility lainnya (readProjects, writeProjects, readSectorData, etc.) tidak perlu diubah, 
+// tetapi tetap mengandung risiko kehilangan data yang sudah diperingatkan)
+// ... (Salin semua Utility Functions dari server.js lama Anda di sini, dari readProjects hingga writeCompanyData)
+// ...
 
 /**
  * Membaca konten dari projects_data.json
@@ -58,6 +80,7 @@ function readProjects() {
  * @returns {boolean} True if successful
  */
 function writeProjects(projects) {
+    logStorageWarning(); // Panggil peringatan sebelum menulis
     try {
         fs.writeFileSync(JSON_FILE_PATH, JSON.stringify(projects, null, 2), 'utf8');
         return true;
@@ -103,6 +126,7 @@ function readSectorData() {
  * @returns {boolean} True if successful
  */
 function writeSectorData(data) {
+    logStorageWarning(); // Panggil peringatan sebelum menulis
     try {
         fs.writeFileSync(SECTOR_JSON_FILE_PATH, JSON.stringify(data, null, 2), 'utf8');
         return true;
@@ -144,6 +168,7 @@ function readNewsData() {
  * @returns {boolean} True if successful
  */
 function writeNewsData(data) {
+    logStorageWarning(); // Panggil peringatan sebelum menulis
     try {
         fs.writeFileSync(NEWS_JSON_FILE_PATH, JSON.stringify(data, null, 2), 'utf8');
         return true;
@@ -186,6 +211,7 @@ function readUserData() {
  * @returns {boolean} True if successful
  */
 function writeUserData(data) {
+    logStorageWarning(); // Panggil peringatan sebelum menulis
     try {
         fs.writeFileSync(USER_JSON_FILE_PATH, JSON.stringify(data, null, 2), 'utf8');
         return true;
@@ -255,6 +281,7 @@ function pruneOldLogs(logs) {
  * @returns {boolean} True if successful
  */
 function writeLogs(logs) {
+    logStorageWarning(); // Panggil peringatan sebelum menulis
     // REVISI: Bersihkan log sebelum menulis ke file
     const prunedLogs = pruneOldLogs(logs); 
     
@@ -300,6 +327,7 @@ function readWebGisData() {
  * @returns {boolean} True if successful
  */
 function writeWebGisData(data) {
+    logStorageWarning(); // Panggil peringatan sebelum menulis
     try {
         fs.writeFileSync(WEBGIS_JSON_FILE_PATH, JSON.stringify(data, null, 2), 'utf8');
         return true;
@@ -343,6 +371,7 @@ function readTeams() {
  * @returns {boolean} True if successful
  */
 function writeTeams(data) {
+    logStorageWarning(); // Panggil peringatan sebelum menulis
     try {
         fs.writeFileSync(TEAMS_JSON_FILE_PATH, JSON.stringify(data, null, 2), 'utf8');
         return true;
@@ -386,6 +415,7 @@ function readCompanyData() {
  * @returns {boolean} True if successful
  */
 function writeCompanyData(data) {
+    logStorageWarning(); // Panggil peringatan sebelum menulis
     try {
         fs.writeFileSync(COMPANY_JSON_FILE_PATH, JSON.stringify(data, null, 2), 'utf8');
         return true;
@@ -399,6 +429,7 @@ function writeCompanyData(data) {
 // =======================================================
 //                    API ENDPOINTS (PROJECTS)
 // =======================================================
+// ... (Semua Endpoints API tidak berubah) ...
 
 /**
  * Endpoint 1: GET /api/projects
@@ -884,6 +915,7 @@ app.listen(PORT, () => {
     console.log(`Data Log disimpan di: ${LOGS_JSON_FILE_PATH}`); 
     console.log(`Data Web GIS disimpan di: ${WEBGIS_JSON_FILE_PATH}`);
     console.log(`Data Teams disimpan di: ${TEAMS_JSON_FILE_PATH}`); 
-    console.log(`Data Company disimpan di: ${COMPANY_JSON_FILE_PATH}`); // Ditambahkan
+    console.log(`Data Company disimpan di: ${COMPANY_JSON_FILE_PATH}`);
     console.log(`======================================================\n`);
+    logStorageWarning(); // Peringatan saat server start
 });
