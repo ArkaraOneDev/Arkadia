@@ -499,7 +499,7 @@
 
     <script>
         // --- KONFIGURASI APLIKASI ---
-        const API_URL = 'arkadia-backend.up.railway.app/api/company-data';
+        const API_URL = 'https://arkadia-backend.up.railway.app/api/company-data';
         
         let currentSlide = 0;
         let slides = document.querySelectorAll('.slide');
@@ -1059,7 +1059,7 @@
         
         // --- FUNGSI REVISI: SIMPAN DATA KE SERVER LOCALHOST ---
         async function saveToServer(data) {
-            const url = API_URL; // arkadia-backend.up.railway.app/api/company-data
+            const url = API_URL; // https://arkadia-backend.up.railway.app/api/company-data
             
             // REVISI: Kirim properti yang lebih lengkap: page, filename, url, transitionIndex
             const dataToSave = data.map(({ page, filename, url, transitionIndex }) => ({ 
@@ -1095,7 +1095,7 @@
             } catch (error) {
                 serverStatus.innerHTML = `<span class="status-failure">❌</span> Jaringan/Fetch Error`;
                 console.error('Error saat menyimpan ke server. Pastikan server.js berjalan:', error);
-                alert("Koneksi gagal! Pastikan Node.js server berjalan di arkadia-backend.up.railway.app.");
+                alert("Koneksi gagal! Pastikan Node.js server berjalan di https://arkadia-backend.up.railway.app.");
                 return false;
             } finally {
                 setTimeout(() => {
