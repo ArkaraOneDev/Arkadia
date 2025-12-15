@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activity Logs</title>
+    <style>
+        /* === SKEMA WARNA BARU ===
+           - Biru Navy (Aksen Primer): #192a56
+           - Biru Slate (Aksen Sekunder): #4682b4
+           - Kuning/Emas (Aksen Hangat): #efb23c
+           - Hijau (Add/Success): #3CB371
+        ======================== */
+        
+        /* ------------------------------------------- */
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif; 
+        }
+
+        /* 1. Body dengan padding 15px dan background image */
+        body {
+            /* Menghapus class="slide-in" dari tag body di HTML */
+            margin: 0;
+            padding: 15px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            
+            background-image: url('assets/img/002_background.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            
+            /* REVISI UTAMA: Mencegah overflow pada body */
+            overflow: hidden; 
+        }
+
+        /* Container untuk 3 cards */
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            gap: 15px;
+            width: 100%;
+            /* REVISI: Menggunakan flex-grow untuk mengambil sisa ruang vertikal dari body */
+            flex-grow: 1; 
+            /* Penting untuk flex item yang berisi grid atau kolom yang bisa di-scroll */
+            min-height: 0; 
+        }
+
+        /* 2. Tampilkan 3 cards dengan header */
+        /* REVISI: Mengubah background card menjadi Biru Slate Transparan */
+        .log-card {
+            background-color: rgba(255, 255, 255, 0.5); /* Biru Slate Transparan */
+            backdrop-filter: blur(8px);
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; 
+            
+            position: relative; 
+        }
+
+        /* Perubahan Utama: CSS untuk Avatar Foto */
+        /* REVISI: Border dan warna teks Avatar menggunakan Biru Navy */
+        .avatar-circle {
+            position: absolute;
+            top: 50%; 
+            left: 15px;
+          
+            width: 60px;
+            height: 60px;
+            line-height: 56px; 
+            border-radius: 50%;
+            
+            background-color: #f9f9f9; 
+            color: #192a56; /* Biru Navy */
+            font-weight: bold;
+            font-size: 16px;
+            text-align: center;
+            
+            border: 2px solid #192a56;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            
+            transform: translateY(-50%); 
+            z-index: 30; 
+            
+            /* CSS untuk memastikan gambar terisi penuh dan rapi */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            /* Penting: Sembunyikan teks inisial saat gambar dimuat */
+            text-indent: -9999px; 
+            overflow: hidden;
+        }
+
+        /* REVISI: Mengganti gradien header card menjadi Biru Navy/Slate */
+        .card-header {
+            margin-top: 15px;
+            max-height: 50px;
+            display: flex;
+            padding: 15px;
+            padding-left: 80px; 
+            background: linear-gradient(90deg, #192a56, #4682b4); /* Biru Navy ke Biru Slate */
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            align-items: center;
+            justify-content: center;
+            border-bottom: 4px solid #a28e2a; 
+            position: sticky;
+            top: 0;
+            z-index: 10; 
+        }
+
+        .card-content {
+            flex-grow: 1;
+            /* Tetap menggunakan overflow-y: auto; di card-content agar hanya konten log yang di-scroll */
+            overflow-y: auto; 
+            padding: 15px;
+            color: #555;
+            font-size: 14px;
+        }
+        
+        /* Tambahan style untuk loading dan jika tidak ada log */
+        .card-content.loading {
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #888;
+        }
+
+        .log-entry {
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #eee;
+            z-index: 1; 
+            cursor: pointer; /* Memberikan indikasi bahwa entri bisa diklik */
+            transition: background-color 0.2s;
+        }
+        
+        /* REVISI: Hover effect menggunakan warna hangat (Emas Muda) */
+        .log-entry:hover {
+            background-color: #fff0d6; 
+        }
+        
+        .log-entry[data-project-id="null"] {
+            cursor: default; /* Non-clickable jika tidak ada ID */
+        }
+        .log-entry[data-project-id="null"]:hover {
+            background-color: transparent;
+        }
+
+
+        .log-time {
+            font-size: 12px;
+            color: #000;
+            display: block;
+            margin-top: 2px;
+        }
+
+        /* Style untuk tipe log tertentu */
+        /* REVISI: Warna Log menyesuaikan skema baru */
+        .log-entry[data-type^="Project_Add"] { color: #00B050; } /* Hijau */
+        .log-entry[data-type^="Project_Delete"] { color: #dc3545; } /* Merah */
+        .log-entry[data-type^="Document_Upload"] { color: #0070C0; } /* Biru Slate */
+        .log-entry[data-type^="Document_Status_Update"] { color: #0070C0; } /* Biru Slate */
+        .log-entry[data-type^="Document_Delete"] { color: #dc3545; } /* Merah */
+        .log-entry[data-type^="Project_Completion_Update"] { color: #DC652A; } /* Emas */
+        
+        /* CSS Filter Controls (Transparan, tanpa Label, Font Kecil) */
+        .filter-controls {
+            padding: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background-color: transparent; 
+            border-radius: 8px;
+            padding: 0; 
+            box-shadow: none;
+        }
+
+        .filter-controls label {
+            display: none;
+        }
+
+        /* REVISI: Filter control menggunakan Biru Slate Transparan */
+        #date-filter {
+            padding: 5px 10px; 
+            border-radius: 4px;
+            /* Menggunakan warna aksen Biru Navy */
+            border: 1px solid #ccc; 
+            background: rgba(70, 130, 180, 0.2);
+            backdrop-filter: blur(12px); 
+            font-size: 13px; 
+            cursor: pointer;
+            min-width: 150px; 
+            color: #192a56;
+        }
+        
+        /* --- MODIFIKASI CSS UNTUK BADGE TANGGAL BARU (TIDAK STICKY) --- */
+        .date-badge {
+            text-align: center;
+            margin: 10px 0 10px 0;
+            padding: 5px 10px;
+            background-color: #d9c756; /* Kuning/Emas */
+            color: #192a56; /* Biru Navy */
+            font-weight: 700;
+            font-size: 11px;
+            border-radius: 6px;
+            display: inline-block;
+            width: 100%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            letter-spacing: 0.5px;
+            /* Hapus: position: sticky, top, z-index */
+        }
+        /* --- AKHIR MODIFIKASI CSS BADGE TANGGAL --- */
+
+    </style>
+</head>
+<body> 
+    
+    <div class="filter-controls">
+        <label for="date-filter">Filter Tanggal:</label>
+        <select id="date-filter">
+            </select>
+    </div>
+    
+    <div class="cards-container">
+        
+        <div class="log-card">
+            <div class="card-header" id="header-busdev1">
+                <div class="avatar-circle">Loading Avatar...</div> 
+                Loading...
+            </div>
+            <div class="card-content" id="content-busdev1">
+                <p class="loading-message">Memuat log aktivitas...</p>
+            </div>
+        </div>
+
+        <div class="log-card">
+            <div class="card-header" id="header-busdev2">
+                <div class="avatar-circle">Loading Avatar...</div> 
+                Loading...
+            </div>
+            <div class="card-content" id="content-busdev2">
+                <p class="loading-message">Memuat log aktivitas...</p>
+            </div>
+        </div>
+
+        <div class="log-card">
+            <div class="card-header" id="header-busdev">
+                <div class="avatar-circle">Loading Avatar...</div> 
+                Loading...
+            </div>
+            <div class="card-content" id="content-busdev">
+                <p class="loading-message">Memuat log aktivitas...</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Konfigurasi API URL (sesuai dari landing.html dan server.js)
+        const API_URL = 'http://localhost:3000';
+        const LOGS_API_URL = `${API_URL}/api/logs`; // URL API untuk log
+        
+        // Daftar username yang ingin ditampilkan
+        const USERNAMES_TO_DISPLAY = ['busdev1', 'busdev2', 'busdev'];
+
+        /**
+         * UTILITY: Memformat timestamp menjadi string waktu yang mudah dibaca.
+         * @param {string} timestampString - Waktu dalam format ISO.
+         * @returns {string} - Contoh: "Hari Ini, 10:30"
+         */
+        function formatLogTime(timestampString) {
+            const date = new Date(timestampString);
+            const now = new Date();
+
+            const diffTime = Math.abs(now.getTime() - date.getTime());
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            const timeOptions = { hour: '2-digit', minute: '2-digit' };
+            const timeStr = date.toLocaleTimeString('id-ID', timeOptions);
+
+            if (diffDays <= 1 && date.getDate() === now.getDate()) {
+                return `Hari Ini, ${timeStr}`;
+            } else if (diffDays <= 2 && date.getDate() === now.getDate() - 1) {
+                return `Kemarin, ${timeStr}`;
+            } else {
+                const dateOptions = { day: '2-digit', month: 'short', year: 'numeric' };
+                const dateStr = date.toLocaleDateString('id-ID', dateOptions);
+                return `${dateStr}, ${timeStr}`;
+            }
+        }
+        
+        // FUNGSI UNTUK FILTER TANGGAL
+        
+        /**
+         * UTILITY: Menghasilkan array objek tanggal untuk 14 hari terakhir.
+         * @returns {Array} - Array objek { label: string, value: string }
+         */
+        function generateDateOptions() {
+            const today = new Date();
+            const options = [
+                { label: "Semua Tanggal", value: "all" },
+                { label: "Hari Ini", value: today.toISOString().split('T')[0] } 
+            ];
+
+            // Opsi untuk format dd mmm yyyy
+            const dateOptions = { day: '2-digit', month: 'short', year: 'numeric' };
+
+            for (let i = 1; i <= 14; i++) {
+                const date = new Date();
+                date.setDate(today.getDate() - i);
+                
+                // Format label: dd mmm yyyy (Misal: 05 Des 2025)
+                const dateLabel = date.toLocaleDateString('id-ID', dateOptions).replace(/\./g, ''); 
+                
+                // Format value: YYYY-MM-DD (untuk filtering yang mudah)
+                const dateValue = date.toISOString().split('T')[0];
+
+                options.push({ 
+                    label: `${dateLabel}`, 
+                    value: dateValue 
+                });
+            }
+
+            return options;
+        }
+
+        /**
+         * Mengisi dropdown filter dengan opsi tanggal dan menambahkan event listener.
+         */
+        function fillDateFilter() {
+            const filter = document.getElementById('date-filter');
+            const dateOptions = generateDateOptions();
+
+            dateOptions.forEach(optionData => {
+                const option = document.createElement('option');
+                option.value = optionData.value;
+                option.textContent = optionData.label;
+                filter.appendChild(option);
+            });
+            
+            // Tambahkan event listener untuk memicu pemuatan ulang log saat nilai berubah
+            filter.addEventListener('change', () => {
+                // Panggil fungsi pemuatan ulang dengan filter tanggal baru
+                loadAndDisplayLogs(filter.value); 
+            });
+        }
+
+
+        /**
+         * Mengambil data pengguna dari server localhost dan memperbarui header
+         */
+        async function updateCardHeaders() {
+            const headers = {};
+            const fetchPromises = [];
+
+            USERNAMES_TO_DISPLAY.forEach(username => {
+                headers[username] = document.getElementById(`header-${username}`);
+                
+                const fetchUrl = `${API_URL}/api/user/${username}`; 
+
+                const promise = fetch(fetchUrl)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status} for ${username}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => ({ username, data }))
+                    .catch(error => ({ username, error })); 
+
+                fetchPromises.push(promise);
+            });
+
+            const results = await Promise.all(fetchPromises);
+
+            results.forEach(result => {
+                const username = result.username;
+                const headerElement = headers[username];
+                
+                if (result.error) {
+                    console.error(`Gagal mengambil data untuk ${username}:`, result.error);
+                    if (headerElement) {
+                        headerElement.textContent = `Error: ${username}`;
+                    }
+                } else {
+                    const userData = result.data.user; 
+                    
+                    if (headerElement && userData && userData.fullName) {
+                        const avatar = headerElement.querySelector('.avatar-circle');
+                        
+                        // Menghapus teks "Loading..." dari header
+                        if (headerElement.childNodes.length > 1) {
+                            for (let i = headerElement.childNodes.length - 1; i >= 0; i--) {
+                                const node = headerElement.childNodes[i];
+                                if (node.nodeType === 3) { 
+                                    headerElement.removeChild(node);
+                                }
+                            }
+                        }
+
+                        // Logika Avatar
+                        if (avatar && userData.photo) {
+                            avatar.style.backgroundImage = `url('${userData.photo}')`;
+                            avatar.textContent = ''; 
+                            avatar.style.textIndent = '-9999px';
+                        } else if (avatar) {
+                            // Fallback: inisial
+                            const initials = userData.fullName.split(' ')
+                                                            .map(n => n.trim())
+                                                            .filter(n => n.length > 0)
+                                                            .map(n => n[0])
+                                                            .join('')
+                                                            .substring(0, 2)
+                                                            .toUpperCase();
+                            avatar.textContent = initials;
+                            avatar.style.backgroundImage = 'none'; 
+                            avatar.style.textIndent = '0';
+                        }
+                        
+                        // Menambahkan teks nama pengguna setelah avatar
+                        headerElement.appendChild(document.createTextNode(userData.fullName)); 
+                        
+                    } else if (headerElement) {
+                        headerElement.textContent = `Data ${username} Tidak Lengkap`;
+                    }
+                }
+            });
+        }
+        
+        /**
+         * Menangani navigasi dengan langsung mengarahkan pengguna.
+         * @param {number} projectId - ID proyek tujuan.
+         */
+        function goToProject(projectId) {
+            if (!projectId || projectId === 'null') {
+                console.warn("Project ID tidak valid, tidak dapat navigasi.");
+                return;
+            }
+            
+            const targetUrl = `projects_edit.html?id=${projectId}`;
+            
+            // Langsung navigasi tanpa animasi slide out
+            window.location.href = targetUrl;
+        }
+
+
+        /**
+         * Menambahkan event listener pada setiap entri log.
+         */
+        function addLogEntryListeners() {
+            document.querySelectorAll('.log-entry').forEach(entry => {
+                const projectId = entry.getAttribute('data-project-id');
+                
+                // Hanya tambahkan listener jika projectId valid dan bukan 'null'
+                if (projectId && projectId !== 'null') {
+                    entry.addEventListener('click', () => goToProject(projectId));
+                }
+            });
+        }
+
+
+        /**
+         * Mengambil dan menampilkan log aktivitas dengan filter tanggal.
+         * @param {string} [dateFilter='all'] - Tanggal dalam format YYYY-MM-DD atau 'all'.
+         */
+        async function loadAndDisplayLogs(dateFilter = 'all') {
+            try {
+                // 1. Ambil semua log dari server
+                const response = await fetch(LOGS_API_URL);
+                if (!response.ok) {
+                    throw new Error(`Gagal memuat log: HTTP ${response.status}`);
+                }
+                const result = await response.json();
+                const allLogs = result.logs || [];
+
+                // 2. Kelompokkan log berdasarkan username dan filter tanggal
+                const logsByUser = {};
+                USERNAMES_TO_DISPLAY.forEach(username => {
+                    let filteredLogs = allLogs
+                        .filter(log => log.user === username);
+                        
+                    // LOGIKA FILTER TANGGAL
+                    if (dateFilter !== 'all') {
+                        filteredLogs = filteredLogs.filter(log => {
+                            // Ambil tanggal log dalam format YYYY-MM-DD
+                            const logDate = new Date(log.timestamp).toISOString().split('T')[0];
+                            return logDate === dateFilter;
+                        });
+                    }
+                    
+                    // Urutkan dari yang terbaru (terbalik)
+                    logsByUser[username] = filteredLogs
+                        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                });
+                
+                // 3. Tampilkan log di setiap card
+                USERNAMES_TO_DISPLAY.forEach(username => {
+                    const contentElement = document.getElementById(`content-${username}`);
+                    const logs = logsByUser[username];
+
+                    if (!contentElement) return;
+
+                    contentElement.innerHTML = ''; // Bersihkan konten
+
+                    if (logs.length === 0) {
+                        contentElement.innerHTML = '<p class="loading-message">Tidak ada log aktivitas untuk pengguna ini pada tanggal yang dipilih.</p>';
+                        contentElement.classList.add('loading');
+                        return;
+                    }
+                    
+                    contentElement.classList.remove('loading');
+                    
+                    // VARIABEL BARU UNTUK MELACAK TANGGAL TERAKHIR
+                    let lastDate = null; 
+
+                    logs.forEach(log => {
+                        const logDateString = new Date(log.timestamp).toISOString().split('T')[0]; // YYYY-MM-DD
+                        
+                        // --- LOGIKA BADGE TANGGAL BARU ---
+                        if (logDateString !== lastDate) {
+                            const badge = document.createElement('div');
+                            badge.className = 'date-badge';
+                            
+                            // Format tanggal untuk badge (dd mmm yyyy)
+                            const dateOptions = { day: '2-digit', month: 'short', year: 'numeric' };
+                            const displayDate = new Date(log.timestamp).toLocaleDateString('id-ID', dateOptions).replace(/\./g, '');
+                            
+                            // Logika Hari Ini/Kemarin untuk Badge
+                            const today = new Date().toISOString().split('T')[0];
+                            const yesterday = new Date();
+                            yesterday.setDate(yesterday.getDate() - 1);
+                            const yesterdayString = yesterday.toISOString().split('T')[0];
+
+                            let badgeText = displayDate;
+                            if (logDateString === today) {
+                                badgeText = 'Hari ini';
+                            } else if (logDateString === yesterdayString) {
+                                badgeText = 'Kemarin';
+                            }
+                            
+                            badge.textContent = badgeText;
+                            contentElement.appendChild(badge);
+                            
+                            // Perbarui lastDate
+                            lastDate = logDateString; 
+                        }
+                        // --- AKHIR LOGIKA BADGE TANGGAL BARU ---
+
+                        const logEntry = document.createElement('div');
+                        logEntry.className = 'log-entry';
+                        
+                        const projectId = log.projectId || 'null'; // Ambil projectId, default 'null'
+                        
+                        // Tambahkan data-type untuk style dan data-project-id untuk klik
+                        logEntry.setAttribute('data-type', log.type || 'General'); 
+                        logEntry.setAttribute('data-project-id', projectId);
+                        
+                        // Hapus fullname dari aktivitas karena sudah di header
+                        const cleanedActivity = log.activity.replace(new RegExp(log.fullName, 'i'), '').trim();
+                        
+                        // Menghilangkan tampilan (ID: ${projectId})
+                        logEntry.innerHTML = `
+                            ${cleanedActivity.charAt(0).toUpperCase() + cleanedActivity.slice(1)} 
+                            <span class="log-time">${formatLogTime(log.timestamp)}</span>
+                        `;
+                        contentElement.appendChild(logEntry);
+                    });
+                });
+                
+                // 4. Tambahkan event listeners setelah log dirender
+                addLogEntryListeners(); 
+
+            } catch (error) {
+                console.error('Error saat memuat atau menampilkan log:', error);
+                USERNAMES_TO_DISPLAY.forEach(username => {
+                    const contentElement = document.getElementById(`content-${username}`);
+                    if (contentElement) {
+                        contentElement.innerHTML = '<p class="loading-message">Gagal memuat log dari server. Cek koneksi API.</p>';
+                        contentElement.classList.add('loading');
+                    }
+                });
+            }
+        }
+
+
+        // Jalankan fungsi saat halaman dimuat
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 1. Isi dropdown filter tanggal
+            fillDateFilter(); 
+            
+            // 2. Memuat log (menggunakan nilai default 'all' saat pertama kali)
+            await loadAndDisplayLogs(); 
+            
+            // 3. Memuat info header (nama dan foto)
+            await updateCardHeaders(); 
+        });
+    </script>
+</body>
+</html>

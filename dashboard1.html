@@ -1,0 +1,1813 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Proyek</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
+
+<style>
+    /* ----------------------------------
+       GLOBAL STYLES
+    ----------------------------------- */
+    /* Warna Aksen Baru:
+       - Biru Navy (Aksen Primer): #192a56 
+       - Emas Tua (Aksen Sekunder): #af8d49 
+       - Kuning Mustard: #efb23c
+    */
+    html, body {
+        height: 100%;
+    }
+    body {
+        margin: 0;
+        padding: 15px;
+        font-family: 'Poppins', sans-serif;
+        /* Hapus overflow: hidden untuk memastikan body bisa menampung grid-new-layout yang keluar */
+        overflow: hidden; 
+        background-image: url('assets/img/002_background.png');
+        background-size: cover;
+        background-attachment: fixed;
+        background-position: center;
+        min-height: 0;
+    }
+
+    /* KONTEN UTAMA: Tambahkan position relative dan transition untuk animasi */
+    .grid-new-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        height: calc(101.5vh - 45px); 
+        
+        position: relative; /* Penting untuk animasi */
+        transition: transform 0.5s ease-out, opacity 0.5s ease-out; 
+    }
+    
+    /* ANIMASI SLIDE BARU */
+    @keyframes slideOutLeft {
+        to {
+            transform: translateX(-100%);
+            opacity: 0;
+        }
+    }
+    
+    .slide-out {
+        animation: slideOutLeft 0.5s ease-out forwards;
+    }
+
+    /* REVISI: Mengubah background glass menjadi Biru Slate Transparan (rgba(70, 130, 180, 0.2)) */
+    .glass {
+        background: rgba(70, 130, 180, 0.2); 
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 14px;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+        margin-bottom: 10px;
+        font-weight: 600;
+        color: #333;
+        font-size: 14px; 
+    }
+    /* Style untuk kontainer judul agar sebaris dengan dropdown */
+    #chart-title-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    /* --- FILTER STYLES (Disesuaikan untuk mendukung JS Gradient) --- */
+    .dropdown-container {
+        display: flex;
+        gap: 15px; 
+        margin-bottom: 15px;
+        flex-wrap: wrap; 
+        width: 100%; 
+    }
+
+    #sector-select option, #tipe-select option, #tahap-select option, #status-select option, #completion-select option {
+        color: #333; 
+        background-color: #fff; 
+    }
+
+    /* REVISI: Background default dropdown mengikuti warna glass baru */
+    #sector-select, #tipe-select, #tahap-select, #status-select, #completion-select {
+        padding: 10px 15px;
+        font-size: 16px;
+        font-weight: 550;
+        border-radius: 8px;
+        border: none;
+        flex-grow: 1; 
+        background: rgba(70, 130, 180, 0.4); 
+        transition: all 0.3s ease;
+        outline: none;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        min-width: 100px; 
+        color: #333; 
+    }
+    /* ----------------------------------------------------------------- */
+
+
+    /* ----------------------------------
+       CARD STYLES
+    ----------------------------------- */
+    .cards-container {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 15px; 
+        flex-wrap: nowrap;
+        overflow-x: auto;
+    }
+
+    /* REVISI: Mengubah background card menjadi Biru Slate Transparan (rgba(70, 130, 180, 0.3)) */
+    .card {
+        flex: 1;
+        min-width: 76px;
+        padding: 10px;
+        background: rgba(70, 130, 180, 0.3);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        box-shadow: 0 8px 15px rgba(0,0,0,0.08);
+        border-radius: 14px;
+    }
+
+    /* REVISI: Mengganti latar belakang summary card ke warna hangat/emas yang lebih gelap */
+    .card-summary {
+        background: rgba(175, 141, 73, 0.5); 
+        box-shadow: 0 4px 15px rgba(175, 141, 73, 0.2);
+    }
+
+
+    .card-title {
+        font-size: 9px;
+        color: #333;
+        font-weight: 600;
+	    text-align: center;
+    }
+
+    /* REVISI: Mengganti warna nilai kartu ke warna aksen biru */
+    .card-value {
+        font-size: 22px;
+        font-weight: bold;
+	    text-align: center;
+        margin-top: 5px;
+        color: #192a56; /* Biru Navy */
+    }
+
+    /* ----------------------------------
+       GRID LAYOUT
+    ----------------------------------- */
+    .left-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 0px; 
+        height: 100%;
+    }
+
+    /* ----------------------------------
+       MAP STYLES
+    ----------------------------------- */
+    #map {
+        width: 100%;
+        height: auto;
+        flex-grow: 1;
+        position: relative;
+    }
+
+    /* REVISI: Background tombol mengikuti warna glass baru */
+    .map-toggle-button {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        z-index: 500;
+        padding: 8px 12px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        background: rgba(70, 130, 180, 0.4); /* Biru Slate Transparan (lebih kuat) */
+        backdrop-filter: blur(5px);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        color: #fff;
+    }
+    .map-toggle-button:hover {
+        background: rgba(70, 130, 180, 0.6);
+    }
+    
+    /* MODIFIKASI DIMULAI DI SINI UNTUK POPUP LEAFLET */
+    .leaflet-popup-content-wrapper {
+        min-width: 300px; 
+    }
+
+    .leaflet-popup-content table {
+        width: 100%; 
+        border-collapse: collapse;
+        table-layout: fixed; 
+    }
+    
+    .leaflet-popup-content table td {
+        padding: 2px 5px;
+        line-height: 1.4;
+        font-size: 11px;
+        white-space: normal; 
+        word-wrap: break-word;
+    }
+
+    /* Style untuk kolom label (kiri) */
+    .leaflet-popup-content table tr td:first-child {
+        width: 35%; 
+        font-weight: 600;
+        white-space: nowrap; 
+    }
+    
+    /* Style untuk kolom pemisah (tengah) */
+    .leaflet-popup-content table tr td:nth-child(2) {
+        width: 5%; 
+        text-align: center;
+        font-weight: 600;
+    }
+    
+    .leaflet-popup-content table tr td {
+        vertical-align: top !important; 
+    }
+    /* MODIFIKASI BERAKHIR DI SINI */
+
+
+    /* ----------------------------------
+       CHART & TABLE STYLES (RIGHT COLUMN)
+    ----------------------------------- */
+    #chartArea {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        overflow: hidden;
+        height: 100%;
+        background: none;
+        backdrop-filter: none;
+        box-shadow: none;
+        padding: 0;
+    }
+
+    /* REVISI: Mengubah background chart/table box menjadi Biru Slate Transparan */
+    .chart-box, .table-box {
+        padding: 15px;
+        background: rgba(70, 130, 180, 0.2); 
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 14px;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    }
+    
+    .chart-box {
+        max-height: 250px;
+        min-height: 250px;
+        display: flex; 
+        flex-direction: column;
+	    margin-bottom: 10px; 
+    }
+
+    .table-box {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    #barChartContainer {
+        max-height: 100%;
+        min-height: 300px;
+        width: 100%;
+        margin-bottom: 5px;
+        flex-grow: 1;
+    }
+
+    #projectTableContainer {
+        flex-grow: 1;
+        overflow-y: auto;
+        max-height: unset;
+        width: 100%;
+    }
+    
+    /* ----------------------------------
+       EXPORT & NEXT BUTTON & LOADING STYLES
+    ----------------------------------- */
+    #export-container {
+        display: flex;
+        justify-content: flex-end; 
+        align-items: center; 
+        gap: 10px; 
+        margin-bottom: 15px; 
+    }
+
+    /* REVISI: Mengganti warna tombol Export ke Hijau (Primary Action) */
+    .export-button {
+        height: 38px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        
+        background: #3cb371; /* Hijau untuk Export */
+        backdrop-filter: blur(5px);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        color: #fff; /* Teks putih untuk kontras */
+        
+        border: 0px solid rgba(25, 42, 86, 0.5); 
+        padding: 0 15px;
+    }
+
+    .export-button:hover {
+        background: #46ce83;
+        color: #fff;
+    }
+
+    /* GAYA BARU UNTUK TOMBOL NEXT (Biru Navy) */
+    .next-button {
+        background: #192a56; 
+    }
+    .next-button:hover {
+        background: #2a3c6e;
+    }
+
+    /* REVISI: Mengganti warna Loading Bar ke Biru Navy */
+    /* GAYA LOADING INDICATOR BARU */
+    #loading-indicator {
+        width: 150px; 
+        height: 38px; 
+        border-radius: 8px;
+        /* REVISI: Background indicator mengikuti warna glass baru */
+        background: rgba(70, 130, 180, 0.4); 
+        overflow: hidden; 
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    #loading-bar {
+        width: 100%; 
+        height: 100%;
+        background: #192a56; /* Biru Navy */
+        transition: transform 0.3s ease-out; 
+        transform: translateX(-100%); /* Sembunyikan di awal */
+    }
+
+    /* ----------------------------------
+       TABLE DETAIL STYLES
+    ----------------------------------- */
+    #projectSummaryTable {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    #projectSummaryTable th, #projectSummaryTable td {
+        padding: 6px 8px;
+        text-align: center;
+        line-height: 1.2;
+    }
+    /* REVISI: Mengganti warna header tabel ke Biru Navy */
+    #projectSummaryTable thead th {
+        background: #192a56; /* Biru Navy */
+        color: #fff;
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        font-weight: 600;
+    }
+
+    /* REVISI: Mengganti background baris tabel menjadi lebih netral di atas background biru glass */
+    #projectSummaryTable tbody tr td {
+        background: rgba(255, 255, 255, 0.7);
+    }
+
+    /* REVISI: Mengganti warna hover tabel ke warna mustard/emas muda */
+    #projectSummaryTable tbody tr:hover td {
+        background: #fff0d6; /* Kuning/Emas Muda yang sangat lembut */
+    }
+
+    #projectSummaryTable th, #projectSummaryTable td {
+        font-size: 9px;
+    }
+    #projectSummaryTable td:nth-child(1) { width: 150px; text-align: left;}  /* Prospek */
+    #projectSummaryTable td:nth-child(2) { width: 100px; text-align: left;}  /* Tipe */
+    #projectSummaryTable td:nth-child(3) { width: 70px; text-align: left;}  /* Tahap */
+    #projectSummaryTable td:nth-child(4) { width: 50px; font-weight: bold; text-align: right;}  /* Progress */
+    #projectSummaryTable td:nth-child(5) { width: 50px; font-weight: bold; text-align: center;} /* Completion */
+
+    #projectSummaryTable tbody tr[data-lat][data-lng] {
+        cursor: pointer;
+    }
+
+    /* --- SYNCHRONIZED STATUS STYLES (Dibiarkan tetap sebagai indikator universal) --- */
+    .status-Finished {
+        background-color: #e6ffe6 !important; 
+        color: #155724;
+    }
+    .status-Open {
+        background-color: #fffbe6 !important; 
+        color: #856404;
+    }
+    .status-Terminated {
+        background-color: #f8d7da !important; 
+        color: #721c24;
+    }
+    .status-Rejected {
+        background-color: #dc3545 !important; 
+        color: white;
+    }
+    
+    /* REVISI: Warna seleksi baris saat diklik */
+    #projectSummaryTable tbody tr.active-row td {
+        background: #ffd7a0 !important; /* Emas soft */
+    }
+
+    /* Custom CSS untuk Emoji Marker agar center */
+    .custom-div-icon {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 16px; 
+    }
+    
+    /* ----------------------------------
+       MODAL/POPUP STYLES (DIPINDAH DARI dashboard2.html)
+    ----------------------------------- */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(5px);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    .modal-overlay.active {
+        display: flex;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .modal-content {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 14px;
+        /* Padding sedikit dikurangi */
+        padding: 20px; 
+        /* Maksimal lebar dan tinggi dikurangi agar lebih ringkas */
+        max-width: 85%;
+        max-height: 75%; 
+        overflow: auto;
+        box-shadow: 0 8px 50px rgba(0, 0, 0, 0.3);
+        animation: slideUp 0.3s ease-out;
+        position: relative;
+        /* Ukuran font default dikurangi */
+        font-size: 13px; 
+    }
+
+    @keyframes slideUp {
+        from { 
+            transform: translateY(50px);
+            opacity: 0;
+        }
+        to { 
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        /* Margin dan padding header dikurangi */
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #192a56;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        color: #192a56;
+        /* Ukuran font judul dikurangi */
+        font-size: 18px; 
+        font-weight: 600;
+    }
+
+    .modal-close {
+        background: #e74c3c;
+        border: none;
+        color: white;
+        /* Ukuran tombol close dikurangi */
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        cursor: pointer;
+        /* Ukuran ikon close dikurangi */
+        font-size: 18px; 
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+
+    .modal-close:hover {
+        background: #c0392b;
+        transform: rotate(90deg);
+    }
+
+    .modal-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px; /* Margin atas dikurangi */
+        /* BARU: Menambahkan border-radius dan overflow untuk tabel */
+        border-radius: 4px;
+        overflow: hidden; 
+    }
+
+    .modal-table thead {
+        background: #192a56;
+        color: white;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .modal-table th,
+    .modal-table td {
+        /* Padding dikurangi agar baris lebih ringkas */
+        padding: 8px 10px; 
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .modal-table th {
+        font-weight: 600;
+        /* Ukuran font header tabel dikurangi */
+        font-size: 12px; 
+    }
+
+    .modal-table td {
+        color: #333;
+        /* Ukuran font data tabel dikurangi */
+        font-size: 12px; 
+    }
+
+    .modal-table tbody tr {
+        transition: background 0.2s ease;
+        /* PERUBAHAN BARU: Baris tabel bisa diklik */
+        cursor: pointer;
+    }
+
+    /* GAYA BARU UNTUK BARIS MODAL BERDASARKAN COMPLETION STATUS */
+    .completion-open {
+        background-color: #FFFBE6 !important;
+    }
+    .modal-table tbody tr.completion-open,
+    .modal-table tbody tr.completion-open td {
+        color: #856404 !important; /* Text color */
+    }
+    .modal-table tbody tr.completion-open:hover {
+        background: #fcf8e3 !important; 
+    }
+
+    .completion-finished {
+        background-color: #e6ffe6 !important;
+    }
+    .modal-table tbody tr.completion-finished,
+    .modal-table tbody tr.completion-finished td {
+        color: #155724 !important; /* Text color */
+    }
+    .modal-table tbody tr.completion-finished:hover {
+        background: #d4edda !important; 
+    }
+
+    .completion-terminated {
+        background-color: #f8d7da !important;
+    }
+    .modal-table tbody tr.completion-terminated,
+    .modal-table tbody tr.completion-terminated td {
+        color: #721c24 !important; /* Text color */
+    }
+    .modal-table tbody tr.completion-terminated:hover {
+        background: #f5c6cb !important; 
+    }
+
+    .completion-rejected {
+        background-color: #dc3545 !important;
+    }
+    /* SPESIFISITAS TINGGI UNTUK MEMASTIKAN TEKS PUTIH */
+    .modal-table tbody tr.completion-rejected,
+    .modal-table tbody tr.completion-rejected td {
+        color: white !important; /* Text color: PUTIH (Diverifikasi) */
+    }
+    .modal-table tbody tr.completion-rejected:hover {
+        background: #c82333 !important; 
+    }
+    /* Akhir Gaya Completion Status */
+    
+    /* Default hover for non-classed rows */
+    .modal-table tbody tr:hover {
+        background: rgba(25, 42, 86, 0.1);
+    }
+
+    .progress-badge {
+        display: inline-block;
+        /* Padding dan font badge dikurangi */
+        padding: 3px 8px; 
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 11px; 
+    }
+
+    .progress-low {
+        background: #e74c3c;
+        color: white;
+    }
+
+    .progress-medium {
+        background: #f39c12;
+        color: white;
+    }
+
+    .progress-high {
+        background: #3cb371;
+        color: white;
+    }
+
+    /* GAYA KOLOM DOKUMEN DENGAN ELLIPSIS */
+    .document-cell {
+        display: block; /* Penting agar max-width berfungsi di dalam td */
+        max-width: 120px; /* Batasi lebar maksimum kolom */
+        white-space: nowrap; /* Jangan biarkan teks pindah baris */
+        overflow: hidden; /* Sembunyikan konten yang meluap */
+        text-overflow: ellipsis; /* Tampilkan elipsis (...) jika terpotong */
+    }
+</style>
+</head>
+<body>
+
+<div class="grid-new-layout">
+
+    <div class="left-wrap">
+
+        <div class="dropdown-container">
+            <select id="sector-select">
+                <option value="all">Semua Sektor</option>
+            </select>
+            <select id="tipe-select">
+                <option value="all">Semua Tipe</option>
+            </select>
+            <select id="tahap-select">
+                <option value="all">Semua Tahap</option>
+            </select>
+            <select id="status-select">
+                <option value="all">Semua Status</option>
+            </select>
+            <select id="completion-select">
+                <option value="all">Semua Completion</option>
+            </select>
+        </div>
+
+        <div class="cards-container">
+            <div class="card glass">
+                <div class="card-title">Organic</div>
+                <div class="card-value" id="total-organic">...</div>
+            </div>
+
+            <div class="card glass">
+                <div class="card-title">Take Over</div>
+                <div class="card-value" id="total-takeover">...</div>
+            </div>
+
+            <div class="card glass">
+                <div class="card-title">Joint Operation</div>
+                <div class="card-value" id="total-jointoperation">...</div>
+            </div>
+
+            <div class="card glass">
+                <div class="card-title">Joint Venture</div>
+                <div class="card-value" id="total-jointventure">...</div>
+            </div>
+
+            <div class="card glass">
+                <div class="card-title">Partnership</div>
+                <div class="card-value" id="total-partnership">...</div>
+            </div>
+
+            <div class="card glass">
+                <div class="card-title">Franchising</div>
+                <div class="card-value" id="total-franchising">...</div>
+            </div>
+
+            <div class="card glass">
+                <div class="card-title">Licensing</div>
+                <div class="card-value" id="total-licensing">...</div>
+            </div>
+
+            <div class="card glass">
+                <div class="card-title">Divestiture</div>
+                <div class="card-value" id="total-divestiture">...</div>
+            </div>
+
+            <div class="card glass card-summary">
+                <div class="card-title">Total</div>
+                <div class="card-value" id="total-projects">...</div>
+            </div>
+
+            <div class="card glass card-summary">
+                <div class="card-title">Progress (%)</div>
+                <div class="card-value" id="total-progress">...</div>
+            </div>
+            </div>
+
+        <div id="map" class="glass">
+
+            <button id="mapToggle" class="map-toggle-button">
+                <i class="fas fa-satellite"></i> Satellite
+            </button>
+
+            <button id="autoZoomToggle" class="map-toggle-button" style="right: 135px;">
+                <i class="fas fa-expand"></i> Auto Zoom
+            </button>
+
+        </div>
+    </div>
+
+    <div id="chartArea">
+        
+        <div id="export-container">
+            <div id="loading-indicator" style="display: none;">
+                <div id="loading-bar"></div>
+            </div>
+            <button id="exportButton" class="export-button">
+                <i class="fas fa-download"></i> Export
+            </button>
+            
+            <button id="nextButton" class="export-button next-button">
+                Next <i class="fas fa-arrow-right"></i> 
+            </button>
+            </div>
+
+        <div class="chart-box">
+            <div id="chart-title-container">
+                <h2 id="chart-title" style="margin: 0;">Tahapan</h2>
+                <select id="chartModeSelect" style="
+                    padding: 6px 10px;
+                    font-size: 12px;
+                    border-radius: 8px;
+                    border: none;
+                    background: rgba(70, 130, 180, 0.4); 
+                    color: #333;
+                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+                    outline: none;
+                    cursor: pointer;
+                ">
+                    <option value="tahapan">Mode 1</option>
+                    <option value="status">Mode 2</option>
+                    <option value="completion">Mode 3</option>
+                </select>
+            </div>
+            <div id="barChartContainer">
+                <canvas id="barChart"></canvas>
+            </div>
+        </div>
+
+        <div class="table-box">
+            <h2>Prioritas</h2>
+            <div id="projectTableContainer">
+                <table id="projectSummaryTable">
+                    <thead>
+                        <tr>
+                            <th>Prospek</th>
+                            <th>Tipe</th>
+                            <th>Tahap</th>
+                            <th>Progress</th>
+                            <th>Completion</th>
+                        </tr>
+                    </thead>
+                    <tbody id="summaryTableBody">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    </div>
+
+<div id="projectModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Detail Prospek</h3>
+            <button class="modal-close" id="modalClose">×</button>
+        </div>
+        <div id="modalBody">
+            </div>
+    </div>
+</div>
+<script>
+/* -------------------------------------------------
+   GLOBAL CONSTANTS AND INITIAL SETUP
+--------------------------------------------------- */
+const API_URL = "http://localhost:3000/api";
+let currentData = [];
+let allProjectsData = []; // Variabel baru untuk menampung data mentah seluruh proyek
+let autoZoomEnabled = true;
+let myBarChart;
+
+Chart.register(ChartDataLabels);
+
+// Definisikan urutan tetap untuk filter Tipe, Tahap, Status, dan Completion
+const FIXED_ORDER = {
+    tipe: ['Organic', 'Take Over', 'Joint Operation', 'Joint Venture', 'Partnership', 'Franchising', 'Licensing', 'Divestiture'],
+    tahap: ['Identification', 'Engagement', 'Term Sheet', 'Due Diligence', 'Final Draft', 'Signing'],
+    status: ['Proposed', 'Approved', 'Pending', 'Cancelled'], 
+    completion: ['Open', 'Finished', 'Terminated', 'Rejected']
+};
+
+// --- LABEL BARU UNTUK TAHAP KOSONG ---
+const EMPTY_STAGE_LABEL = 'New/No Stage';
+// ------------------------------------
+
+
+/* -------------------------------------------------
+   UPDATE FILTER STYLES
+--------------------------------------------------- */
+function updateFilterStyles() {
+    const filters = ['sector-select', 'tipe-select', 'tahap-select', 'status-select', 'completion-select'];
+    // REVISI: Mengganti gradien aktif ke Biru Navy dan Biru Slate
+    const activeBackground = 'linear-gradient(90deg, #192a56, #4682b4)'; 
+    const defaultBackground = 'rgba(70, 130, 180, 0.4)'; /* REVISI: Mengikuti warna glass baru */
+
+    filters.forEach(id => {
+        const select = document.getElementById(id);
+        if (select.value === 'all') {
+            select.style.background = activeBackground;
+            select.style.color = '#fff'; // White text for contrast on gradient
+        } else {
+            select.style.background = defaultBackground;
+            select.style.color = '#333'; // Default text color
+        }
+    });
+}
+
+
+/* -------------------------------------------------
+   HELPER FUNCTIONS (MODAL & DATA)
+--------------------------------------------------- */
+function normalize(value) {
+    return (value || '').toLowerCase().trim().replace(/-/g, ' ');
+}
+
+function getCompletionStatus(progress, projectCompletion) {
+    if (projectCompletion && projectCompletion !== '-') return projectCompletion;
+
+    const p = parseInt(progress) || 0;
+    if (p >= 100) return 'Finished'; 
+    return 'Open';
+}
+
+function getCompletionClass(status) {
+    if (!status) return '';
+    const cleanStatus = status.replace(/\s/g, ''); 
+    
+    if (cleanStatus === 'Finished') return 'status-Finished';
+    if (cleanStatus === 'Open') return 'status-Open';
+    if (cleanStatus === 'Terminated') return 'status-Terminated';
+    if (cleanStatus === 'Rejected') return 'status-Rejected';
+    
+    return '';
+}
+
+// FUNGSI UNTUK WARNA MARKER (SINKRONISASI DENGAN BAR CHART)
+function getStageColor(tahap, completionStatus) {
+    // REVISI: Warna Tahapan telah diganti sesuai permintaan user
+    const stageColors = {
+        'Identification': '#F8CBAD', 
+        'Engagement': '#FFC000',     
+        'Term Sheet': '#BDD7EE',     
+        'Due Diligence': '#3A86FF',  
+        'Final Draft': '#C5E0B4',    
+        'Signing': '#92D050'         
+    };
+
+    const t = (tahap || '').trim();
+    const c = (completionStatus || '').trim();
+
+    if (c === 'Terminated' || c === 'Rejected') {
+        return '#DC143C'; // Merah Solid (Tetap)
+    }
+    
+    // --- PERUBAHAN BARU: Jika Tahap kosong atau '-', gunakan Putih (#FFFFFF) ---
+    if (!t || t === '-') {
+        return '#FFFFFF';
+    }
+    // -------------------------------------------------------------------------
+    
+    if (stageColors[t]) {
+        return stageColors[t];
+    }
+
+    return '#4682b4'; // REVISI: Default Biru Slate
+}
+
+// GET COMPLETION COUNTS
+function getCompletionCounts(projects) {
+    const counts = {};
+    FIXED_ORDER.completion.forEach(status => counts[status] = 0);
+    
+    projects.forEach(p => {
+        const progressValue = parseInt(p.progress) || 0;
+        const status = getCompletionStatus(progressValue, p.completion);
+        if (FIXED_ORDER.completion.includes(status)) {
+            counts[status]++;
+        }
+    });
+    return counts;
+}
+
+// GET STATUS COUNTS
+function getStatusCounts(projects) {
+    const counts = {};
+    FIXED_ORDER.status.forEach(status => counts[status] = 0);
+    
+    projects.forEach(p => {
+        const status = (p.status || '').trim();
+        if (FIXED_ORDER.status.includes(status)) {
+            counts[status]++;
+        }
+    });
+    return counts;
+}
+
+// FUNGSI HELPER BARU UNTUK FORMAT CARD VALUE
+function formatCardValue(count) {
+    return count === 0 ? '-' : count;
+}
+
+
+// FUNGSI UNTUK MENAMPILKAN MODAL DETAIL PROYEK
+function showProjectModal(labelName, chartMode) {
+    const modal = document.getElementById('projectModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalBody = document.getElementById('modalBody');
+    
+    // 1. Ambil nilai filter yang aktif
+    const sectorFilter = document.getElementById('sector-select').value;
+    const tipeFilter = document.getElementById('tipe-select').value;
+    const tahapFilter = document.getElementById('tahap-select').value;
+    const statusFilter = document.getElementById('status-select').value;
+    const completionFilter = document.getElementById('completion-select').value;
+    
+    // 2. Filter data (gunakan allProjectsData untuk memastikan semua data dipertimbangkan, lalu saring berdasarkan chart mode dan filter aktif)
+    const filteredProjects = allProjectsData.filter(project => {
+        const projectProgress = parseFloat(project.progress) || 0;
+        const projectCompletionStatus = getCompletionStatus(projectProgress, project.completion);
+        
+        let matchesChartLabel = false;
+        
+        if (chartMode === 'tahapan') {
+            const projectStage = (project.tahap || '').trim();
+            if (labelName === EMPTY_STAGE_LABEL) {
+                 matchesChartLabel = !projectStage || projectStage === '-';
+            } else {
+                matchesChartLabel = projectStage === labelName;
+            }
+        } else if (chartMode === 'status') {
+             matchesChartLabel = normalize(project.status) === normalize(labelName);
+        } else if (chartMode === 'completion') {
+             matchesChartLabel = normalize(projectCompletionStatus) === normalize(labelName);
+        }
+
+        const matchesSector = sectorFilter === 'all' || normalize(project.sektor) === normalize(sectorFilter);
+        const matchesTipe = tipeFilter === 'all' || normalize(project.tipe) === normalize(tipeFilter);
+        const matchesTahap = tahapFilter === 'all' || normalize(project.tahap) === normalize(tahapFilter);
+        const matchesStatus = statusFilter === 'all' || normalize(project.status) === normalize(statusFilter);
+        const matchesCompletion = completionFilter === 'all' || normalize(projectCompletionStatus) === normalize(completionFilter);
+
+        // Hanya tampilkan jika match dengan label chart yang diklik DAN match dengan SEMUA filter aktif lainnya
+        return matchesChartLabel && matchesSector && matchesTipe && matchesTahap && matchesStatus && matchesCompletion;
+    });
+    
+    // 3. Set judul modal
+    modalTitle.textContent = `Detail Prospek - ${chartMode.charAt(0).toUpperCase() + chartMode.slice(1)}: ${labelName}`;
+    
+    // 4. Generate tabel
+    if (filteredProjects.length === 0) {
+        modalBody.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Tidak ada prospek ditemukan</p>';
+    } else {
+        let tableHTML = `
+            <table class="modal-table">
+                <thead>
+                    <tr>
+                        <th>No</th>
+                        <th>Prospek</th> <th>Tipe</th>
+                        <th>Tahap</th>
+                        <th>Dokumen</th>
+                        <th>Status</th>
+                        <th>Progress</th>
+                        <th>Completion</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+        
+        filteredProjects.forEach((project, index) => {
+            const progress = parseFloat(project.progress) || 0;
+            let progressClass = 'progress-low';
+            if (progress >= 70) progressClass = 'progress-high';
+            else if (progress >= 40) progressClass = 'progress-medium';
+            
+            // Dapatkan nilai completion status
+            const completionStatus = getCompletionStatus(progress, project.completion);
+            
+            // Tentukan class CSS berdasarkan Completion Status
+            let rowClass = getCompletionClass(completionStatus).replace('status-', 'completion-');
+
+            const projectID = project.no; 
+            // Anggap ada halaman detail 'projects_edit.html'
+            const onClickHandler = `window.location.href='projects_edit.html?id=${projectID}'`;
+
+            tableHTML += `
+                <tr class="${rowClass}" onclick="${onClickHandler}">
+                    <td>${index + 1}</td>
+                    <td><strong>${project.prospek || '-'}</strong></td> <td>${project.tipe || '-'}</td>
+                    <td>${project.tahap || '-'}</td>
+                    <td><span class="document-cell">${project.upload || '-'}</span></td>
+                    <td>${project.status || '-'}</td>
+                    <td><span class="progress-badge ${progressClass}">${progress.toFixed(1)}%</span></td>
+                    <td>${completionStatus || '-'}</td>
+                </tr>
+            `;
+        });
+        
+        tableHTML += `
+                </tbody>
+            </table>
+        `;
+        
+        modalBody.innerHTML = tableHTML;
+    }
+    
+    // 5. Tampilkan modal
+    modal.classList.add('active');
+}
+
+// FUNGSI UNTUK MENUTUP MODAL
+function closeModal() {
+    const modal = document.getElementById('projectModal');
+    modal.classList.remove('active');
+}
+
+
+/* -------------------------------------------------
+   FETCH & CALCULATE METRICS
+--------------------------------------------------- */
+async function fetchDataAndCalculateMetrics() {
+    // 1. Ambil nilai semua filter dari DOM
+    const sectorFilter = document.getElementById('sector-select').value;
+    const tipeFilter = document.getElementById('tipe-select').value;
+    const tahapFilter = document.getElementById('tahap-select').value;
+    const statusFilter = document.getElementById('status-select').value; 
+    const completionFilter = document.getElementById('completion-select').value;
+
+    try {
+        if (allProjectsData.length === 0) {
+            const response = await fetch(`${API_URL}/projects`);
+            if (!response.ok) {
+                console.error("Gagal ambil data backend");
+                return;
+            }
+            const result = await response.json();
+            allProjectsData = result.success ? (result.projects || []) : [];
+            populateAllDropdowns();
+        }
+
+
+        // 2. Terapkan semua filter ke allProjectsData
+        const filteredProjects = allProjectsData.filter(p => {
+            // Normalisasi Completion Status proyek saat ini
+            const p_completion = getCompletionStatus(parseInt(p.progress) || 0, p.completion);
+            
+            const matchesSector = sectorFilter === 'all' || 
+                                  normalize(p.sektor) === normalize(sectorFilter);
+            
+            const matchesTipe = tipeFilter === 'all' || 
+                                normalize(p.tipe) === normalize(tipeFilter);
+            
+            const matchesTahap = tahapFilter === 'all' || 
+                                 normalize(p.tahap) === normalize(tahapFilter);
+
+            const matchesStatus = statusFilter === 'all' || 
+                                  normalize(p.status) === normalize(statusFilter); 
+
+            const matchesCompletion = completionFilter === 'all' || 
+                                      normalize(p_completion) === normalize(completionFilter);
+
+            return matchesSector && matchesTipe && matchesTahap && matchesStatus && matchesCompletion;
+        });
+        
+        currentData = filteredProjects; // Simpan hasil filter untuk digunakan di chart/map
+
+        const typeCounts = {
+            'organic': 0, 'take over': 0, 'joint operation': 0, 'joint venture': 0,
+            'partnership': 0, 'franchising': 0, 'licensing': 0, 'divestiture': 0
+        };
+        const stageCounts = {}; 
+
+        filteredProjects.forEach(p => {
+            const tipe = (p.tipe || '').toLowerCase().trim();
+            
+            if (tipe.includes('organic')) typeCounts['organic']++;
+            else if (tipe.includes('take over')) typeCounts['take over']++;
+            else if (tipe.includes('joint operation')) typeCounts['joint operation']++;
+            else if (tipe.includes('joint venture')) typeCounts['joint venture']++;
+            else if (tipe.includes('partnership')) typeCounts['partnership']++;
+            else if (tipe.includes('franchising')) typeCounts['franchising']++;
+            else if (tipe.includes('licensing')) typeCounts['licensing']++;
+            else if (tipe.includes('divestiture')) typeCounts['divestiture']++;
+
+            const tahap = (p.tahap || '').trim();
+            if (tahap && tahap !== '-') {
+                stageCounts[tahap] = (stageCounts[tahap] || 0) + 1;
+            } else if (!tahap || tahap === '-') {
+                // Menggunakan label baru
+                stageCounts[EMPTY_STAGE_LABEL] = (stageCounts[EMPTY_STAGE_LABEL] || 0) + 1;
+            }
+        });
+
+        // Menerapkan formatCardValue
+        document.getElementById('total-organic').textContent = formatCardValue(typeCounts['organic']);
+        document.getElementById('total-takeover').textContent = formatCardValue(typeCounts['take over']);
+        document.getElementById('total-jointoperation').textContent = formatCardValue(typeCounts['joint operation']);
+        document.getElementById('total-jointventure').textContent = formatCardValue(typeCounts['joint venture']);
+        document.getElementById('total-partnership').textContent = formatCardValue(typeCounts['partnership']);
+        document.getElementById('total-franchising').textContent = formatCardValue(typeCounts['franchising']);
+        document.getElementById('total-licensing').textContent = formatCardValue(typeCounts['licensing']);
+        document.getElementById('total-divestiture').textContent = formatCardValue(typeCounts['divestiture']);
+
+        
+        const totalProjects = filteredProjects.length;
+
+        const totalProgressSum = filteredProjects.reduce((sum, p) => {
+            const progressValue = parseInt(p.progress) || 0; 
+            return sum + progressValue;
+        }, 0);
+
+        const calculatedProgress = totalProjects > 0 
+            ? (totalProgressSum / totalProjects).toFixed(1) 
+            : '0.0';
+        
+        // Menerapkan formatCardValue pada Total Projects
+        document.getElementById('total-projects').textContent = formatCardValue(totalProjects);
+        // Progress (dalam persentase) tidak diubah ke strip (-)
+        document.getElementById('total-progress').textContent = `${calculatedProgress}%`;
+
+        updateMap(filteredProjects);
+        updateChartsAndTables(filteredProjects, stageCounts); 
+
+        updateFilterStyles(); 
+
+    } catch (err) {
+        console.error("Kesalahan dalam pengambilan data atau perhitungan:", err);
+    }
+}
+
+
+/* -------------------------------------------------
+   POPULATE ALL DROPDOWNS
+--------------------------------------------------- */
+function getUniqueOptions(data, key) {
+    if (key === 'completion') {
+        const calculatedStatus = data.map(p => {
+            const progressValue = parseInt(p.progress) || 0;
+            return getCompletionStatus(progressValue, p.completion);
+        });
+        const uniqueValues = [...new Set(calculatedStatus.filter(s => s && s !== '-'))];
+        
+        if (FIXED_ORDER[key]) {
+            return FIXED_ORDER[key].filter(item => uniqueValues.includes(item));
+        }
+        return uniqueValues.sort();
+    }
+    
+    const uniqueValues = [...new Set(data
+        .map(p => (p[key] || '').trim())
+        .filter(s => s && s !== '-')
+    )];
+
+    if (FIXED_ORDER[key]) {
+        return FIXED_ORDER[key].filter(item => uniqueValues.includes(item));
+    }
+    
+    return uniqueValues.sort();
+}
+
+function populateDropdown(id, options, allText) {
+    const select = document.getElementById(id);
+    const currentValue = select.value;
+    
+    select.innerHTML = `<option value="all">${allText}</option>`;
+
+    options.forEach(option => {
+        const opt = document.createElement('option');
+        opt.value = option.toLowerCase().replace(/\s/g, '-'); 
+        opt.textContent = option;
+        select.appendChild(opt);
+    });
+    
+    if (currentValue && select.querySelector(`option[value="${currentValue}"]`)) {
+        select.value = currentValue;
+    }
+}
+
+function populateAllDropdowns() {
+    // Hanya populasi jika dropdown Tipe belum terisi (biasanya hanya terjadi saat load pertama)
+    if (document.getElementById('tipe-select').options.length === 1 && allProjectsData.length > 0) { 
+        
+        const sectors = getUniqueOptions(allProjectsData, 'sektor');
+        populateDropdown('sector-select', sectors, 'Semua Sektor');
+        
+        const types = getUniqueOptions(allProjectsData, 'tipe');
+        populateDropdown('tipe-select', types, 'Semua Tipe');
+        
+        const stages = getUniqueOptions(allProjectsData, 'tahap');
+        populateDropdown('tahap-select', stages, 'Semua Tahap');
+        
+        const statuses = getUniqueOptions(allProjectsData, 'status'); 
+        populateDropdown('status-select', statuses, 'Semua Status');
+        
+        const completions = getUniqueOptions(allProjectsData, 'completion');
+        populateDropdown('completion-select', completions, 'Semua Completion');
+    }
+}
+
+
+/* -------------------------------------------------
+   LEAFLET MAP & TOGGLES
+--------------------------------------------------- */
+const darkTiles = L.tileLayer(
+    'https://api.maptiler.com/maps/dataviz-dark/{z}/{x}/{y}.png?key=bNsicycXlwWOQeeLrUqR',
+    { tileSize: 256, maxZoom: 18 }
+);
+
+const satelliteTiles = L.tileLayer(
+    'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+    { tileSize: 256, maxZoom: 18 }
+);
+
+// PENGGUNAAN MEMORIZED TOGGLE BUTTON
+let isSatellite = false; // Status awal default
+if (localStorage.getItem('mapToggleStatus') === 'satellite') {
+    isSatellite = true;
+}
+
+var map = L.map('map').setView([-2.5, 118], 5);
+var markers = L.layerGroup().addTo(map);
+
+// Setel peta awal berdasarkan status yang disimpan
+if (isSatellite) {
+    satelliteTiles.addTo(map);
+    document.getElementById('mapToggle').innerHTML = '<i class="fas fa-moon"></i> Dark';
+} else {
+    darkTiles.addTo(map);
+    document.getElementById('mapToggle').innerHTML = '<i class="fas fa-satellite"></i> Satellite';
+}
+
+
+function toggleBaseMap() {
+    const toggleButton = document.getElementById('mapToggle');
+    if (isSatellite) {
+        map.removeLayer(satelliteTiles);
+        darkTiles.addTo(map);
+        toggleButton.innerHTML = '<i class="fas fa-satellite"></i> Satellite';
+        isSatellite = false;
+        // Simpan status
+        localStorage.setItem('mapToggleStatus', 'dark');
+    } else {
+        map.removeLayer(darkTiles);
+        satelliteTiles.addTo(map);
+        toggleButton.innerHTML = '<i class="fas fa-moon"></i> Dark';
+        isSatellite = true;
+        // Simpan status
+        localStorage.setItem('mapToggleStatus', 'satellite');
+    }
+}
+
+
+function toggleAutoZoom() {
+    const btn = document.getElementById('autoZoomToggle');
+    autoZoomEnabled = !autoZoomEnabled;
+    if (autoZoomEnabled) {
+        btn.innerHTML = '<i class="fas fa-expand"></i> Auto Zoom';
+        btn.style.opacity = "1";
+    } else {
+        btn.innerHTML = '<i class="fas fa-compress"></i> Manual';
+        btn.style.opacity = "0.6";
+    }
+}
+
+// FUNGSI INI SUDAH DIREVISI UNTUK STRUKTUR POPUP 3 KOLOM
+function updateMap(projects) {
+    markers.clearLayers();
+    if (projects.length === 0) {
+        map.setView([-2.5, 118], 5);
+        return;
+    }
+
+    projects.forEach(p => {
+        const lat = parseFloat(p.lat);
+        const lng = parseFloat(p.lng);
+        if (!isNaN(lat) && !isNaN(lng)) {
+            // Data Kontak
+            const contactName = (p.contact && p.contact.name) ? p.contact.name : '-';
+            const contactTitle = (p.contact && p.contact.title) ? p.contact.title : '-';
+            const contactEmail = (p.contact && p.contact.email) ? p.contact.email : '-';
+            
+            const rawPhone = (p.contact && p.contact.phone) ? p.contact.phone : '';
+            let phoneLinkHtml = '-';
+
+            if (rawPhone) {
+                const cleanedPhone = rawPhone.replace(/[^0-9+]/g, '');
+                phoneLinkHtml = `<a href="https://wa.me/${cleanedPhone}" target="_blank">${rawPhone}</a>`;
+            }
+            
+            const progressValue = parseInt(p.progress) || 0;
+            const completionStatus = getCompletionStatus(progressValue, p.completion);
+            
+            // Logika Ikon Marker
+            let iconHtml, iconSize, iconAnchor, popupAnchor;
+
+            if (completionStatus === 'Finished') {
+                iconHtml = '⭐';
+                iconSize = [24, 24];
+                iconAnchor = [12, 12];
+                popupAnchor = [0, -12];
+            } else if (completionStatus === 'Terminated') {
+                iconHtml = '⛔';
+                iconSize = [24, 24];
+                iconAnchor = [12, 12];
+                popupAnchor = [0, -12];
+            } else if (completionStatus === 'Rejected') {
+                iconHtml = '❌';
+                iconSize = [24, 24];
+                iconAnchor = [12, 12];
+                popupAnchor = [0, -12];
+            } else { 
+                const color = getStageColor(p.tahap, completionStatus);
+                iconHtml = `<div style="background-color: ${color}; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #333; box-shadow: 0 0 5px rgba(0,0,0,0.5);"></div>`; 
+                iconSize = [16, 16];
+                iconAnchor = [8, 8];
+                popupAnchor = [0, -8];
+            }
+            
+            // Jika warna marker putih, pastikan border-nya terlihat (diubah dari #fff ke #333 di atas)
+
+            const customIcon = L.divIcon({
+                className: 'custom-div-icon',
+                html: iconHtml,
+                iconSize: iconSize,
+                iconAnchor: iconAnchor,
+                popupAnchor: popupAnchor
+            });
+
+            /* * REVISI KONTEN POPUP DITERAPKAN DI SINI
+             * Setiap baris menggunakan struktur 3 kolom (Deskripsi | Pemisah | Nilai)
+             */
+            const popupContent = 
+                `<b style="text-align: center; display: block;">${p.prospek}</b><br>` +
+                `<table style="width: 100%; border-collapse: collapse;">` +
+                    // ------------------ Data Umum ------------------
+                    `<tr><td>Lokasi</td><td>:</td><td>${p.lokasi}</td></tr>` +
+                    `<tr><td>Sektor</td><td>:</td><td>${p.sektor || '-'}</td></tr>` +
+                    `<tr><td>Komoditas</td><td>:</td><td>${p.komoditas || '-'}</td></tr>` +
+                    `<tr><td>Tipe</td><td>:</td><td>${p.tipe || '-'}</td></tr>` +
+                    `<tr><td>Tahap</td><td>:</td><td>${p.tahap || '-'}</td></tr>` +
+                    `<tr><td>Completion</td><td>:</td><td><b>${completionStatus}</b></td></tr>` +
+                    
+                    // ------------------ Dokumen ------------------
+                    `<tr><td colspan="3"><hr style="margin: 5px 0;"></td></tr>` +
+                    `<tr><td>Dokumen Update</td><td>:</td><td>${p.upload || '-'}</td></tr>` +
+                    `<tr><td>Dokumen Status</td><td>:</td><td>${p.status || '-'}</td></tr>` +
+                    `<tr><td>Dokumen Link</td><td>:</td><td>${p.link && p.link !== '-' ? '<a href="' + p.link + '" target="_blank">Lihat</a>' : '-'}</td></tr>` +
+                    
+                    // ------------------ Kontak ------------------
+                    `<tr><td colspan="3"><hr style="margin: 5px 0;"></td></tr>` +
+                    `<tr><td>Nama Kontak</td><td>:</td><td>${contactName}</td></tr>` +
+                    `<tr><td>Jabatan</td><td>:</td><td>${contactTitle}</td></tr>` + 
+                    `<tr><td>Email</td><td>:</td><td><a href="mailto:${contactEmail}" target="_blank">${contactEmail}</a></td></tr>` + 
+                    `<tr><td>No. Telp</td><td>:</td><td>${phoneLinkHtml}</td></tr>` +
+                    
+                    // ------------------ Maps Link ------------------
+                    `<tr><td colspan="3"><hr style="margin: 5px 0;"></td></tr>` +
+                    `<tr><td>Google Maps</td><td>:</td><td><a href="http://maps.google.com/?q=$${lat},${lng}" target="_blank">Lihat Lokasi</a></td></tr>` +
+                `</table>`;
+
+            L.marker([lat, lng], { icon: customIcon })
+                .bindPopup(popupContent)
+                .addTo(markers);
+        }
+    });
+
+    if (markers.getLayers().length > 0 && autoZoomEnabled) {
+        const group = L.featureGroup(markers.getLayers());
+        map.fitBounds(group.getBounds(), { padding: [30, 30], maxZoom: 12 });
+    }
+}
+
+function zoomToProject(lat, lng) {
+    autoZoomEnabled = false;
+    const autoZoomButton = document.getElementById('autoZoomToggle');
+    autoZoomButton.style.opacity = "0.6";
+    autoZoomButton.innerHTML = '<i class="fas fa-compress"></i> Manual';
+
+    map.setView([lat, lng], 13);
+
+    markers.eachLayer(function(layer) {
+        if (Math.abs(layer.getLatLng().lat - lat) < 0.0001 && Math.abs(layer.getLatLng().lng - lng) < 0.0001) {
+            setTimeout(() => {
+                layer.openPopup();
+            }, 300);
+        }
+    });
+}
+
+
+/* -------------------------------------------------
+   UPDATE CHARTS AND TABLES
+--------------------------------------------------- */
+function updateChartsAndTables(projects, stageCounts) {
+    const totalFilteredProjects = projects.length; 
+    const chartMode = document.getElementById('chartModeSelect').value; // Mengambil nilai dari dropdown
+    
+    // Hitung completion counts untuk mode dropdown
+    const completionCounts = getCompletionCounts(projects);
+    // Hitung status counts untuk mode dropdown
+    const statusCounts = getStatusCounts(projects);
+
+    let chartLabels;
+    let chartData;
+    let chartColors;
+    let chartTitle;
+    let chartTooltipTitle;
+    
+    // Tentukan data berdasarkan mode dropdown
+    if (chartMode === 'completion') {
+        chartLabels = FIXED_ORDER.completion;
+        chartData = FIXED_ORDER.completion.map(label => completionCounts[label] || 0);
+        chartTitle = 'Completion';
+        chartTooltipTitle = 'Completion';
+        // REVISI: Mengubah warna Completion ke varian biru (kecuali Finished/Rejected)
+        chartColors = [
+            'rgba(255, 180, 0, 0.8)',   // Open (Kuning/Mustard)
+            'rgba(60, 179, 113, 0.8)',   // Finished (Hijau - Tetap)
+            'rgba(251, 156, 164, 0.8)',     // Terminated (Merah Muda Pudar)
+            'rgba(220, 20, 60, 0.8)'  // Rejected (Merah - Tetap)
+        ];
+    } else if (chartMode === 'status') { // LOGIKA BARU UNTUK STATUS CHART
+        chartLabels = FIXED_ORDER.status;
+        chartData = FIXED_ORDER.status.map(label => statusCounts[label] || 0);
+        chartTitle = 'Status';
+        chartTooltipTitle = 'Status';
+        // REVISI: Mengubah warna Status ke varian biru/hangat
+        chartColors = [
+            'rgba(255, 180, 0, 0.8)',    // Proposed (Emas/Mustard)
+            'rgba(60, 179, 113, 0.8)',    // Approved (Hijau - Tetap)
+            'rgba(251, 156, 164, 0.8)',   // Pending (Merah Muda Pudar)
+            'rgba(220, 20, 60, 0.8)'      // Cancelled (Merah - Tetap)
+        ];
+    }
+    else { // 'tahapan'
+        // Define the preferred display order: ['New/No Stage', 'Identification', 'Engagement', ...]
+        const preferredOrder = [EMPTY_STAGE_LABEL, ...FIXED_ORDER.tahap];
+        
+        // Filter this order to only include stages that have a count > 0
+        chartLabels = preferredOrder.filter(label => (stageCounts[label] || 0) > 0);
+        
+        // Map the data based on the new chartLabels order
+        chartData = chartLabels.map(label => stageCounts[label] || 0);
+        
+        chartTitle = 'Tahapan';
+        chartTooltipTitle = 'Tahap';
+
+        // REVISI: Warna Tahapan telah diganti sesuai permintaan user, ditambah warna Putih untuk "New/No Stage"
+        const stageColorMap = {
+            'Identification': 'rgba(248, 203, 173, 0.8)',
+            'Engagement': 'rgba(255, 192, 0, 0.8)',   
+            'Term Sheet': 'rgba(189, 215, 238, 0.8)', 
+            'Due Diligence': 'rgba(58, 134, 255, 0.8)', 
+            'Final Draft': 'rgba(197, 224, 180, 0.8)', 
+            'Signing': 'rgba(146, 208, 80, 0.8)',   
+            [EMPTY_STAGE_LABEL]: 'rgba(255, 255, 255, 0.8)' // WARNA BARU: Putih Transparan
+        };
+        
+        // Pastikan urutan warna sesuai dengan chartLabels yang sudah difilter
+        chartColors = chartLabels.map(label => stageColorMap[label] || 'rgba(70, 130, 180, 0.8)');
+    }
+
+    // 1. Update Judul
+    document.getElementById('chart-title').textContent = chartTitle;
+    
+    // 2. Hancurkan dan Buat Ulang Chart
+    if (myBarChart) {
+        myBarChart.destroy();
+    }
+
+    const ctx = document.getElementById('barChart');
+
+    myBarChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: chartLabels,
+            datasets: [{
+                label: `Jumlah Proyek per ${chartTooltipTitle}`,
+                data: chartData,
+                backgroundColor: chartColors,
+                borderColor: chartColors.map(color => {
+                    // Jika warna putih, gunakan border abu-abu untuk visibilitas
+                    if (color.includes('255, 255, 255')) return 'rgba(150, 150, 150, 1)'; 
+                    return color.replace('0.8', '1').replace('0.9', '1').replace('0.3', '1').replace('0.5', '1')
+                }), 
+                borderWidth: 1 // Ditingkatkan agar border putih terlihat
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            
+            // MODIFIKASI UTAMA: ON CLICK HANDLER UNTUK MODAL
+            onClick: (event, activeElements) => {
+                if (activeElements.length > 0) {
+                    const index = activeElements[0].index;
+                    const labelName = chartLabels[index];
+                    const mode = document.getElementById('chartModeSelect').value;
+                    showProjectModal(labelName, mode);
+                }
+            },
+            // AKHIR MODIFIKASI UTAMA
+
+            scales: {
+                y: { 
+                    beginAtZero: true, 
+                    ticks: { precision: 0, display: false }, 
+                    grid: { display: false } 
+                }, 
+                x: { 
+                    grid: { display: false }, 
+                    ticks: {
+                        maxRotation: 60, 
+                        minRotation: 0,  
+                        font: { size: 9, weight : 'bold' },
+                        callback: function(val, index) {
+                            const labelName = chartLabels[index];
+                            const count = chartData[index]; 
+                            
+                            if (totalFilteredProjects === 0) {
+                                return [labelName, '0%'];
+                            }
+
+                            // Hitung Persentase: (count / totalFilteredProjects) * 100
+                            const percentage = ((count / totalFilteredProjects) * 100).toFixed(0); 
+                            
+                            // Gunakan label penuh untuk tampilan
+                            return [labelName, `${percentage}%`]; 
+                        }
+                    },
+                    afterFit: function(scale) {
+                        scale.height = 100;
+                    }
+                }
+            },
+            plugins: {
+                legend: { display: false },
+                datalabels: {
+                    color: (context) => {
+                        // Jika bar berwarna putih, gunakan teks hitam
+                        const color = context.dataset.backgroundColor[context.dataIndex];
+                        if (color && color.includes('255, 255, 255')) {
+                            return '#333'; 
+                        }
+                        return '#fff';
+                    }, 
+                    font: { weight: 'bold', size: 14 }, 
+                    align: 'center',
+                    anchor: 'center',
+                    formatter: (value) => value > 0 ? value : ''
+                }
+            }
+        }
+    });
+    
+    // 3. Update Tabel Detail
+    const tableBody = document.getElementById('summaryTableBody');
+    tableBody.innerHTML = '';
+
+    if (projects.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color: #777; font-style: italic; background: rgba(255, 255, 255, 0.7);">Tidak ada proyek yang cocok dengan filter yang dipilih.</td></tr>`;
+        return;
+    }
+
+    projects.sort((a, b) => {
+        const progressA = parseInt(a.progress) || 0;
+        const progressB = parseInt(b.progress) || 0;
+        return progressB - progressA;
+    });
+
+
+    projects.forEach((p) => {
+        const lat = parseFloat(p.lat);
+        const lng = parseFloat(p.lng);
+        const tr = document.createElement('tr');
+
+        if (!isNaN(lat) && !isNaN(lng)) {
+            tr.setAttribute('data-lat', lat);
+            tr.setAttribute('data-lng', lng);
+            tr.style.cursor = 'pointer';
+
+            tr.addEventListener('click', function() {
+                // Hapus kelas aktif dari semua baris
+                document.querySelectorAll('#projectSummaryTable tbody tr').forEach(row => {
+                    row.classList.remove('active-row');
+                });
+                // Tambahkan kelas aktif pada baris yang diklik
+                this.classList.add('active-row');
+
+                zoomToProject(lat, lng);
+            });
+        }
+
+        const progressValue = parseInt(p.progress) || 0;
+        const completionStatus = getCompletionStatus(progressValue, p.completion);
+        const completionClass = getCompletionClass(completionStatus);
+
+        // REVISI: Mengganti warna progress > 30% dari Oranye ke Biru Slate
+        let progressColor = '#333';
+        if (progressValue >= 70) {
+            progressColor = '#3CB371'; // Hijau (Tinggi)
+        } else if (progressValue > 30) {
+            progressColor = '#4682b4'; // Biru Slate (Sedang)
+        } else if (progressValue > 0) {
+            progressColor = '#DC143C'; // Merah (Rendah)
+        }
+
+        tr.innerHTML = `
+            <td title="${p.prospek || '-'}">${p.prospek || '-'}</td>
+            <td>${p.tipe || '-'}</td>
+            <td>${p.tahap || '-'}</td>
+            <td style="color: ${progressColor}; font-weight: bold;">
+                ${progressValue}%
+            </td>
+            <td class="${completionClass}" style="font-weight: bold; text-align: center; color: ${completionClass ? '' : '#333'};">
+                ${completionStatus}
+            </td>
+        `;
+        tableBody.appendChild(tr);
+    });
+}
+
+
+/* -------------------------------------------------
+   INITIAL LOAD
+--------------------------------------------------- */
+document.addEventListener("DOMContentLoaded", async () => {
+
+    await fetchDataAndCalculateMetrics();
+    
+    // Tambahkan 'status-select' ke dalam daftar filter
+    const filterIds = ['sector-select', 'tipe-select', 'tahap-select', 'status-select', 'completion-select'];
+
+    filterIds.forEach(id => {
+        document.getElementById(id).addEventListener('change', () => {
+            fetchDataAndCalculateMetrics(); 
+        });
+    });
+
+    document.getElementById('mapToggle')
+        .addEventListener('click', toggleBaseMap);
+
+    document.getElementById('autoZoomToggle')
+        .addEventListener('click', toggleAutoZoom);
+        
+    // Mengganti event listener chartToggle menjadi chartModeSelect
+    document.getElementById('chartModeSelect') 
+        .addEventListener('change', fetchDataAndCalculateMetrics);
+        
+    // EVENT LISTENER UNTUK MODAL
+    document.getElementById('modalClose').addEventListener('click', closeModal);
+    
+    document.getElementById('projectModal').addEventListener('click', (e) => {
+        if (e.target.id === 'projectModal') {
+            closeModal();
+        }
+    });
+    
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeModal();
+        }
+    });
+        
+    // FUNGSI EXPORT (REVISI: MENGGUNAKAN HTML2CANVAS dan LOADING BAR)
+    document.getElementById('exportButton').addEventListener('click', () => {
+        const element = document.querySelector('.grid-new-layout');
+        const exportButton = document.getElementById('exportButton');
+        
+        // Elemen Loading Bar
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const loadingBar = document.getElementById('loading-bar');
+
+        // --- START PROCESS ---
+        exportButton.disabled = true;
+        exportButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+        
+        // Tampilkan loading indicator dan atur ulang bar
+        loadingIndicator.style.display = 'flex';
+        loadingBar.style.transform = 'translateX(-100%)'; // Reset posisi
+        
+        // Animasi Loading Bar (Simulasi Progress)
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += 10;
+            if (progress < 90) { // Berhenti di 90% sampai html2canvas selesai
+                loadingBar.style.transform = `translateX(${progress - 100}%)`;
+            }
+        }, 300); // Update setiap 300ms
+
+        html2canvas(element, {
+            scale: 2, 
+            // PENAMBAHAN: background abu-abu saat export
+            backgroundColor: '#939393', 
+            // Tambahkan opsi berikut untuk membantu rendering gambar eksternal (tile peta)
+            allowTaint: true, 
+            useCORS: true, 
+            ignoreElements: (element) => {
+                // Abaikan tombol Export, Next, dan indicator (supaya tidak ter-screenshot)
+                return element.id === 'exportButton' || element.id === 'nextButton' || element.id === 'loading-indicator'; 
+            }
+        }).then(canvas => {
+            // Setelah html2canvas selesai, lengkapi progress bar
+            clearInterval(interval);
+            loadingBar.style.transform = 'translateX(0%)'; // 100% selesai
+
+            const imageURL = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.href = imageURL;
+            link.download = 'Dashboard_Proyek_' + new Date().toISOString().slice(0, 10) + '.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // --- END PROCESS (SUCCESS) ---
+            setTimeout(() => {
+                loadingIndicator.style.display = 'none';
+                exportButton.disabled = false;
+                exportButton.innerHTML = '<i class="fas fa-download"></i> Export';
+            }, 500); // Beri sedikit jeda agar user melihat 100%
+            
+        }).catch(err => {
+            console.error('Export Failed:', err);
+            alert('Gagal mengambil tangkapan layar. Pastikan Anda menjalankan dari server lokal.');
+            
+            // --- END PROCESS (FAILURE) ---
+            clearInterval(interval);
+            loadingIndicator.style.display = 'none';
+            exportButton.disabled = false;
+            exportButton.innerHTML = '<i class="fas fa-download"></i> Export';
+        });
+    });
+    
+    // FUNGSI NAVIGASI NEXT BARU (Slide Left)
+    document.getElementById('nextButton').addEventListener('click', () => {
+        const mainContainer = document.querySelector('.grid-new-layout');
+        
+        // 1. Terapkan kelas animasi slide-out
+        mainContainer.classList.add('slide-out');
+        
+        // 2. Tunggu hingga animasi selesai (0.5 detik)
+        setTimeout(() => {
+            // 3. Navigasi ke halaman dashboard2.html
+            window.location.href = 'dashboard2.html';
+        }, 500); // Harus sinkron dengan durasi animasi CSS (0.5s)
+    });
+});
+</script>
+
+</body>
+</html>

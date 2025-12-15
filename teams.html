@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Editor Struktur Organisasi (Terintegrasi Server) - Dioptimasi</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* 1. STYLE DASAR */
+    body {
+      margin: 0;
+      padding: 0; 
+      font-family: 'Poppins', sans-serif;
+      color: #333;
+      min-height: 100vh;
+      position: relative;
+    }
+    
+    /* STYLE BARU UNTUK CONTAINER WORKSPACE */
+    #workspace {
+        width: 100%;
+        height: 100vh; 
+        position: relative; 
+        overflow-x: auto; 
+        overflow-y: auto;
+        /* --- SCROLLBAR HOVER REVEAL --- */
+        /* Firefox */
+        scrollbar-width: thin; 
+        scrollbar-color: rgba(60, 60, 60, 0.2) transparent; 
+        /* Edge */
+        -ms-overflow-style: auto; 
+    }
+    
+    /* Webkit (Chrome, Safari): Tetapkan lebar kecil agar tetap ada ruang untuk di-hover */
+    #workspace::-webkit-scrollbar {
+        width: 8px; 
+        height: 8px;
+        background: transparent; 
+    }
+
+    /* Webkit Thumb (Garis Scroll): Default Sangat Transparan */
+    #workspace::-webkit-scrollbar-thumb {
+        background-color: rgba(60, 60, 60, 0); /* Transparansi Penuh (0%) */
+        border-radius: 4px;
+        transition: background-color 0.3s ease; /* Transisi agar halus */
+    }
+
+    /* Webkit Thumb: Saat #workspace di-hover, buat Thumb terlihat (50% opacity) */
+    #workspace:hover::-webkit-scrollbar-thumb {
+        background-color: rgba(60, 60, 60, 0.5); 
+    }
+
+    /* Webkit Thumb: Saat Thumb itu sendiri di-hover, buat lebih jelas (80% opacity) */
+    #workspace::-webkit-scrollbar-thumb:hover {
+        background-color: rgba(60, 60, 60, 0.8);
+    }
+    /* ------------------------------------------------ */
+
+    /* Perluas elemen HTML dan Body agar height: 100% pada workspace berfungsi */
+    html, body {
+        height: 100%;
+        overflow: hidden; 
+    }
+
+    /* 2. FLOATING CONTROLS (SEKARANG JADI #toolboxContainer) */
+    #toolboxContainer {
+      /* CONTAINER UTAMA YANG FIXED */
+      position: fixed; 
+      top: 15px; 
+      right: 25px; 
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 60; 
+    }
+    
+    /* KOTAK KONTEN YANG AKAN DI-TOGGLE */
+    #toolboxContent {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+    }
+    
+    /* KONDISI SAAT TOOLBOX TERSEMBUNYI */
+    .toolbox-hidden #toolboxContent {
+        opacity: 0;
+        transform: translateX(100px); /* Geser keluar dari layar */
+        pointer-events: none;
+        height: 0; 
+        padding: 0;
+        margin: 0;
+    }
+    
+    /* STYLE UMUM UNTUK SEMUA TOMBOL DI TOOLBOX CONTENT */
+    #toolboxContent button {
+      background-color: #4682b4;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background-color 0.3s, box-shadow 0.2s;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    
+    #toolboxContent button:hover {
+      background-color: #386a94;
+    }
+
+    /* STYLE KHUSUS: Add Card (Hijau) */
+    #toolboxContent button[onclick*="addCard"] {
+        background-color: #3CB371; /* Hijau Calem */
+    }
+    #toolboxContent button[onclick*="addCard"]:hover {
+        background-color: #349864;
+    }
+    
+    /* STYLE BARU UNTUK TOMBOL TOGGLE (DARK) */
+    #toggleToolboxButton {
+        background-color: #192a56; /* Biru Navy */
+	    border-radius: 10px;
+	    color: white;
+        padding: 8px 8px; 
+    }
+
+    #toggleToolboxButton:hover {
+        background-color: #0d1e3d;
+    }
+    
+    /* STYLE UNTUK TOMBOL ZOOM (BIRU) */
+    #toolboxContent button[onclick*="zoom"] {
+        background-color: #4682b4; /* Biru Slate */
+    }
+    #toolboxContent button[onclick*="zoom"]:hover {
+        background-color: #386a94;
+    }
+    
+    /* STYLE UNTUK TOMBOL DELETE MODE (MERAH) */
+    #toolboxContent #deleteModeButton {
+        background-color: #f44336; /* Warna Merah */
+    }
+    #toolboxContent #deleteModeButton:hover {
+        background-color: #d32f2f; 
+    }
+
+    /* STYLE UNTUK TOMBOL LINE MODE (BIRU NAVY) */
+    #toolboxContent #lineModeBtn {
+        background-color: #192a56; /* Biru Navy */
+    }
+    #toolboxContent #lineModeBtn.active {
+        background-color: #4682b4; /* Warna Biru Slate saat aktif */
+    }
+    #toolboxContent #lineModeBtn:hover {
+        background-color: #4682b4;
+    }
+
+    /* (Map Toggle Styles dihapus) */
+
+
+    /* 3. AREA KARTU (PENTING: Menambahkan transform-origin dan transisi untuk zoom) */
+    .org-chart-area-simulated {
+        position: relative;
+        padding-top: 100px; 
+        min-height: 800px; 
+        transform-origin: 0 0; 
+        transition: transform 0.3s ease-out; 
+        background: transparent;
+    }
+    
+    /* Kursor untuk mode hapus */
+    .chart-delete-mode {
+        cursor: crosshair;
+    }
+    
+    /* (Map View Active Styles dihapus) */
+
+
+    /* 4. STYLE KARTU ANGGOTA (CARD) - SUDAH DIMODIFIKASI UNTUK OVERLAP */
+    .org-card {
+      display: flex;
+      align-items: center;
+      width: 400px; 
+      padding: 10px;
+      background: linear-gradient(90deg, #192a56, #4682b4); /* Biru Navy ke Biru Slate */
+      border-radius: 25px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      transition: transform 0.2s, box-shadow 0.2s;
+      cursor: grab;
+      position: absolute;
+      z-index: 10; 
+    }
+
+    .org-card:hover {
+      transform: scale(1.5);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+      z-index: 100;
+    }
+    
+    /* Efek hover saat mode hapus aktif */
+    .org-card.deleting-card { 
+        border: 3px dashed #f44336; 
+        box-shadow: 0 0 15px rgba(244, 67, 54, 0.7);
+    }
+
+    .photo-circle {
+      min-width: 100px;
+      min-height: 100px;
+      max-width: 100px;
+      max-height: 100px;  
+      border-radius: 50%;
+      overflow: hidden;
+      margin-right: 5px;
+      border: 3px solid #ffffff;
+      background: #d3d3d3; 
+      
+      position: relative; 
+      z-index: 20; 
+    }
+
+    .photo-circle img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .info-boxes {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+
+      /* Geser ke kiri sebesar lebar foto + margin */
+      margin-left: -75px; 
+      width: 250px; 
+      position: relative;
+      z-index: 10; /* Di belakang foto */
+    }
+
+    /* STYLE BOX YANG SEKARANG HANYA TEKS STATIS */
+    .name-box, .title-box {
+        cursor: pointer; 
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding: 10px 10px 10px 80px;
+	    text-align: left;
+    }
+
+    /* Kotak Nama menggunakan Biru Navy gelap */
+    .name-box {
+      background-color: #192a56; 
+      color: white;
+      font-weight: 600;
+      font-size: 24px;
+      border-radius: 0 0 0 0; 
+    }
+
+    /* Kotak Jabatan menggunakan Emas Muda */
+    .title-box {
+      background-color: #fff0d6; /* Emas Muda */
+      color: #333;
+      font-size: 18px;
+      border-radius: 0 0 0 0; 
+    }
+    
+    /* STYLE GARIS PENGHUBUNG (ORTHOGONAL) */
+    .connector-path {
+        position: absolute;
+        top: 0;
+        left: 0;
+        pointer-events: none;
+        z-index: 1; /* di bawah card yang z-index:10 */
+    }
+    /* Garis menggunakan PUTIH */
+    .connector-line {
+        position: absolute;
+        background-color: #ffffff; /* PUTIH */
+        pointer-events: none;
+        border: 3px solid #ffffff;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.4); 
+    }
+    .connector-line.horizontal {
+        height: 2px;
+    }
+    .connector-line.vertical {
+        width: 2px;
+    }
+
+    /* STYLE GARIS PADA CARD YANG TERPILIH (LINE MODE) */
+    .org-card.line-selected {
+        outline: 3px solid #4682b4;
+    }
+
+    /* STYLE GARIS PENGHUBUNG DIHAPUS (SEBELUM ADA) */
+    .connector-segment, .line-container, .chart-drawing-mode {
+        display: none !important;
+    }
+
+    /* 5. STYLE MODAL POP-UP BARU */
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 100; /* Paling atas */
+    }
+
+    .modal-content {
+        background: white;
+        padding: 25px; 
+        border-radius: 12px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        width: 350px; 
+        max-width: 90%;
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .modal-content #cardForm {
+        margin-top: 5px; 
+    }
+
+    .input-group {
+        margin-bottom: 15px;
+    }
+
+    .input-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: #333;
+    }
+
+    .input-group input[type="text"],
+    .input-group input[type="email"],
+    .input-group input[type="tel"] { 
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        box-sizing: border-box;
+    }
+    
+    .modal-actions {
+        text-align: right;
+        margin-top: 20px; 
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .modal-actions button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        transition: background-color 0.2s;
+    }
+    
+    /* Tombol Simpan */
+    .modal-actions button:last-child { 
+        background-color: #3CB371; /* Hijau */
+        color: white;
+    }
+    
+    .modal-actions button:last-child:hover {
+        background-color: #349864;
+    }
+
+    /* Tombol Batal */
+    .modal-actions button:first-child { 
+        background-color: #f0f0f0;
+        color: #333;
+    }
+    
+    .modal-actions button:first-child:hover {
+        background-color: #ddd;
+    }
+
+    /* FOTO UPLOAD AREA DITENGAHKAN DAN DIHAPUS LABELNYA */
+    .photo-upload-area {
+        text-align: center;
+        margin-bottom: 20px; 
+        padding-bottom: 10px; 
+        border-bottom: 1px solid #eee; 
+        position: relative;
+    }
+    /* CONTAINER FOTO UTAMA */
+    .photo-container {
+        position: relative;
+        display: inline-block;
+        border-radius: 50%;
+        overflow: hidden;
+        cursor: pointer; 
+    }
+    
+    #modalPhoto {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid #4682b4;
+        transition: opacity 0.3s;
+    }
+    
+    /* EFEK HOVER/OVERLAY UNTUK MENUNJUKKAN BISA DIUBAH */
+    .photo-container:hover #modalPhoto {
+        opacity: 0.5;
+    }
+    .photo-container:hover::after {
+        content: 'Ubah Foto';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background-color: rgba(25, 42, 86, 0.7); /* Biru Navy Transparan */
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-weight: 600;
+        pointer-events: none;
+    }
+
+    /* HIDDEN INPUT FILE */
+    .hidden-input {
+        display: none; 
+    }
+
+    /* --- BARU: STYLE UNTUK FOTO DUMMY --- */
+    .photo-placeholder {
+        background-color: #e0e0e0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 40px;
+        color: #999;
+        font-weight: 300;
+    }
+
+  </style>
+</head>
+<body>
+
+  <div id="workspace">
+    <div id="toolboxContainer" class="toolbox-hidden">
+        <button id="toggleToolboxButton" onclick="toggleToolbox()">Show</button>
+        <div id="toolboxContent">
+            <button onclick="addCard()">+ Tambah Card</button>
+            <button onclick="toggleLineMode()" id="lineModeBtn">
+                Orthogonal Line
+            </button>
+            
+            <button onclick="zoomOut()">Zoom Out (-)</button>
+            <button onclick="zoomIn()">Zoom In (+)</button>
+            <button onclick="saveChart()">Simpan Struktur</button>
+        </div>
+    </div>
+    
+    <div class="org-chart-area-simulated" id="orgChartArea">
+    </div>
+  </div>
+
+  <div id="cardModal" class="modal-overlay" style="display: none;">
+      <div class="modal-content">
+          <form id="cardForm">
+              
+              <div class="photo-upload-area">
+                  <label for="photoFile" class="photo-container">
+                      <img id="modalPhoto" 
+                           src="assets/img/person.png" 
+                           alt="Photo Profile" 
+                           data-default-src="assets/img/person.png"
+                           class="photo-placeholder"
+                       />
+                      <input type="file" id="photoFile" accept="image/*" onchange="simulatePhotoChange(this)" class="hidden-input">
+                  </label>
+              </div>
+
+              <div class="input-group">
+                  <label for="modalName">Nama:</label>
+                  <input type="text" id="modalName" required>
+              </div>
+              <div class="input-group">
+                  <label for="modalTitle">Jabatan:</label>
+                  <input type="text" id="modalTitle" required>
+              </div>
+              <div class="input-group">
+                  <label for="modalEmail">E-mail:</label>
+                  <input type="email" id="modalEmail"> 
+              </div>
+              <div class="input-group"> 
+                  <label for="modalPhone">Phone:</label>
+                  <input type="tel" id="modalPhone"> 
+              </div>
+              
+              <div class="modal-actions">
+                  <button type="button" onclick="closeModal()">Batal</button>
+                  <button type="button" onclick="saveModalData()">Simpan</button>
+              </div>
+              
+              <input type="hidden" id="editingCardId">
+          </form>
+      </div>
+  </div>
+  <script>
+    const chartArea = document.getElementById('orgChartArea');
+    const workspace = document.getElementById('workspace'); 
+    const gridSize = 20; 
+    
+    // --- KONFIGURASI SERVER API ---
+    const API_URL = 'http://localhost:3000'; 
+    
+    // --- REVISI: URL DUMMY IMAGE GANTI DENGAN PATH LOKAL ---
+    const DUMMY_IMG_URL = 'assets/img/person.png'; 
+    const NEW_CARD_IMG_URL = 'assets/img/person.png'; 
+    
+    // --- IMGBB CONFIGURATION ---
+    const IMGBB_API_KEY = '21f90604d6de208720ee6830cf60a73a'; // <-- GANTI DENGAN API KEY IMGBB ANDA
+
+    // --- REVISI: Konstanta ImgBB URL ---
+    const IMGBB_OLD_PREFIX = 'https://i.ibb.co/';
+    const IMGBB_NEW_PREFIX = 'https://i.ibb.co.com/';
+
+    let activeCard = null;
+    let offsetX, offsetY;
+    let cardCounter = 0; 
+    
+    // Variabel Global untuk Zoom
+    let currentZoom = 0.1; // Nilai default
+    const zoomStep = 0.05;
+    const minZoom = 0.1;
+    const maxZoom = 2.0;
+    
+    let isToolboxVisible = false; // Set ke false agar default Hide
+
+    // Variabel untuk Line Mode
+    let lineModeActive = false;
+    let firstCardSelected = null;
+    let connectors = []; // { from: id, to: id, element: dom }
+
+    // =======================================================
+    // I. FUNGSI UTILITY (GRID, ZOOM, & TOOLBOX)
+    // =======================================================
+    function snapToGrid(value) {
+        return Math.round(value / gridSize) * gridSize;
+    }
+    
+    /**
+     * Mengubah koordinat layar menjadi skala area kerja (UN-SCALED).
+     */
+    function unscaleValue(value) {
+        return value / currentZoom;
+    }
+
+    function updateZoom() {
+        chartArea.style.transform = `scale(${currentZoom})`;
+    }
+
+    function zoomIn() {
+        currentZoom = Math.min(maxZoom, currentZoom + zoomStep);
+        updateZoom();
+    }
+
+    function zoomOut() {
+        currentZoom = Math.max(minZoom, currentZoom - zoomStep);
+        updateZoom();
+    }
+    
+    function toggleToolbox() {
+        const container = document.getElementById('toolboxContainer');
+        const button = document.getElementById('toggleToolboxButton');
+
+        isToolboxVisible = !isToolboxVisible;
+        
+        if (isToolboxVisible) {
+            container.classList.remove('toolbox-hidden');
+            button.textContent = 'Hide';
+        } else {
+            container.classList.add('toolbox-hidden');
+            button.textContent = 'Show';
+        }
+    }
+
+    // =======================================================
+    // II. CARD MANAGEMENT (TAMBAH, HAPUS, SIMPAN)
+    // =======================================================
+    
+    function deleteCard(cardId) {
+        const cardToRemove = document.getElementById(cardId);
+        if (cardToRemove) {
+            // hapus connector yang berkaitan
+            const remaining = [];
+            connectors.forEach(c => {
+                if (c.from === cardId || c.to === cardId) {
+                    if (c.element && c.element.parentNode) c.element.parentNode.removeChild(c.element);
+                } else {
+                    remaining.push(c);
+                }
+            });
+            connectors = remaining;
+            cardToRemove.remove();
+            // adjust chart height jika perlu
+            adjustChartHeight();
+        }
+    }
+    
+    function toggleDeleteMode() {
+        const deleteModeButton = document.getElementById('deleteModeButton');
+        let isDeleting = chartArea.classList.toggle('chart-delete-mode');
+        
+        const allCards = document.querySelectorAll('.org-card');
+        
+        if (isDeleting) {
+            deleteModeButton.textContent = 'Mode Hapus AKTIF';
+            
+            allCards.forEach(card => {
+                card.classList.add('deleting-card');
+                card.style.cursor = 'crosshair'; // Kursor visual untuk hapus
+            });
+            
+        } else {
+            deleteModeButton.textContent = 'Hapus Kartu';
+            
+            allCards.forEach(card => {
+                card.classList.remove('deleting-card');
+                card.style.cursor = 'grab';
+            });
+        }
+    }
+
+    function addCard(data = null) {
+        cardCounter++;
+        const newCardId = data ? data.id : `card-${cardCounter}`; 
+        
+        const newCard = document.createElement('div');
+        newCard.className = 'org-card';
+        newCard.id = newCardId;
+        
+        // *BARU: Tambahkan data-email dan data-phone sebagai atribut di card
+        if (data && data.email) {
+             newCard.setAttribute('data-email', data.email);
+        }
+        if (data && data.phone) {
+             newCard.setAttribute('data-phone', data.phone);
+        }
+
+        const name = data ? data.name : `Vacant ${cardCounter}`;
+        const title = data ? data.title : `-`;
+        // MODIFIKASI: Menggunakan NEW_CARD_IMG_URL untuk kartu baru
+        const img = data && data.img ? data.img : NEW_CARD_IMG_URL; 
+
+        let initialTop, initialLeft;
+        
+        if (data) {
+            // Gunakan posisi tersimpan (string seperti "120px")
+            initialTop = parseInt(data.top);
+            initialLeft = parseInt(data.left);
+        } else {
+            // Posisi di area terlihat (Memperhitungkan scroll dari #workspace)
+            initialTop = snapToGrid(workspace.scrollTop + 50); 
+            initialLeft = snapToGrid(workspace.scrollLeft + 50); 
+        }
+        
+        newCard.style.top = `${initialTop}px`; 
+        newCard.style.left = `${initialLeft}px`; 
+
+        // *MODIFIKASI: Menghapus contenteditable="true" dan onblur
+        newCard.innerHTML = `
+            <div class="photo-circle">
+                <img src="${img}" alt="Foto Anggota Baru">
+            </div>
+            <div class="info-boxes">
+                <div class="name-box">${name}</div>
+                <div class="title-box">${title}</div>
+            </div>
+        `;
+        
+        chartArea.appendChild(newCard);
+        // pastikan chartArea cukup tinggi
+        adjustChartHeight();
+        // update connectors (tidak ada konektor baru, tapi jaga konsistensi)
+        updateAllConnectors();
+        return newCardId;
+    }
+    
+    /**
+     * FUNGSI BARU: Menyimpan data ke server menggunakan POST /api/teams-data
+     */
+    async function saveChart() {
+        const cards = document.querySelectorAll('.org-card');
+        const structureData = [];
+        
+        cards.forEach(card => {
+            structureData.push({
+                id: card.id,
+                // Mengambil textContent terbaru dari box 
+                name: card.querySelector('.name-box').textContent,
+                title: card.querySelector('.title-box').textContent,
+                img: card.querySelector('img').getAttribute('src'), 
+                top: card.style.top,
+                left: card.style.left,
+                // *BARU: Simpan data email dan phone
+                email: card.getAttribute('data-email') || '',
+                phone: card.getAttribute('data-phone') || ''
+            });
+        });
+        
+        const connectorsData = connectors.map(c => ({ from: c.from, to: c.to }));
+
+        const dataToSave = {
+            cards: structureData,
+            cardCounter: cardCounter,
+            connectors: connectorsData,
+            zoomLevel: currentZoom
+        };
+        
+        try {
+            const response = await fetch(`${API_URL}/api/teams-data`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dataToSave)
+            });
+            
+            if (response.ok) {
+                console.log("Data Struktur Tersimpan di Server:", dataToSave);
+                alert(`Struktur organisasi dengan ${cards.length} card berhasil disimpan ke server.`);
+            } else {
+                const errorData = await response.json();
+                console.error("Gagal menyimpan ke server:", errorData);
+                alert(`Gagal menyimpan ke server. Status: ${response.status}. Error: ${errorData.error || response.statusText}`);
+            }
+        } catch (e) {
+            console.error("Gagal koneksi ke server:", e);
+            alert("Gagal koneksi ke server. Pastikan server Node.js berjalan di http://localhost:3000.");
+        }
+    }
+    
+    // =======================================================
+    // III. CONNECTOR (ORTHOGONAL LINE) FUNCTIONS
+    // =======================================================
+    function drawConnectorElement(cardA, cardB) {
+        // Menggambar line orthogonal di dalam wrapper yang merupakan child dari chartArea
+        // Posisi card (relative to chartArea)
+        const x1 = cardA.offsetLeft + (cardA.offsetWidth / 2);
+        const y1 = cardA.offsetTop + cardA.offsetHeight; // bawah cardA
+        const x2 = cardB.offsetLeft + (cardB.offsetWidth / 2);
+        const y2 = cardB.offsetTop; // atas cardB
+
+        // buat wrapper sesuai ukuran chartArea
+        const wrapper = document.createElement('div');
+        wrapper.className = 'connector-path';
+        wrapper.style.width = `${chartArea.scrollWidth}px`;
+        wrapper.style.height = `${chartArea.scrollHeight}px`;
+        wrapper.style.top = '0px';
+        wrapper.style.left = '0px';
+        wrapper.style.position = 'absolute';
+
+        // hitung titik belok orthogonal (vertical then horizontal then vertical)
+        const midY = (y1 + y2) / 2;
+
+        // bagian vertikal dari y1 -> midY di x1
+        const v1 = document.createElement('div');
+        v1.className = 'connector-line vertical';
+        v1.style.left = `${x1}px`;
+        v1.style.top = `${Math.min(y1, midY)}px`;
+        v1.style.height = `${Math.abs(midY - y1)}px`;
+        v1.style.width = '2px';
+
+        // bagian horizontal di midY dari x1 -> x2
+        const h = document.createElement('div');
+        h.className = 'connector-line horizontal';
+        h.style.left = `${Math.min(x1, x2)}px`;
+        h.style.top = `${midY}px`;
+        h.style.width = `${Math.abs(x2 - x1)}px`;
+        h.style.height = '2px';
+
+        // bagian vertikal dari midY -> y2 di x2
+        const v2 = document.createElement('div');
+        v2.className = 'connector-line vertical';
+        v2.style.left = `${x2}px`;
+        v2.style.top = `${Math.min(midY, y2)}px`;
+        v2.style.height = `${Math.abs(y2 - midY)}px`;
+        v2.style.width = '2px';
+
+        wrapper.appendChild(v1);
+        wrapper.appendChild(h);
+        wrapper.appendChild(v2);
+
+        return wrapper;
+    }
+
+    function addConnector(fromId, toId) {
+        // Cek apakah konektor sudah ada (dua arah)
+        const exists = connectors.some(c => 
+            (c.from === fromId && c.to === toId) || 
+            (c.from === toId && c.to === fromId)
+        );
+        if (exists) {
+            console.warn(`Konektor antara ${fromId} dan ${toId} sudah ada.`);
+            return null;
+        }
+
+        const cardA = document.getElementById(fromId);
+        const cardB = document.getElementById(toId);
+        if (!cardA || !cardB) return null;
+        
+        // Aturan: card A harus di atas card B
+        if (cardA.offsetTop > cardB.offsetTop) {
+            [fromId, toId] = [toId, fromId]; // Tukar posisi jika A di bawah B
+            [cardA, cardB] = [cardB, cardA];
+        }
+
+        const element = drawConnectorElement(cardA, cardB);
+        chartArea.appendChild(element);
+        const connector = { from: fromId, to: toId, element: element };
+        connectors.push(connector);
+        return connector;
+    }
+
+    function updateConnector(c) {
+        // recreate element and replace DOM
+        if (c.element && c.element.parentNode) c.element.parentNode.removeChild(c.element);
+        let cardA = document.getElementById(c.from);
+        let cardB = document.getElementById(c.to);
+        
+        // Aturan: card A harus di atas card B
+        if (cardA && cardB && cardA.offsetTop > cardB.offsetTop) {
+            // Tukar sementara untuk proses menggambar
+            [cardA, cardB] = [cardB, cardA];
+        } else if (!cardA || !cardB) {
+            return null;
+        }
+        
+        const newEl = drawConnectorElement(cardA, cardB);
+        chartArea.appendChild(newEl);
+        c.element = newEl;
+        return c;
+    }
+
+    function updateAllConnectors() {
+        // update connectors in place (recreate DOM)
+        for (let i = 0; i < connectors.length; i++) {
+            updateConnector(connectors[i]);
+        }
+    }
+
+    // =======================================================
+    // IV. EVENT HANDLERS (DRAG & DROP, CLICK) - LOGIKA BARU
+    // =======================================================
+    
+    chartArea.addEventListener('mousedown', (e) => {
+        let card = e.target.closest('.org-card');
+
+        // --- LOGIKA LINE MODE ---
+        if (lineModeActive) {
+            if (e.target.closest('#cardModal')) {
+                 return;
+            }
+            e.preventDefault();
+            if (!card) return;
+            if (!firstCardSelected) {
+                firstCardSelected = card;
+                card.classList.add('line-selected');
+            } else {
+                // jika klik card yang sama, batalkan
+                if (firstCardSelected === card) {
+                    firstCardSelected.classList.remove('line-selected');
+                    firstCardSelected = null;
+                    return;
+                }
+                // buat connector
+                firstCardSelected.classList.remove('line-selected');
+                if (firstCardSelected.id !== card.id) {
+                    addConnector(firstCardSelected.id, card.id);
+                }
+                firstCardSelected = null;
+            }
+            return; // jangan lanjut ke drag / delete saat line mode aktif
+        }
+        
+        // --- LOGIKA HAPUS KARTU ---
+        if (chartArea.classList.contains('chart-delete-mode')) {
+            e.preventDefault();
+            if (card) {
+                deleteCard(card.id);
+            } 
+            return; 
+        }
+        
+        // --- LOGIKA DRAG & DROP (KLIK TUNGGAL) ---
+        // Jika bukan line mode dan bukan delete mode, lakukan drag.
+        if (card) { 
+            e.preventDefault(); // Mencegah default browser drag
+            
+            activeCard = card;
+            activeCard.style.cursor = 'grabbing';
+            activeCard.style.zIndex = 20; 
+            
+            const cardRect = activeCard.getBoundingClientRect();
+
+            // Hitung offset UN-SCALED relatif terhadap posisi mouse di viewport
+            offsetX = unscaleValue(e.clientX - cardRect.left);
+            offsetY = unscaleValue(e.clientY - cardRect.top);
+        }
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+        if (activeCard) {
+            
+            const workspaceRect = workspace.getBoundingClientRect();
+            
+            // Posisi di dalam Workspace (SCALED)
+            const mouseXInWorkspace = e.clientX - workspaceRect.left;
+            const mouseYInWorkspace = e.clientY - workspaceRect.top;
+
+            // Posisi Absolute mouse (UN-SCALED) di dalam orgChartArea
+            // AKURASI KRITIS: Menggunakan scrollLeft/scrollTop dari #workspace
+            let newX = unscaleValue(mouseXInWorkspace + workspace.scrollLeft) - offsetX;
+            let newY = unscaleValue(mouseYInWorkspace + workspace.scrollTop) - offsetY;
+            
+            const snappedX = snapToGrid(newX);
+            const snappedY = snapToGrid(newY);
+
+            activeCard.style.left = `${Math.max(0, snappedX)}px`;
+            activeCard.style.top = `${Math.max(0, snappedY)}px`;
+            
+            // Perluas tinggi area jika kartu bergerak melampaui batas bawah
+            if (snappedY + activeCard.offsetHeight + 100 > chartArea.scrollHeight) {
+                 chartArea.style.minHeight = `${snappedY + activeCard.offsetHeight + 100}px`;
+            }
+
+            // update connectors real-time agar mengikuti drag
+            updateAllConnectors();
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (activeCard) {
+            // Snap to grid akhir
+            const currentX = parseInt(activeCard.style.left);
+            const currentY = parseInt(activeCard.style.top);
+            
+            activeCard.style.left = `${snapToGrid(currentX)}px`;
+            activeCard.style.top = `${snapToGrid(currentY)}px`;
+            
+            activeCard.style.cursor = 'grab';
+            activeCard.style.zIndex = 10;
+            
+            activeCard = null;
+            // update konektor sekali lagi setelah release
+            updateAllConnectors();
+        }
+    });
+
+    // =======================================================
+    // V. INITIALIZATION (LOAD DARI SERVER)
+    // =======================================================
+    
+    function clearInitialCards() {
+        // Hapus semua kartu yang ada
+        while (chartArea.firstChild) {
+            chartArea.removeChild(chartArea.firstChild);
+        }
+        // Hapus juga konektor dari array
+        connectors = [];
+    }
+    
+    function adjustChartHeight() {
+         let maxBottom = 800; // Minimal setinggi default CSS
+         document.querySelectorAll('.org-card').forEach(card => {
+             const topValue = parseInt(card.style.top) || 0;
+             const bottom = topValue + card.offsetHeight;
+             if (bottom > maxBottom) {
+                 maxBottom = bottom;
+             }
+         });
+         chartArea.style.minHeight = `${maxBottom + 100}px`;
+    }
+
+    /**
+     * REVISI: FUNGSI BARU UNTUK MENYESUAIKAN URL IMGBB PADA DATA LAMA
+     */
+    function adjustImgbbUrl(url) {
+        if (url && url.startsWith(IMGBB_OLD_PREFIX)) {
+            // Ganti 'https://i.ibb.co/' dengan 'https://i.ibb.co.com/'
+            return url.replace(IMGBB_OLD_PREFIX, IMGBB_NEW_PREFIX);
+        }
+        return url;
+    }
+
+    /**
+     * FUNGSI BARU: Memuat data dari server menggunakan GET /api/teams-data
+     */
+    async function initializeChartArea() {
+        // --- Lakukan Pemuatan Data dari Server ---
+        let savedData = {};
+        try {
+            const response = await fetch(`${API_URL}/api/teams-data`);
+            
+            if (response.ok) {
+                const result = await response.json();
+                savedData = result.data || {};
+                console.log("Data dimuat dari Server:", savedData);
+            } else {
+                console.warn(`Gagal memuat data dari server. Status: ${response.status}. Menggunakan struktur kosong.`);
+            }
+        } catch (e) {
+            console.error("Gagal koneksi ke server saat memuat:", e);
+            console.warn("Menggunakan struktur kosong. Pastikan server Node.js berjalan di http://localhost:3000.");
+        }
+
+        // Hapus semua kartu yang ada sebelum memuat
+        clearInitialCards(); 
+        
+        // --- Proses Data yang Dimuat ---
+        if (Object.keys(savedData).length > 0 && savedData.cards) {
+            cardCounter = savedData.cardCounter || 0;
+            
+            // Muat zoom level
+            if (savedData.zoomLevel !== undefined) {
+                currentZoom = savedData.zoomLevel;
+            }
+
+            // Muat kartu
+            savedData.cards.forEach(cardData => {
+                const cardIndex = parseInt(cardData.id.split('-')[1]);
+                cardCounter = Math.max(cardCounter, cardIndex);
+
+                // REVISI: Sesuaikan URL foto yang dimuat dari server
+                cardData.img = adjustImgbbUrl(cardData.img);
+                
+                // REVISI: Jika gambar masih placeholder lama, set ke placeholder lokal baru
+                if (cardData.img.includes('e0e0e0') || cardData.img.includes('cccccc')) {
+                    cardData.img = NEW_CARD_IMG_URL; 
+                }
+
+                addCard(cardData);
+            });
+
+            // Muat konektor
+            if (savedData.connectors && Array.isArray(savedData.connectors)) {
+                savedData.connectors.forEach(c => {
+                    // pastikan card ada sebelum menambah connector
+                    const a = document.getElementById(c.from);
+                    const b = document.getElementById(c.to);
+                    if (a && b) addConnector(c.from, c.to);
+                });
+            }
+        }
+
+        adjustChartHeight();
+        updateAllConnectors();
+        // Terapkan zoom level
+        updateZoom();
+        
+        // Tambahkan tombol delete card saat inisialisasi
+        const deleteButton = document.createElement('button');
+        deleteButton.id = 'deleteModeButton';
+        deleteButton.setAttribute('onclick', 'toggleDeleteMode()');
+        deleteButton.textContent = 'Hapus Kartu';
+        
+        const toolboxContent = document.getElementById('toolboxContent');
+        const zoomOutButton = document.querySelector('#toolboxContent button[onclick*="zoomOut"]'); 
+            
+        // Masukkan tombol Delete sebelum tombol Zoom Out
+        toolboxContent.insertBefore(deleteButton, zoomOutButton); 
+        
+        // Pastikan line mode tombol berada di kondisi awal dan menggunakan class CSS
+        const lineBtn = document.getElementById('lineModeBtn');
+        lineBtn.textContent = 'Orthogonal Line';
+        lineBtn.classList.remove('active');
+        firstCardSelected = null;
+    }
+    
+    // Panggil initializeChartArea saat window selesai dimuat
+    window.onload = initializeChartArea;
+
+    // Resize listener untuk meresize connector wrapper ketika ukuran chartArea berubah
+    window.addEventListener('resize', () => {
+        updateAllConnectors();
+    });
+
+    // =======================================================
+    // VI. LINE MODE TOGGLE
+    // =======================================================
+    function toggleLineMode() {
+        lineModeActive = !lineModeActive;
+
+        const btn = document.getElementById('lineModeBtn');
+        if (lineModeActive) {
+            btn.textContent = "Line Mode: ON";
+            btn.classList.add("active");
+            firstCardSelected = null;
+        } else {
+            btn.textContent = "Orthogonal Line";
+            btn.classList.remove("active");
+            if (firstCardSelected) {
+                firstCardSelected.classList.remove('line-selected');
+                firstCardSelected = null;
+            }
+        }
+    }
+    
+    // =======================================================
+    // VII. IMAGE PROCESSING & UPLOAD FUNCTION
+    // =======================================================
+    
+    /**
+     * Mengubah ukuran dan memotong (crop) gambar menjadi 400x400
+     */
+    function resizeImageFile(file, targetSize = 400) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onerror = () => reject(new Error("Gagal memuat gambar untuk resize."));
+                
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+
+                    // 1. Tentukan ukuran kanvas target (selalu persegi 400x400)
+                    canvas.width = targetSize;
+                    canvas.height = targetSize;
+
+                    // 2. Hitung ukuran sumber dan posisi untuk memotong/crop
+                    const sourceAspect = img.width / img.height;
+                    const targetAspect = 1; // 400 / 400
+
+                    let sx, sy, sWidth, sHeight; // Sumber (Source)
+
+                    if (sourceAspect > targetAspect) {
+                        // Gambar lebih lebar dari target (proporsionalitas: landscape)
+                        sHeight = img.height;
+                        sWidth = img.height * targetAspect; // Sesuaikan lebar agar rasio sama dengan tinggi
+                        sx = (img.width - sWidth) / 2; // Hitung posisi X awal untuk memotong di tengah
+                        sy = 0;
+                    } else {
+                        // Gambar lebih tinggi dari target (proporsionalitas: portrait)
+                        sWidth = img.width;
+                        sHeight = img.width / targetAspect; // Sesuaikan tinggi agar rasio sama dengan lebar
+                        sx = 0;
+                        sy = (img.height - sHeight) / 2; // Hitung posisi Y awal untuk memotong di tengah
+                    }
+
+                    // 3. Gambar ulang di kanvas dengan memotong dan mengubah ukuran (DrawImage 9 parameter)
+                    // (img, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight)
+                    ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, targetSize, targetSize);
+
+                    // 4. Konversi canvas ke Blob
+                    canvas.toBlob(function(blob) {
+                        if (!blob) {
+                            return reject(new Error("Gagal mengonversi canvas ke Blob."));
+                        }
+                        // Buat objek File baru
+                        const newFile = new File([blob], file.name, {
+                            type: file.type,
+                            lastModified: Date.now()
+                        });
+                        resolve(newFile);
+                    }, file.type, 0.9); // Kualitas 90%
+                };
+                img.src = e.target.result;
+            };
+            reader.onerror = error => reject(error);
+            reader.readAsDataURL(file);
+        });
+    }
+
+    /**
+     * Mengunggah file gambar ke ImgBB dengan penyesuaian URL prefix.
+     */
+    async function uploadToImgBB(file) {
+        if (!IMGBB_API_KEY || IMGBB_API_KEY === 'GANTI_DENGAN_API_KEY_IMGBB_ANDA') {
+            throw new Error("ImgBB API Key belum diatur. Upload dibatalkan.");
+        }
+        
+        // Konversi file ke format base64
+        const base64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = error => reject(error);
+            reader.readAsDataURL(file);
+        });
+
+        const formData = new FormData();
+        formData.append('image', base64); // ImgBB menerima base64 di field 'image'
+
+        const url = `https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`;
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                body: formData 
+            });
+            
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                let uploadedUrl = result.data.url; 
+                
+                // --- PENYESUAIAN URL UNTUK MEMASTIKAN AWALAN I.IBB.CO.COM ---
+                if (uploadedUrl.startsWith(IMGBB_OLD_PREFIX)) {
+                    // Ganti 'https://i.ibb.co/' dengan 'https://i.ibb.co.com/'
+                    uploadedUrl = uploadedUrl.replace(IMGBB_OLD_PREFIX, IMGBB_NEW_PREFIX);
+                    console.log("URL ImgBB disesuaikan menjadi:", uploadedUrl);
+                }
+                // -----------------------------------------------------------
+                
+                return uploadedUrl; // Mengembalikan URL yang sudah dimodifikasi
+            } else {
+                console.error("ImgBB Error:", result.error?.message || "Unknown error");
+                throw new Error(`Gagal mengunggah foto ke ImgBB: ${result.error?.message || 'Error API.'}`);
+            }
+        } catch (e) {
+            console.error("Kesalahan jaringan/ImgBB:", e);
+            throw new Error("Gagal koneksi atau error ImgBB. " + e.message);
+        }
+    }
+
+
+    // =======================================================
+    // VIII. MODAL POP-UP LOGIC (REVISI SAVE)
+    // =======================================================
+    
+    function openModal(card) {
+        const modal = document.getElementById('cardModal');
+        const editingCardId = document.getElementById('editingCardId');
+        const modalPhoto = document.getElementById('modalPhoto');
+        const fileInput = document.getElementById('photoFile'); 
+
+        // 1. Ambil data dari card yang diklik
+        const nameBox = card.querySelector('.name-box');
+        const titleBox = card.querySelector('.title-box');
+        const imgEl = card.querySelector('.photo-circle img');
+        
+        // Ambil data email dan phone dari atribut data-email/data-phone
+        const currentEmail = card.getAttribute('data-email') || ''; 
+        const currentPhone = card.getAttribute('data-phone') || ''; 
+
+        // 2. Isi data ke modal
+        document.getElementById('modalName').value = nameBox.textContent.trim();
+        document.getElementById('modalTitle').value = titleBox.textContent.trim();
+        document.getElementById('modalEmail').value = currentEmail;
+        document.getElementById('modalPhone').value = currentPhone; 
+        editingCardId.value = card.id;
+        
+        // MODIFIKASI: Mengatur SRC foto modal
+        modalPhoto.src = imgEl.src;
+        
+        // REVISI LOGIKA: Hapus atau tambahkan class photo-placeholder berdasarkan URL gambar DUMMY_IMG_URL
+        if (imgEl.src.endsWith(DUMMY_IMG_URL)) {
+             modalPhoto.classList.add('photo-placeholder');
+        } else {
+             modalPhoto.classList.remove('photo-placeholder');
+        }
+        
+        // Penting: Reset input file saat modal dibuka agar tidak mengunggah file lama
+        fileInput.value = ''; 
+
+        // 3. Tampilkan modal
+        modal.style.display = 'flex';
+        
+        // Nonaktifkan drag/delete mode saat modal aktif
+        activeCard = null; // Pastikan tidak ada drag yang tertunda
+    }
+
+    function closeModal() {
+        const modal = document.getElementById('cardModal');
+        modal.style.display = 'none';
+        
+        // Bersihkan input file setelah modal ditutup
+        document.getElementById('photoFile').value = '';
+    }
+
+    /**
+     * Logika inti untuk menyimpan data ke kartu DOM
+     */
+    function performSave(card, newName, newTitle, newImg, newEmail, newPhone) {
+        const cardImg = card.querySelector('.photo-circle img');
+        
+        // 1. Update elemen card di tampilan
+        card.querySelector('.name-box').textContent = newName;
+        card.querySelector('.title-box').textContent = newTitle;
+        cardImg.src = newImg; // Gunakan URL ImgBB atau URL yang sudah ada
+        
+        // 2. Simpan email dan phone ke atribut data
+        card.setAttribute('data-email', newEmail);
+        card.setAttribute('data-phone', newPhone); 
+        
+        // 3. Pastikan modalPhoto direset juga agar mencerminkan gambar yang baru
+        const modalPhoto = document.getElementById('modalPhoto');
+        modalPhoto.src = newImg;
+        // Hapus class placeholder jika berhasil upload gambar (bukan DUMMY_IMG_URL)
+        if (newImg.endsWith(DUMMY_IMG_URL)) {
+             modalPhoto.classList.add('photo-placeholder'); 
+        } else {
+            modalPhoto.classList.remove('photo-placeholder'); 
+        }
+        
+        console.log(`Card ${card.id} diperbarui. Foto baru: ${newImg}`);
+        closeModal();
+    }
+    
+    /**
+     * REVISI: Fungsi saveModalData sekarang menangani resizing dan upload ImgBB
+     */
+    function saveModalData() {
+        const cardId = document.getElementById('editingCardId').value;
+        const card = document.getElementById(cardId);
+        
+        if (!card) return;
+
+        const fileInput = document.getElementById('photoFile');
+        const modalPhoto = document.getElementById('modalPhoto');
+        const newName = document.getElementById('modalName').value;
+        const newTitle = document.getElementById('modalTitle').value;
+        const newEmail = document.getElementById('modalEmail').value;
+        const newPhone = document.getElementById('modalPhone').value; 
+        const saveButton = document.querySelector('#cardModal .modal-actions button:last-child');
+        
+        // 1. Cek apakah ada file baru yang dipilih
+        if (fileInput.files && fileInput.files.length > 0) {
+            const originalFile = fileInput.files[0];
+            
+            // Nonaktifkan tombol dan tampilkan pesan loading Resizing
+            saveButton.textContent = 'Resizing...';
+            saveButton.disabled = true;
+
+            // Langkah 1: Resize gambar ke 400x400 (dengan proporsionalitas/crop)
+            resizeImageFile(originalFile, 400).then(resizedFile => {
+                saveButton.textContent = 'Uploading...';
+                // Langkah 2: Upload file yang sudah di-resize
+                return uploadToImgBB(resizedFile);
+            }).then(uploadedUrl => {
+                // Langkah 3: Setelah upload berhasil, lakukan performSave dengan URL baru
+                performSave(card, newName, newTitle, uploadedUrl, newEmail, newPhone);
+            }).catch(error => {
+                // Handle error resize atau upload
+                alert(error.message);
+            }).finally(() => {
+                // Bersihkan dan kembalikan tombol ke keadaan semula
+                saveButton.textContent = 'Simpan';
+                saveButton.disabled = false;
+                // Reset input file
+                fileInput.value = ''; 
+            });
+            
+        } else {
+            // Jika TIDAK ada file baru, gunakan SRC yang sudah ada di modalPhoto
+            const currentSrc = modalPhoto.src;
+            performSave(card, newName, newTitle, currentSrc, newEmail, newPhone);
+        }
+    }
+    
+    /** * Simulasi: Mengganti gambar pada modal dengan file yang dipilih (PRATINJAU LOKAL)
+     */
+    function simulatePhotoChange(input) {
+        const modalPhoto = document.getElementById('modalPhoto');
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                modalPhoto.src = e.target.result;
+                // Hapus class placeholder
+                modalPhoto.classList.remove('photo-placeholder'); 
+            };
+            reader.readAsDataURL(input.files[0]);
+        } else {
+            // Jika input file dibatalkan, biarkan saveModalData yang memutuskan.
+        }
+    }
+    
+    // =======================================================
+    // IX. DOUBLE-CLICK MODAL HANDLER
+    // =======================================================
+    
+    // Tambahkan event listener untuk double-click di area chart
+    chartArea.addEventListener('dblclick', (e) => {
+        const card = e.target.closest('.org-card');
+        
+        // Pastikan modal hanya terbuka jika:
+        // 1. Yang diklik adalah kartu
+        // 2. Tidak sedang dalam Line Mode
+        // 3. Tidak sedang dalam Delete Mode
+        if (card && !lineModeActive && !chartArea.classList.contains('chart-delete-mode')) {
+            e.preventDefault(); 
+            openModal(card);
+            // Penting: Batalkan setiap proses drag yang mungkin tertunda
+            activeCard = null; 
+        }
+    });
+  </script>
+
+</body>
+</html>

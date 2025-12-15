@@ -1,0 +1,2257 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detail Laporan Prospek</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" /> 
+    
+    <style>
+        /* --- STYLE YANG SUDAH ADA (DIPERTahankan) --- */
+        * {
+            font-family: 'Poppins', sans-serif;
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            /* --- KODE UNTUK BACKGROUND IMAGE --- */
+            background-image: url('assets/img/002_background.png'); 
+            background-size: cover; 
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            /* ------------------------------------- */
+
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start; 
+            padding: 20px; 
+            padding-top: 80px; 
+            width: 100%; 
+            overflow-x: auto; 
+        }
+
+        /* --- STYLE HEADER NAVIGASI --- */
+        .page-header {
+            position: fixed;
+            top: 20px; 
+            left: 20px; 
+            width: calc(100% - 40px); 
+            
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            
+            margin-bottom: 0px; 
+            padding: 10px 0;
+            
+            background-color: transparent; 
+            
+            z-index: 20; 
+        }
+
+        .back-button, .export-button {
+            padding: 8px 15px;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            flex-shrink: 0;
+      	    box-shadow: 0 5px 5px rgba(0, 0, 0, 0.3) 
+        }
+
+        .back-button {
+            background-color: #a28e2a; 
+        }
+
+        .back-button:hover {
+            background-color: #d9c756;
+        }
+
+        /* --- STYLE BARU UNTUK TOMBOL EXPORT --- */
+        .export-button {
+            background-color: #2ecc71; 
+        }
+
+        .export-button:hover {
+            background-color: #27ae60;
+        }
+
+        /* --- STYLE WRAPPER UNTUK SLIDE HORIZONTAL --- */
+        .slider-wrapper {
+            display: flex; 
+            flex-direction: row; 
+            width: fit-content; 
+            flex-grow: 1; 
+            padding-bottom: 10px; 
+        }
+
+
+        /* --- STYLE KERTAS SLIDE (A4 LANDSCAPE) --- */
+        .slide-container {
+            --slide-width: 1050px; 
+            --a4-ratio: 0.707; 
+            
+	        width: var(--slide-width);
+	        max-width: var(--slide-width); 
+            min-width: var(--slide-width); 
+            height: calc(var(--slide-width) * var(--a4-ratio)); 
+            max-height: 85vh; 
+            
+            background-color: white; 
+            border: 1px solid #ddd;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            
+            padding: 30px;
+            /* overflow-y: auto; DIHAPUS */
+            flex-shrink: 0; 
+            
+            /* MODIFIKASI: Mengubah margin-right dari 30px menjadi 10px */
+            margin-right: 10px; 
+            
+            /* BARU: Tetapkan konteks relatif untuk menghitung sisa tinggi */
+            position: relative; 
+            display: flex; /* Tambahkan flex untuk layout vertikal */
+            flex-direction: column; 
+        }
+        
+        /* Hilangkan margin kanan pada slide terakhir */
+        .slide-container:last-child {
+            margin-right: 0;
+        }
+
+        .slide-header {
+            border-bottom: 3px solid #192a56; 
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            flex-shrink: 0; /* Pastikan header tidak terpengaruh oleh flex */
+        }
+
+        .slide-header h1 {
+            font-size: 24px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        
+        /* --- BARU: STYLE KHUSUS UNTUK JUDUL SEKSI (PERMINTAAN USER) --- */
+        .period { 
+            font-size: 18px; 
+            color: #2c3e50;
+            font-weight: 600;
+            margin-bottom: 0px;
+        }
+        
+        /* --- BARU: STYLE WRAPPER BARU UNTUK SELURUH SEKSI 1 --- */
+        .InformasiDasar { 
+            margin-top: 0px; 
+            margin-bottom: 10px; 
+            flex-shrink: 0; /* Pastikan bagian ini tidak terpengaruh oleh flex */
+        }
+
+        /* --- BARU: STYLE CONTAINER UNTUK LAYOUT TIGA KOLOM HORIZONTAL (DIUBAH MENJADI 4 BAGIAN) --- */
+        .detail-layout-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px; 
+        }
+        
+        /* --- MODIFIKASI: STYLE UNTUK KOTAK VISUAL DI KIRI (MENJADI PERSEGI TETAP UNTUK LOGO) --- */
+        .visual-indicator-box {
+            /* PERUBAHAN 1: Atur ukuran menjadi persegi tetap (misalnya 140px x 140px) */
+            width: 140px; 
+            height: 140px; 
+            min-width: 140px;
+            
+            background-color: #f0f0f0; 
+            border: 1px solid #ddd;
+	        margin-top : 10px;
+            
+            /* Hapus align-self: stretch agar tingginya fix 140px */
+            
+            padding: 15px;
+            font-size: 14px;
+            color: #7f8c8d;
+            display: flex;
+            align-items: center; 
+            justify-content: center;
+            font-style: italic;
+            text-align: center;
+            flex-shrink: 0; /* Penting agar tidak melebar */
+        }
+        
+        /* === MODIFIKASI KRITIS: STYLE LOGO BARU === */
+        .visual-indicator-box#logoArea {
+            padding: 0px; /* Tambahkan sedikit padding agar logo tidak terlalu mepet */
+            overflow: hidden;
+            display: flex; 
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #projectLogoImage {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain; /* Memastikan logo terlihat penuh tanpa terpotong */
+        }
+        /* ========================================= */
+        
+        /* BARU: Style Khusus untuk Area Peta */
+        .visual-indicator-box#mapArea {
+            /* Hapus padding, border (karena akan dihandle Leaflet), ubah display */
+            padding: 0; 
+            border: none;
+            display: block; /* Penting agar Leaflet bisa mengisi area */
+            margin-top: 0;
+            flex: 1; 
+            max-width: 100%; 
+            height: auto; 
+            min-height: 0;
+            
+            /* Aturan di bawah ini agar teks placeholder hilang */
+            font-size: 0; 
+        }
+
+        /* --- STYLE WRAPPER UNTUK MEMBERI MARGIN DI SEKITAR TABEL (Diubah flex:1 agar 3 tabel & 1 box muat) --- */
+        .project-details-wrapper {
+            margin-top: 10px; 
+            margin-bottom: 20px; 
+            /* UBAH: Bagi lebar agar tiga kolom tabel (masing-masing flex: 1.5) dan satu box (flex: 2) muat */
+            flex: 1.5; 
+            min-width: 0;
+            flex-shrink: 1; /* Diizinkan menyusut */
+        }
+        
+        /* --- STYLE UNTUK TABEL DETAIL PROYEK --- */
+        .project-details-table {
+            border-collapse: collapse; 
+            width: 100%;
+            border: 1px solid #c0c0c0; 
+            /* UBAH: Kecilkan sedikit ukuran font agar muat lebih baik */
+            font-size: 9px; 
+        }
+
+        .project-details-table td {
+            border: 1px solid #e0e0e0; 
+            padding: 6px 10px; 
+            vertical-align: middle;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 0; /* Trick untuk membuat ellipsis bekerja di table cell */
+        }
+
+        .project-details-table .label {
+            font-weight: 600; 
+            color: #555;
+            background-color: #cfcfcf; 
+            /* UBAH: Persentase lebar label ditambah menjadi 35% agar kolom value lebih lebar (65%) */
+            width: 35%; 
+            text-align: right; 
+        }
+        
+        .project-details-table .value {
+            font-weight: 500;
+            color: #2c3e50;
+            background-color: #ffffff; 
+        }
+        
+        /* --- END STYLE TABEL DETAIL PROYEK --- */
+        
+        /* --- STYLE BARU UNTUK PROGRESS BAR (MODIFIKASI: Ditinggikan untuk memuat teks) --- */
+        .progress-bar-container {
+            width: 100%;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            height: 10px; /* Tinggi bar ditingkatkan untuk memuat teks */
+            position: relative; /* Penting untuk penempatan teks absolut */
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: #2ecc71; /* Warna hijau cerah */
+            width: 0%; /* Diatur oleh JavaScript */
+            transition: width 0.4s ease-in-out;
+            
+            /* Tambahkan style untuk menampilkan teks di dalam bar */
+            display: flex;
+            align-items: center;
+            justify-content: flex-start; /* Teks dimulai dari kiri */
+            padding-left: 15px; 
+            
+            /* Style teks */
+            color: white; /* Teks putih agar kontras dengan warna hijau */
+            font-size: 8px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+        /* --- END STYLE PROGRESS BAR --- */
+
+
+        .empty-content {
+            color: #7f8c8d;
+            text-align: left; 
+            margin-top: 0px;
+            flex-shrink: 0;
+        }
+        
+        /* --- MODIFIKASI: KOTAK PETA (MEMANJANG HINGGA AKHIR SLIDE) --- */
+        .MapAreaContainer {
+            /* Gunakan flex: 1 agar container ini mengisi sisa ruang vertikal di slide-container */
+            flex: 1; 
+            min-height: 0; /* Izinkan menyusut */
+            margin-top: 10px;
+            display: flex; /* Aktifkan flex di sini juga */
+            flex-direction: column;
+        }
+
+        .MapAreaContainer .detail-layout-container {
+            /* Untuk memastikan MapAreaContainer mengisi sisa ruang */
+            flex: 1; 
+            /* Hilangkan margin-top yang sudah dihandle oleh MapAreaContainer */
+            margin-top: 0px !important; 
+        }
+
+        .visual-indicator-box#mapArea {
+            /* PERUBAHAN 2: MapArea mengisi sisa ruang horizontal dan vertikal */
+            flex: 2.8; /* Mengisi sisa ruang horizontal */
+            max-width: 100%; 
+            height: auto; /* Dikelola oleh flex-grow */
+            margin-top: 0;
+        }
+        
+        /* --- MODIFIKASI UNTUK MEMAKSIMALKAN TINGGI HIGHLIGHT BOX --- */
+        .project-details-wrapper.MapCoordinates {
+            /* Pastikan wrapper koordinat mengisi tinggi penuh container */
+            flex: 1.5; /* Disesuaikan agar notes tetap terlihat wajar di samping peta */
+            min-width: 0;
+            margin-top: 0; 
+            /* MODIFIKASI: Atur sebagai Flex Container Vertikal */
+            display: flex;
+            flex-direction: column;
+            /* PENTING: Hilangkan margin-bottom agar sejajar dengan MapArea */
+            margin-bottom: 0px; 
+            /* TAMBAHAN: Pastikan mengisi tinggi penuh */
+            height: 100%;
+        }
+        
+        /* --- STYLE UNTUK KOTAK HIGHLIGHT/NOTES (DIMAKSIMALKAN) --- */
+        .highlight-box {
+            flex: 1; /* Penting: Mengisi sisa ruang vertikal di wrapper */
+            min-width: 0;
+            margin-top: 15px; /* Spasi di bawah tabel koordinat */
+            margin-bottom: 0px; 
+            padding: 5px;
+            border: 1px solid #c0c0c0;
+            background-color: #fffacd; /* Warna kuning muda */
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column; 
+            min-height: 50px; /* Tinggi minimum yang wajar */
+        }
+
+        .highlight-box label {
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 5px;
+            font-size: 12px;
+            flex-shrink: 0; 
+        }
+
+        .highlight-box .notes-display {
+            width: 100%;
+            flex: 1; /* Penting: Isi sisa ruang di dalam box */
+            border: 1px solid #ddd;
+            padding: 8px;
+            font-size: 11px;
+            background-color: #ffffff; /* Ubah latar belakang display menjadi putih agar notes terlihat jelas */
+            font-family: 'Poppins', sans-serif; 
+            overflow-y: auto; /* Aktifkan scroll jika konten panjang */
+            min-height: 40px; 
+            white-space: pre-wrap; 
+        }
+        /* --- END MODIFIKASI --- */
+        
+        /* --- STYLE UNTUK MEMBERI MARGIN KANAN TAMBAHAN --- */
+        .right-end-spacer {
+            min-width: 15px; 
+            height: calc(var(--slide-width) * var(--a4-ratio)); 
+            background-color: transparent; 
+            flex-shrink: 0; 
+            margin-right: -8px;
+        }
+        
+        /* --- BARU: STYLE MARKER MERAH CUSTOM (L.divIcon) --- */
+        .red-marker-icon {
+            background-color: #e74c3c; /* Merah cerah */
+            width: 24px; /* Disesuaikan dengan iconSize */
+            height: 24px;
+            display: block;
+            border-radius: 50%; /* Bulat */
+            border: 2px solid #fff;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+            /* Transform dihilangkan karena menggunakan iconAnchor 8,8 */
+        }
+        
+        /* Tambahkan style ini untuk menimpa gaya default Leaflet jika perlu */
+        .leaflet-marker-pane .red-marker-pin {
+            /* Untuk memastikan L.divIcon bekerja tanpa bayangan default */
+            border: none;
+            background: none;
+        }
+
+        /* === STYLE BARU UNTUK GANNT CHART (MODIFIKASI KRITIS) === */
+        
+        /* BARU: Style untuk membuat konten timeline mengisi sisa tinggi Slide 2 */
+        #timelineData {
+            flex: 1; /* PENTING: Mengisi sisa ruang vertikal di Slide 2 */
+            min-height: 0; 
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; 
+        }
+        
+        .gantt-chart-container {
+            width: 100%;
+	        max-width: 100%;
+            margin-top: 2px;
+            /* PERUBAHAN: Perkecil font di sini agar tampilan lebih padat */
+            font-size: 9px; 
+            border: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+            /* BARU: Mengisi sisa ruang di dalam #timelineData */
+            flex: 1;
+            min-height: 0;
+            /* overflow-x: auto; /* BARIS INI DIHILANGKAN */
+        }
+        
+        .gantt-header, .gantt-row {
+            display: flex;
+            /* min-width: fit-content; DIHAPUS karena flex: 1 pada kolom tanggal */
+        }
+        
+        /* MODIFIKASI: Latar belakang header disamakan */
+        .gantt-header {
+            background-color: #555555; /* Warna latar belakang header baru */
+            font-weight: 700;
+            flex-shrink: 0; /* Pastikan header tidak menyusut */
+            color: #ffffff; /* PENTING: Teks putih untuk kontras */
+        }
+
+        /* BARU: Style agar body Gantt Chart mengisi sisa ruang vertikal */
+        #ganttBody {
+            flex: 1; /* PENTING: Mengisi sisa ruang vertikal di dalam gantt-chart-container */
+            min-height: 0;
+            display: flex;
+            flex-direction: column; /* Stacks rows vertically */
+            overflow-y: auto; 
+        }
+
+        /* MODIFIKASI: BARU: Agar setiap row membagi tinggi yang tersedia secara merata */
+        .gantt-row {
+            flex: 1 0 0; /* Grow equally, basis 0 */
+            border-bottom: 1px solid #ddd;
+            align-items: stretch;
+            color: #555555; /* Teks body row default */
+        }
+        
+        /* BARU: Style untuk kolom Nomor (Pastikan konten terpusat vertikal) */
+        .number-column {
+            width: 30px; 
+            min-width: 30px;
+            /* PERUBAHAN: Padding vertikal dikurangi dari 8px menjadi 6px */
+            padding: 6px 5px; 
+            border-right: 1px solid #ddd;
+            flex-shrink: 0; 
+            display: flex; /* Tambahkan flex agar konten bisa diatur */
+            align-items: center; /* Center Vertikal */
+            justify-content: center; 
+            /* HAPUS background-color & color di sini agar mengikuti .gantt-header */
+        }
+        .gantt-header .number-column {
+            background-color: #555555;
+            color: #ffffff;
+        }
+        .gantt-row .number-column {
+             background-color: transparent;
+             font-weight: 500;
+        }
+        
+        /* MODIFIKASI: PERKECIL LEBAR KOLOM AKTIVITAS (Menjadi 200px) */
+        .activity-column {
+            width: 200px; 
+            min-width: 200px; 
+             /* PERUBAHAN: Padding vertikal dikurangi dari 8px menjadi 6px */
+            padding: 6px 10px;
+            border-right: 1px solid #ddd;
+            flex-shrink: 0; 
+            display: flex; /* Tambahkan flex agar konten bisa diatur */
+            align-items: center; /* Center Vertikal */
+            /* HAPUS background-color & color di sini agar mengikuti .gantt-header */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .gantt-header .activity-column {
+             background-color: #555555;
+             color: #ffffff;
+        }
+        .gantt-row .activity-column {
+             background-color: transparent;
+             font-weight: 500;
+        }
+        
+        /* BARU: Style untuk Kolom Tahap (Stage) */
+        .stage-gantt-column {
+            width: 70px; /* Lebar tetap 70px */
+            min-width: 70px;
+            padding: 6px 5px; 
+            border-right: 1px solid #ddd;
+            flex-shrink: 0; 
+            display: flex;
+            align-items: center; /* Center Vertikal */
+            justify-content: center; /* Center Horizontal */
+            /* HAPUS background-color & color di sini agar mengikuti .gantt-header */
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .gantt-header .stage-gantt-column {
+             background-color: #555555;
+             color: #ffffff;
+        }
+
+        /* Modifikasi untuk kolom Tahap di Body */
+        .gantt-row .stage-gantt-column {
+            background-color: transparent; /* Latar belakang transparan di body */
+            font-weight: 500;
+            color: #555555;
+            justify-content: flex-start; /* Text alignment di body agar rata kiri */
+            padding-left: 10px; /* Tambahkan padding kiri agar tidak terlalu mepet */
+        }
+        
+        /* BARU: Style untuk Kolom Tanggal Start/End */
+        .date-label-column {
+            width: 60px; /* Lebar tetap 60px */
+            min-width: 60px;
+            padding: 6px 5px; 
+            border-right: 1px solid #ddd;
+            flex-shrink: 0; 
+            display: flex;
+            align-items: center;
+            justify-content: center; /* Center Horizontal */
+            /* HAPUS background-color & color di sini agar mengikuti .gantt-header */
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .gantt-header .date-label-column {
+             background-color: #555555;
+             color: #ffffff;
+        }
+
+        /* Modifier untuk kolom Start/End di Body */
+        .gantt-row .date-label-column {
+            background-color: transparent; /* Latar belakang transparan di body */
+            font-weight: 500;
+        }
+
+        /* Wrapper untuk tanggal di header, memungkinkan scroll horizontal */
+        #ganttDateHeaders {
+            display: flex;
+            flex: 1; /* PENTING: Memastikan wrapper mengisi sisa lebar */
+        }
+
+        /* MODIFIKASI: Hapus Tinggi Tetap dan Gunakan min-height: 100% */
+        .date-header, .gantt-cell {
+            flex: 1; /* PENTING: Bagi rata sisa ruang horizontal */
+            width: auto; /* Dikelola oleh flex */
+            min-width: 0; /* Penting untuk mengizinkan penyusutan */
+            /* height: 25px; <--- DIHAPUS */
+            height: auto; /* Dikelola oleh flex */
+            min-height: 100%; /* PENTING: Memastikan cell mengisi tinggi row */
+            border-right: 1px solid #e0e0e0;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        /* MODIFIKASI: PERKECIL UKURAN FONT HEADER TANGGAL */
+        .date-header {
+            font-size: 8px; 
+            color: #ffffff; /* Teks Putih agar kontras */
+            background-color: #555555; /* Warna latar belakang baru */
+        }
+        
+        
+        .gantt-row:last-child {
+            border-bottom: none;
+        }
+
+        .gantt-cell {
+            background-color: #fff;
+            position: relative;
+        }
+        
+        .gantt-bar {
+            background-color: #efb23c; /* Warna batang Gantt default */
+            width: 100%;
+            height: 80%;
+            border-radius: 2px;
+            position: absolute;
+            top: 10%;
+            left: 0;
+            opacity: 0.8;
+        }
+        
+        .gantt-row:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        /* Gaya khusus untuk hari UPLOAD DOKUMEN */
+        .gantt-cell.doc-upload {
+            background-color: transparent; 
+        }
+
+        /* BARU: Style berdasarkan status dokumen (WARNA DIPERKUAT) */
+        .gantt-cell.status-Proposed {
+            background-color: #ffe599; /* Kuning (Ditingkatkan) */
+        }
+        .gantt-cell.status-Approved {
+            background-color: #a9d18e; /* Hijau (Ditingkatkan) */
+        }
+        .gantt-cell.status-Pending {
+            background-color: #ffc080; /* Oranye (Ditingkatkan) */
+        }
+        .gantt-cell.status-Cancelled {
+            background-color: #ea9999; /* Merah (Ditingkatkan) */
+        }
+        .gantt-cell.status-Finished {
+             background-color: #9BC2E6; /* Biru Muda */
+        }
+        /* Style untuk status yang tidak terdefinisi */
+        .gantt-cell.status-Unknown {
+            background-color: #f0f0f0; 
+        }
+        
+        /* BARU: Style untuk status INITAL (Baris Proyek Dibuat) */
+        /* Digunakan sebagai FILLER dari Tgl Proyek dibuat sampai Tgl Dokumen Pertama */
+        .gantt-cell.status-Initial {
+            background-color: #d1e5f8; /* Warna Biru Muda yang lebih lembut */
+        }
+
+        /* Hilangkan border bawah pada header agar tidak dobel */
+        .gantt-header .activity-column, .gantt-header .number-column, .gantt-header .stage-gantt-column, .gantt-header .date-label-column {
+            border-bottom: none;
+        }
+        
+        .gantt-header {
+            border-bottom: 1px solid #ddd;
+        }
+        /* --- END STYLE GANTT CHART --- */
+        
+        /* === STYLE UNTUK MENYEMBUNYIKAN KOLOM TAHAP (STAGE) DI SLIDE 2 (REVISI) === */
+        .gantt-row .stage-gantt-column, 
+        .gantt-header .stage-gantt-column {
+            display: none !important;
+        }
+        /* ========================================================================= */
+
+
+        /* === STYLE BARU UNTUK NAVIGASI BULAN (TOMBOL KECIL) === */
+        /* MODIFIKASI: Mengganti #ganttTitleContainer dengan #ganttNavWrapper */
+        #ganttNavWrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 0px; 
+            margin-bottom: 5px;
+            flex-shrink: 0; 
+        }
+        
+        /* BARU: Tetapkan lebar 150px untuk judul bulan */
+        #ganttNavWrapper #ganttTitle.period { 
+            /* Pastikan lebar fix */
+            width: 150px; 
+            min-width: 150px; 
+            /* Tambahkan style jika ingin teks terpusat di dalam lebar 150px */
+            text-align: center;
+            /* Hilangkan margin-bottom yang mungkin diwarisi dari .period */
+            margin-bottom: 0px !important; 
+        }
+
+        .month-nav-button {
+            padding: 4px 8px;
+            background-color: #555555;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 10px; 
+            font-weight: 600;
+            transition: background-color 0.2s;
+            line-height: 1; 
+        }
+        
+        /* Gaya untuk tombol navigasi yang nonaktif */
+        .month-nav-button:disabled {
+            background-color: #bdc3c7; /* Abu-abu */
+            cursor: not-allowed;
+        }
+
+        .month-nav-button:hover:not(:disabled) {
+            background-color: #7f8c8d;
+        }
+        /* ======================================================= */
+        
+        /* === STYLE BARU UNTUK KOTAK KONTEN PAGE 3 === */
+        .page3-content-wrapper {
+            /* PENTING: Mengisi sisa ruang vertikal di slide-container */
+            flex: 1; 
+            min-height: 0;
+            display: flex;
+            flex-direction: row; /* Kolom horizontal */
+            width: 100%;
+            margin-top: 10px;
+            /* REVISI: Border diubah menjadi #000000 */
+            border: 1px solid #000000;
+            border-radius: 5px;
+            overflow: hidden; /* Penting agar tidak meluber */
+        }
+
+        /* --- BARU: STYLE UNTUK SETIAP KOLOM VERTIKAL --- */
+        .stage-column {
+            flex: 1; /* Bagi rata lebar horizontal */
+            display: flex;
+            flex-direction: column; /* Konten vertikal di dalam kolom */
+            /* REVISI: Border kanan diubah menjadi #000000 */
+            border-right: 1px solid #000000; /* Garis pemisah kolom */
+            min-width: 0; 
+        }
+
+        /* Hilangkan border kanan pada kolom terakhir */
+        .stage-column:last-child {
+            border-right: none;
+        }
+
+        /* --- BARU: STYLE UNTUK HEADER KOLOM --- */
+        .stage-header {
+            padding: 10px 5px;
+            font-weight: 700;
+            font-size: 11px;
+            color: #555; /* Default color jika tidak di set inline */
+            text-align: center;
+            text-transform: uppercase;
+            flex-shrink: 0; /* Pastikan header tidak menyusut */
+            /* Tambahkan efek bayangan untuk pemisahan visual */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); 
+            /* REVISI: Border bawah diubah menjadi #000000 */
+            border-bottom: 1px solid #000000;
+        }
+
+        /* --- BARU: STYLE UNTUK KONTEN KOLOM (Mengisi sisa ruang) --- */
+        .stage-body {
+            flex: 1; /* Mengisi sisa ruang vertikal di dalam kolom */
+            padding: 5px;
+            overflow-y: auto; /* Aktifkan scroll vertikal jika perlu */
+            font-size: 10px;
+            color: #555;
+        }
+        
+        /* BARU: Style untuk item dokumen di Stage Body (MODIFIKASI BUBBLE LIST) */
+        .stage-document-item {
+            padding: 6px 8px; /* Tambahkan padding vertikal/horizontal */
+            border-bottom: none; /* Hilangkan border dashed */
+            margin-bottom: 6px; /* Spasi antar bubble */
+            
+            /* --- PERUBAHAN KRITIS UNTUK MENGHILANGKAN ELLIPSIS DAN MEMUNGKINKAN WRAP --- */
+            white-space: normal; /* Ganti dari 'nowrap' menjadi 'normal' (Memungkinkan teks melipat) */
+            overflow: visible; /* Ganti dari 'hidden' menjadi 'visible' */
+            text-overflow: clip; /* Ganti dari 'ellipsis' menjadi 'clip' */
+            /* ------------------------------------------------------------------------- */
+            
+            font-size: 10px;
+            color: #2c3e50;
+            
+            /* Tambahkan Gaya Bubble Vertikal */
+            background-color: #f0f0f0; /* Latar belakang abu-abu muda */
+            border: 1px solid #ddd;
+            border-radius: 8px; /* Sudut membulat */
+            line-height: 1.4; /* Jaga keterbacaan */
+            
+            /* BARU: Style untuk pointer */
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .stage-document-item:hover {
+            background-color: #e0e0e0;
+        }
+
+        .stage-document-item:last-child {
+             /* Tidak perlu ada perubahan khusus */
+        }
+        
+        .stage-document-item.initial-activity {
+            color: #2F75B5; 
+            font-weight: 600;
+            background-color: #d1e5f8; /* Warna latar belakang bubble biru muda untuk Initial */
+        }
+
+        /* ========================================== */
+
+
+        /* ================================================= */
+        /* --- STYLE KHUSUS UNTUK CETAK (PRINT) - REVISI --- */
+        /* ================================================= */
+        @media print {
+            @page {
+                /* PERBAIKAN: Ukuran A4 Landscape */
+                size: A4 landscape;
+                /* PERBAIKAN: Margin 0.5 cm */
+                margin: 0.5cm; 
+                /* PERBAIKAN: Selalu tampilkan background graphics/color */
+                -webkit-print-color-adjust: exact !important; 
+                color-adjust: exact !important;
+            }
+            
+            .page-header {
+                display: none !important; 
+            }
+            
+            body {
+                background: none !important; 
+                padding: 0 !important; 
+                display: block !important;
+                overflow: visible !important; 
+                width: 100% !important;
+                height: auto !important;
+                padding-top: 0 !important; 
+            }
+            
+            .slider-wrapper {
+                /* PENTING: Hilangkan flex-direction: row & overflow untuk mengaktifkan page-break */
+                display: block !important;
+                overflow: visible !important;
+                width: 100% !important;
+                padding-bottom: 0 !important; 
+            }
+
+            .slide-container {
+                /* PERBAIKAN: Tetapkan ukuran penuh A4 Landscape (29.7cm x 21.0cm) */
+                width: 29.7cm !important; 
+                height: 21.0cm !important; 
+                min-width: 29.7cm !important;
+                max-width: 29.7cm !important;
+                min-height: 21.0cm !important;
+                max-height: 21.0cm !important;
+                
+                box-shadow: none !important; 
+                border: none !important; 
+                border-radius: 0 !important;
+                
+                page-break-after: always; /* Pastikan setiap slide pindah halaman */
+                
+                /* Padding internal disesuaikan agar konten tetap di dalam batas margin 0.5cm */
+                padding: 1.5cm;
+                margin-right: 0 !important; 
+                
+                /* Pastikan konten di slide tidak berlebihan */
+                overflow: hidden !important; 
+            }
+            
+            /* Aturan slide terakhir */
+            .slide-container:last-of-type {
+                 page-break-after: auto; 
+            }
+
+            /* Pastikan slide 1 tetap menggunakan flex vertikal agar MapArea mengisi ruang */
+            .slide-container#page1 {
+                display: flex !important;
+                flex-direction: column !important;
+            }
+            
+            /* Pastikan slide 2 dan 3 tetap menggunakan flex vertikal */
+            .slide-container#page2, .slide-container#page3 {
+                display: flex !important;
+                flex-direction: column !important;
+            }
+            
+            /* Sembunyikan navigasi bulan saat cetak */
+            #ganttNavWrapper {
+                display: flex !important;
+                justify-content: center !important; /* Pusatkan navigasi di cetak jika tombol hilang */
+            }
+
+            /* Tombol navigasi harus disembunyikan */
+            #ganttNavWrapper .month-nav-button {
+                display: none !important;
+            }
+            
+            /* Pastikan judul tetap memiliki lebar yang ditentukan untuk cetak */
+            #ganttNavWrapper #ganttTitle.period {
+                 width: 100% !important; 
+                 text-align: center !important; 
+                 font-size: 20px !important;
+            }
+
+            /* PERBAIKAN KRITIS UNTUK MAP AREA */
+            .MapAreaContainer {
+                flex: 1 !important;
+                min-height: 10cm !important; 
+                height: auto !important; 
+                max-height: 100% !important;
+                margin-top: 10px !important;
+                overflow: hidden !important;
+            }
+
+            .visual-indicator-box#mapArea {
+                min-height: 10cm !important; 
+                height: 100% !important; 
+                max-height: 100% !important;
+                flex: 2.8 !important;
+            }
+            
+            /* Pastikan peta tampil dengan baik saat dicetak */
+            .visual-indicator-box#mapArea .leaflet-container {
+                height: 100% !important;
+            }
+            
+            /* PERBAIKAN KRITIS UNTUK NOTES */
+            .project-details-wrapper.MapCoordinates {
+                flex: 1.5 !important;
+                min-width: 0 !important;
+                margin-top: 0 !important; 
+                height: 100% !important; 
+                overflow: hidden !important;
+            }
+            
+            .highlight-box {
+                /* HAPUS flex-grow: 0 dan max-height yang kaku */
+                flex: 1 !important; /* Izinkan Notes Box mengambil sisa ruang yang ada di MapCoordinates */
+                min-height: 3cm !important; /* Beri ketinggian minimum yang wajar */
+                margin-top: 15px !important;
+                overflow: hidden !important; 
+                height: auto !important; 
+            }
+            
+            .highlight-box .notes-display {
+                flex: 1 !important;
+                overflow-y: auto !important; /* Pertahankan scroll jika Notes sangat panjang */
+                min-height: 0 !important;
+                white-space: pre-wrap !important;
+            }
+            /* --- END PERBAIKAN PETA DAN NOTES --- */
+            
+            .right-end-spacer {
+                display: none !important;
+            }
+            
+            /* PENTING: Pastikan semua elemen flex di Slide 2 bekerja untuk memaksimalkan tinggi */
+            #timelineData, .gantt-chart-container, #ganttBody, .gantt-row {
+                flex: 1 !important;
+                min-height: 0 !important;
+            }
+            
+            .gantt-header {
+                flex-shrink: 0 !important;
+                background-color: #555555 !important;
+                color: #ffffff !important;
+            }
+
+            /* Pastikan Gantt Chart terlihat baik di cetak */
+            .gantt-chart-container {
+                overflow-x: hidden !important; 
+                width: 100% !important;
+            }
+            /* MODIFIKASI: Lebar kolom nomor print */
+            .number-column {
+                width: 30px !important;
+                min-width: 30px !important;
+                background-color: #555555 !important;
+                color: #ffffff !important;
+                /* PERUBAHAN PENTING: Untuk print juga */
+                padding: 6px 5px !important;
+            }
+            .gantt-row .number-column { /* Override background untuk row body */
+                background-color: transparent !important;
+                color: #555555 !important;
+                font-weight: 500 !important;
+            }
+            
+            /* MODIFIKASI: Lebar kolom aktivitas print (menjadi 150px) */
+            .activity-column {
+                width: 150px !important; 
+                min-width: 150px !important; 
+                background-color: #555555 !important;
+                color: #ffffff !important;
+                 /* PERUBAHAN PENTING: Untuk print juga */
+                padding: 6px 10px !important;
+            }
+            .gantt-row .activity-column { /* Override background untuk row body */
+                background-color: transparent !important;
+                color: #555555 !important;
+                font-weight: 500 !important;
+            }
+
+             /* BARU: Lebar kolom Tahap di Print (AKAN DIHIDE OLEH RULES DI BAWAH) */
+            .stage-gantt-column {
+                width: 70px !important;
+                min-width: 70px !important;
+                background-color: #555555 !important;
+                color: #ffffff !important;
+                padding: 6px 5px !important;
+            }
+            .gantt-row .stage-gantt-column {
+                background-color: transparent !important;
+                color: #555555 !important;
+            }
+            
+            /* BARU: Lebar kolom Start/End di Print (menjadi 60px) */
+            .date-label-column {
+                width: 60px !important;
+                min-width: 60px !important;
+                background-color: #555555 !important;
+                color: #ffffff !important;
+            }
+            .gantt-row .date-label-column {
+                background-color: transparent !important;
+                color: #555555 !important;
+            }
+            
+            /* MODIFIKASI: Lebar kolom tanggal print */
+            .date-header, .gantt-cell {
+                width: auto !important; /* Dikelola oleh Flexbox */
+                min-width: 0 !important; /* Dikelola oleh Flexbox */
+                /* Hapus paksaan tinggi */
+                height: auto !important;
+                min-height: 100% !important;
+                border-right: 1px solid #c0c0c0 !important; /* Gunakan abu-abu yang lebih gelap untuk print */
+                border-bottom: 1px solid #c0c0c0 !important;
+            }
+            
+            /* MODIFIKASI: Warna header tanggal print */
+            .date-header {
+                background-color: #555555 !important;
+                color: #ffffff !important;
+                border-right: 1px solid #c0c0c0 !important;
+            }
+            .gantt-row:nth-child(even) {
+                 background-color: #f0f0f0 !important; /* Abu-abu muda untuk cetak */
+            }
+            
+            /* Pastikan warna status juga diterapkan saat cetak */
+            .gantt-cell.status-Proposed {
+                background-color: #ffe599 !important; 
+            }
+            .gantt-cell.status-Approved {
+                background-color: #a9d18e !important;
+            }
+            .gantt-cell.status-Pending {
+                background-color: #ffc080 !important;
+            }
+            .gantt-cell.status-Cancelled {
+                background-color: #ea9999 !important;
+            }
+            .gantt-cell.status-Finished {
+                background-color: #9BC2E6 !important;
+            }
+            .gantt-cell.status-Unknown {
+                background-color: #f0f0f0 !important; 
+            }
+            /* BARU: Style untuk status INITAL saat cetak */
+            .gantt-cell.status-Initial {
+                background-color: #d1e5f8 !important; /* Biru muda */
+            }
+            
+            /* PENTING: Style Cetak untuk Page 3 */
+            .page3-content-wrapper {
+                flex: 1 !important;
+                min-height: 400px !important; 
+                max-height: 100% !important;
+                display: flex !important;
+                flex-direction: row !important;
+                overflow: hidden !important;
+                /* REVISI: Border diubah menjadi #000000 */
+                border: 1px solid #000000 !important; 
+            }
+            
+            .stage-column {
+                /* REVISI: Border kanan diubah menjadi #000000 */
+                border-right: 1px solid #000000 !important;
+            }
+            
+            .stage-column:last-child {
+                border-right: none !important;
+            }
+            
+            .stage-header {
+                /* Set warna teks putih untuk kontras dengan background warna (Override inline color) */
+                color: #ffffff !important; 
+                box-shadow: none !important;
+                /* REVISI: Border bawah diubah menjadi #000000 */
+                border-bottom: 1px solid #000000 !important;
+            }
+
+            /* Perubahan logo untuk cetak */
+            .visual-indicator-box#logoArea img {
+                display: block !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="page-header">
+        <button class="back-button" id="backButton">
+            &larr; Kembali
+        </button>
+        
+        <button class="export-button" id="exportButton">
+            Export 📄
+        </button>
+    </div>
+
+    <div class="slider-wrapper">
+
+        <div class="slide-container" id="page1">
+            <div class="slide-header">
+                <h1 id="prospectHeaderTitle">Prospek: Memuat...</h1> 
+            </div>
+            
+            <div class="InformasiDasar">
+                <h2 class="period">1. Informasi Dasar</h2> 
+                
+                <div class="detail-layout-container">
+                    
+                    <div class="visual-indicator-box" id="logoArea">
+                        <img id="projectLogoImage" src="" alt="Logo Proyek" style="display: none; max-width: 100%; max-height: 100%; object-fit: contain;">
+                        <p id="logoPlaceholder" style="font-size: 14px; color: #7f8c8d; text-align: center;">Logo (140x140)</p>
+                    </div>
+
+                    <div class="project-details-wrapper">
+                        <table class="project-details-table">
+                            <tbody>
+                                <tr>
+                                    <td class="label">Project ID</td>
+                                    <td class="value" id="prospectIdDisplay">N/A</td>
+                                </tr>
+                                <tr>
+                                    <td class="label">Tanggal</td>
+                                    <td class="value" id="projectDate">N/A</td>
+                                </tr>
+                                <tr>
+                                    <td class="label">Lokasi</td>
+                                    <td class="value" id="projectLocation">N/A</td>
+                                </tr>
+                                <tr>
+                                    <td class="label">Sektor</td>
+                                    <td class="value" id="projectSector">N/A</td>
+                                </tr>
+                                <tr>
+                                    <td class="label">Komoditas</td>
+                                    <td class="value" id="projectCommodity">N/A</td>
+                                </tr>
+                                <tr>
+                                    <td class="label">Tipe</td>
+                                    <td class="value" id="projectType">N/A</td>
+                                </tr>
+                                </tbody>
+                        </table>
+                    </div>
+
+                    <div class="project-details-wrapper">
+                        <table class="project-details-table">
+                            <tbody>
+                                <tr>
+                                    <td class="label">Tahap</td>
+                                    <td class="value" id="projectStage">N/A</td>
+                                </tr>
+                                
+                                <tr>
+                                    <td class="label">Dokumen</td>
+                                    <td class="value" id="documentUpdate">N/A</td>
+                                </tr>
+                                
+                                <tr>
+                                    <td class="label">Status</td>
+                                    <td class="value" id="documentStatus">N/A</td>
+                                </tr>
+                                
+                                <tr>
+                                    <td class="label">Progress</td>
+                                    <td class="value" id="progressContainer">
+                                        <div class="progress-bar-container">
+                                            <div id="progressBar" class="progress-bar">N/A</div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="label">Completion:</td>
+                                    <td class="value" id="projectCompletion">N/A</td>
+                                </tr>
+                                <tr>
+                                    <td class="label">Days</td>
+                                    <td class="value" id="projectDays">N/A</td>
+                                </tr>
+                                </tbody>
+                        </table>
+                    </div>
+
+                    <div class="project-details-wrapper">
+                        <table class="project-details-table">
+                            <tbody>
+                                <tr>
+                                    <td class="label">Nama</td>
+                                    <td class="value" id="contactName">N/A</td>
+                                </tr>
+                                <tr>
+                                    <td class="label">Jabatan</td>
+                                    <td class="value" id="contactTitle">N/A</td>
+                                </tr>
+                                <tr>
+                                    <td class="label">Email</td>
+                                    <td class="value" id="contactEmail">N/A</td>
+                                </tr>
+                                <tr>
+                                    <td class="label">Nomor</td>
+                                    <td class="value" id="contactPhone">N/A</td>
+                                </tr>
+                                </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+            
+            <div class="empty-content">
+                <h2 class="period" style="margin-bottom: 5px;">2. Detail Lokasi</h2> 
+            </div>
+            
+            <div class="MapAreaContainer">
+                <div class="detail-layout-container">
+                    
+                    <div class="visual-indicator-box" id="mapArea">
+                        <p>Area Peta Interaktif</p> 
+                    </div>
+                    
+                    <div class="project-details-wrapper MapCoordinates">
+                        <table class="project-details-table">
+                            <tbody>
+                                <tr>
+                                    <td class="label">Latitude</td>
+                                    <td class="value" id="projectLatitude">N/A</td>
+                                </tr>
+                                <tr>
+                                    <td class="label">Longitude</td>
+                                    <td class="value" id="projectLongitude">N/A</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div class="highlight-box">
+                            <label>Notes</label>
+                            <div class="notes-display" id="projectNotesDisplay">
+                                Belum ada catatan.
+                            </div>
+                        </div>
+                        </div>
+                    
+                </div>
+            </div>
+            </div>
+
+        <div class="slide-container" id="page2">
+            <div class="slide-header">
+                <h1>Timeline</h1>
+            </div>
+      
+            <div id="ganttNavWrapper">
+                <button class="month-nav-button" id="prevMonthButton" onclick="changeGanttMonth(-1)">
+                    &lt;
+                </button>
+                <h3 id="ganttTitle" class="period">Memuat Bulan...</h3> 
+                <button class="month-nav-button" id="nextMonthButton" onclick="changeGanttMonth(1)">
+                    &gt;
+                </button>
+            </div>
+            <div id="timelineData">
+                <div class="gantt-chart-container">
+                    <div class="gantt-header">
+                        <div class="gantt-column number-column">No.</div>
+                        <div class="gantt-column activity-column">Aktivitas</div>
+                        
+                        <div class="gantt-column stage-gantt-column">Tahap</div>
+                        
+                        <div class="gantt-column date-label-column">Start</div>
+                        
+                        <div class="gantt-column date-label-column">End</div>
+                        
+                        <div id="ganttDateHeaders" class="gantt-dates-row">
+                            <div style="padding: 10px; color: #7f8c8d; font-weight: 500;">Memuat header tanggal...</div>
+                        </div>
+                    </div>
+                    <div id="ganttBody" class="gantt-body">
+                        <div style="padding: 10px; text-align: center; color: #7f8c8d; ">Memuat data aktivitas...</div>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+        <div class="slide-container" id="page3">
+            <div class="slide-header">
+                <h1>Riwayat Dokumen</h1>
+            </div>
+            
+            <div class="page3-content-wrapper">
+                
+                <div class="stage-column" data-stage="Identification">
+                    <div class="stage-header" style="background-color: #F8CBAD ;">
+                        Identification
+                    </div>
+                    <div class="stage-body">
+                        </div>
+                </div>
+
+                <div class="stage-column" data-stage="Engagement">
+                    <div class="stage-header" style="background-color: #FFC000;">
+                        Engagement
+                    </div>
+                    <div class="stage-body">
+                        </div>
+                </div>
+
+                <div class="stage-column" data-stage="Term Sheet">
+                    <div class="stage-header" style="background-color: #BDD7EE;">
+                        Term Sheet
+                    </div>
+                    <div class="stage-body">
+                        </div>
+                </div>
+
+                <div class="stage-column" data-stage="Due Diligence">
+                    <div class="stage-header" style="background-color: #3A86FF;">
+                        Due Diligence
+                    </div>
+                    <div class="stage-body">
+                        </div>
+                </div>
+
+                <div class="stage-column" data-stage="Final Draft">
+                    <div class="stage-header" style="background-color: #C5E0B4;">
+                        Final Draft
+                    </div>
+                    <div class="stage-body">
+                        </div>
+                </div>
+
+                <div class="stage-column" data-stage="Signing">
+                    <div class="stage-header" style="background-color: #92D050;">
+                        Signing
+                    </div>
+                    <div class="stage-body">
+                        </div>
+                </div>
+            </div>
+            </div>
+    
+        <div class="right-end-spacer"></div>
+
+    </div> 
+    
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script> 
+    
+    <script>
+        // Variabel global untuk menyimpan instance peta
+        let prospectMap = null; 
+        
+        // ** VARIABEL GLOBAL BARU UNTUK GANTT CHART **
+        let currentGanttDate = null; 
+        let projectDocuments = []; 
+        let ganttMinDate = null; 
+        let ganttMaxDate = null; 
+        let initialProjectDate = null; 
+        
+        /**
+         * Mengambil nilai query parameter dari URL.
+         */
+        function getQueryParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        /**
+         * Menutup modal dengan memanggil fungsi di jendela induk.
+         */
+        function handleBackButton() {
+            if (window.parent && typeof window.parent.closeEditModal === 'function') {
+                window.parent.closeEditModal(); 
+            } else {
+                console.error("Gagal menutup modal. Pastikan reports.html memuat fungsi closeEditModal.");
+                alert("Gagal menutup modal.");
+            }
+        }
+
+        /**
+         * FUNGSI KRITIS: Menangani klik tombol Export (Cetak / Simpan sebagai PDF).
+         */
+        function handleExport() {
+            const pageHeader = document.querySelector('.page-header');
+            if (pageHeader) {
+                pageHeader.style.display = 'none';
+            }
+            
+            const endSpacer = document.querySelector('.right-end-spacer');
+            if (endSpacer) {
+                endSpacer.style.display = 'none';
+            }
+            
+            if (prospectMap) {
+                prospectMap.invalidateSize(); 
+            }
+            
+            window.print();
+            
+            const restoreDisplay = () => {
+                if (pageHeader) {
+                    pageHeader.style.display = 'flex'; 
+                }
+                if (endSpacer) {
+                    endSpacer.style.display = 'block'; 
+                }
+                
+                 if (prospectMap) {
+                    prospectMap.invalidateSize(); 
+                }
+            };
+            
+            // Tambahkan listener untuk 'afterprint'
+            if (!window.printListenerAdded) {
+                window.addEventListener('afterprint', restoreDisplay);
+                window.printListenerAdded = true;
+            } else {
+                restoreDisplay();
+            }
+        }
+        
+        /**
+         * Menginisialisasi peta Leaflet.
+         */
+        function initializeMap(lat, lng) {
+            const mapId = 'mapArea';
+            const mapContainer = document.getElementById(mapId);
+            
+            if (isNaN(lat) || isNaN(lng) || !mapContainer) {
+                mapContainer.innerHTML = "<p style='text-align:center; padding: 50px 0;'>Koordinat Peta Tidak Ditemukan atau Tidak Valid.</p>";
+                return;
+            }
+            
+            if (prospectMap) {
+                prospectMap.remove();
+                prospectMap = null;
+            }
+            
+            mapContainer.innerHTML = '';
+            
+            const center = [lat, lng];
+            
+            const redMarkerIcon = L.divIcon({
+                className: 'red-marker-pin',
+                iconSize: [16, 16],
+                iconAnchor: [8, 8],
+                popupAnchor: [0, -8],
+                html: '<div class="red-marker-icon"></div>'
+            });
+            
+            prospectMap = L.map(mapId, { attributionControl: true }).setView(center, 14);
+            
+            L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+                maxZoom: 20,
+                attribution: '&copy; Google' 
+            }).addTo(prospectMap);
+
+            L.marker(center, {icon: redMarkerIcon}).addTo(prospectMap); 
+                
+            prospectMap.invalidateSize();
+        }
+
+        /**
+         * Mengkonversi tanggal dari YYYY-MM-DD menjadi objek Date.
+         * @param {string} dateString Tanggal dalam format YYYY-MM-DD.
+         * @returns {Date|null} Objek Date atau null jika gagal.
+         */
+        function parseDateFromBackend(dateString) {
+            if (!dateString || typeof dateString !== 'string') return null;
+            const parts = dateString.split('-');
+            if (parts.length !== 3) return null;
+            
+            const year = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10);
+            const day = parseInt(parts[2], 10);
+            
+            // Menggunakan Date(tahun, bulan-1, hari) untuk inisialisasi yang aman
+            const date = new Date(year, month - 1, day);
+            
+            // Verifikasi untuk mencegah parsing tanggal tidak valid (misalnya 2025-02-30)
+            if (date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day) {
+                return date;
+            }
+            return null;
+        }
+        
+        /**
+         * FUNGSI KRITIS BARU: Mengkonversi tanggal YYYY-MM-DD menjadi DD/MM/YY.
+         * @param {string} dateRaw Tanggal dalam format YYYY-MM-DD.
+         * @returns {string} Tanggal dalam format DD/MM/YY atau '-'.
+         */
+        function formatGanttDateDisplay(dateRaw) {
+            if (!dateRaw || typeof dateRaw !== 'string' || dateRaw.length !== 10) return "-";
+            const parts = dateRaw.split('-'); // YYYY, MM, DD
+            if (parts.length === 3) {
+                const yearShort = parts[0].substring(2); // Ambil 2 digit terakhir tahun
+                return `${parts[2]}/${parts[1]}/${yearShort}`; // DD/MM/YY
+            }
+            return "-";
+        }
+
+        /**
+         * FUNGSI BARU: Mengubah bulan Gantt Chart dan merender ulang.
+         * @param {number} direction -1 untuk bulan sebelumnya, 1 untuk bulan berikutnya.
+         */
+        function changeGanttMonth(direction) {
+            if (!currentGanttDate || !projectDocuments) return;
+            
+            // Clone the current date to modify it
+            const newDate = new Date(currentGanttDate);
+            
+            // Change the month (setting the date to 1 to avoid month overflow issues)
+            newDate.setDate(1); 
+            newDate.setMonth(newDate.getMonth() + direction);
+            
+            // Pastikan tidak melewati batas bulan minimum dan maksimum yang relevan
+            const newDateYearMonth = new Date(newDate.getFullYear(), newDate.getMonth(), 1).getTime();
+            
+            if (ganttMinDate && newDateYearMonth < new Date(ganttMinDate.getFullYear(), ganttMinDate.getMonth(), 1).getTime()) {
+                return; // Batasi navigasi ke belakang
+            }
+            if (ganttMaxDate && newDateYearMonth > new Date(ganttMaxDate.getFullYear(), ganttMaxDate.getMonth(), 1).getTime()) {
+                return; // Batasi navigasi ke depan
+            }
+            
+            currentGanttDate = newDate;
+            
+            // Re-render the chart with the new month and existing document data
+            renderGanttChart(currentGanttDate, projectDocuments);
+        }
+        
+        // ====================================================================
+        // === FUNGSI BARU: RENDER SLIDE 3 (RIWAYAT DOKUMEN PER TAHAP) ===
+        // ====================================================================
+        
+        /**
+         * Menyiapkan event listener untuk item dokumen agar dapat diklik dan membuka link.
+         */
+        function setupDocumentLinkListeners() {
+            document.querySelectorAll('.stage-document-item').forEach(item => {
+                // Hapus listener lama jika ada (penting untuk menghindari duplikasi saat re-render)
+                item.onclick = null; 
+
+                item.addEventListener('click', function() {
+                    const link = this.getAttribute('data-link');
+                    if (link && link.startsWith('http')) {
+                        // Membuka link di tab/window baru
+                        window.open(link, '_blank'); 
+                    } else if (link) {
+                        console.warn("Link dokumen tidak valid atau kosong:", link);
+                        alert("Link dokumen tidak tersedia.");
+                    }
+                });
+            });
+        }
+
+        /**
+         * Mengisi Konten Riwayat Dokumen per Tahap (Slide 3).
+         * HANYA MENAMPILKAN JUDUL AKTIVITAS.
+         * @param {Array<Object>} documentHistory Riwayat dokumen dari backend (termasuk baris 'Initial').
+         */
+        function renderDocumentHistory(documentHistory) {
+            // 1. Definisikan pemetaan tahap ke elemen body
+            const stageColumns = document.querySelectorAll('.page3-content-wrapper .stage-column');
+            const stageBodyMap = {};
+
+            // Inisialisasi map dengan query selector berdasarkan data-stage
+            stageColumns.forEach(col => {
+                const stageName = col.getAttribute('data-stage');
+                if (stageName) {
+                    stageBodyMap[stageName] = col.querySelector('.stage-body');
+                }
+            });
+
+            // Bersihkan semua stage-body terlebih dahulu
+            Object.values(stageBodyMap).forEach(body => {
+                if (body) body.innerHTML = '';
+            });
+
+            if (!documentHistory || documentHistory.length === 0) {
+                 // Tampilkan pesan jika tidak ada data
+                Object.values(stageBodyMap).forEach(body => {
+                    if (body) body.innerHTML = '<div style="padding: 5px; text-align: center; color: #7f8c8d; font-style: italic;">Tidak ada dokumen</div>';
+                });
+                // Tidak perlu setup listener jika kosong
+                return; 
+            }
+
+            // 2. Loop dan Kelompokkan Dokumen
+            documentHistory.forEach((doc, index) => {
+                const stage = doc.stage || 'Unknown';
+                const bodyElement = stageBodyMap[stage];
+
+                // Abaikan jika elemen body tidak ditemukan (atau stage tidak terdefinisi) atau tahap adalah 'Initial'
+                if (!bodyElement || stage === 'Initial') {
+                    return; 
+                }
+                
+                const activityTitle = doc.title || 'Dokumen Tanpa Judul';
+                
+                // BARU: Tambahkan properti link ke data-link (Asumsi: 'doc.link' ada di data)
+                // Menggunakan placeholder link jika data.link tidak ada
+                const documentLink = doc.link || `https://placeholder.link/doc-id-${index}-${stage}`; 
+                
+                // Buat template item dokumen (HANYA JUDUL)
+                const documentItemHtml = `
+                    <div class="stage-document-item" title="${activityTitle} (Klik untuk membuka)" data-link="${documentLink}">
+                        ${activityTitle}
+                    </div>
+                `;
+
+                // Tambahkan ke kolom yang sesuai
+                bodyElement.insertAdjacentHTML('beforeend', documentItemHtml);
+            });
+            
+            // Tambahkan pesan default jika kolom masih kosong setelah diisi
+            Object.entries(stageBodyMap).forEach(([stage, body]) => {
+                 if (body && body.children.length === 0) {
+                     body.innerHTML = '<div style="padding: 5px; text-align: center; color: #7f8c8d; font-style: italic;">Tidak ada dokumen</div>';
+                 }
+            });
+            
+            // PENTING: Setel listener setelah semua elemen dimuat
+            setupDocumentLinkListeners(); 
+        }
+        
+        // ====================================================================
+        // === FUNGSI KRITIS: RENDER SLIDE 2 (GANTT CHART) (DIPERTahankan) ===
+        // ====================================================================
+
+        /**
+         * FUNGSI KRITIS: Mengisi Gantt Chart di Slide 2.
+         * Menerima objek Date dari bulan yang diinginkan.
+         * @param {Date} dateToRender Objek Date yang menentukan bulan dan tahun untuk dirender.
+         * @param {Array<Object>} documentHistory Riwayat dokumen dari backend.
+         */
+        function renderGanttChart(dateToRender, documentHistory) {
+            const headerContainer = document.getElementById('ganttDateHeaders');
+            const bodyContainer = document.getElementById('ganttBody');
+            const titleElement = document.getElementById('ganttTitle'); 
+            const prevButton = document.getElementById('prevMonthButton');
+            const nextButton = document.getElementById('nextMonthButton');
+            
+            if (!headerContainer || !bodyContainer || !titleElement || !dateToRender) {
+                titleElement.textContent = 'Tanggal Tidak Tersedia';
+                return;
+            }
+            
+            // --- Tentukan Tanggal Hari Ini (Today) ---
+            const today = new Date();
+            // -----------------------------------------------
+            
+            // =======================================================
+            // Tambahkan Baris "Proyek Dibuat" di awal array
+            // =======================================================
+            let activitiesToRender = [...documentHistory]; // Salin array 
+            
+            if (initialProjectDate) {
+                // Tentukan tanggal End untuk baris Initial (menggunakan 'date' (Start Date) dari baris dokumen pertama)
+                const firstDocStartDateRaw = documentHistory.length > 0 ? documentHistory[0].date || null : null;
+                
+                const initialActivity = {
+                    indexNo: '🔵',
+                    title: 'Proyek dibuat / didaftarkan',
+                    date: initialProjectDate, // Start Date: Tanggal proyek
+                    // UPDATE LOGIKA 1: Untuk Initial, End Date = Start Date Dokumen Pertama
+                    statusDate: firstDocStartDateRaw, 
+                    uploadDate: initialProjectDate, 
+                    status: 'Initial', 
+                    stage: 'Initial' // BARU: Tambahkan stage untuk baris Initial
+                };
+                activitiesToRender.unshift(initialActivity); 
+            }
+            
+            const activities = activitiesToRender; 
+            
+            // --- Tentukan Tanggal Dokumen Pertama (Batas Atas untuk status-Initial) ---
+            const firstDocument = activities.length > 1 ? activities[1] : null;
+            let firstDocTime = null;
+            
+            if (firstDocument && firstDocument.date) { // Menggunakan doc.date (Start Date) dari dokumen pertama
+                 const firstDocumentDate = parseDateFromBackend(firstDocument.date);
+                if (firstDocumentDate) {
+                    firstDocTime = new Date(firstDocumentDate.getFullYear(), firstDocumentDate.getMonth(), firstDocumentDate.getDate()).getTime();
+                }
+            }
+            
+            // Tentukan tanggal mulai proyek (batas bawah untuk fill)
+            let projectStart = null;
+            if (initialProjectDate) {
+                const projectDateObj = parseDateFromBackend(initialProjectDate);
+                if (projectDateObj) {
+                     projectStart = new Date(projectDateObj.getFullYear(), projectDateObj.getMonth(), projectDateObj.getDate()).getTime();
+                }
+            }
+            // ----------------------------------------------------------------------------------
+            
+            // --- PENGECEKAN DATA KOSONG ---
+            if (!activities || activities.length === 0) {
+                 headerContainer.innerHTML = '<div style="padding: 10px; color: #7f8c8d; font-weight: 500; border-left: 1px solid #ddd;">Tidak ada data aktivitas/dokumen yang tersedia.</div>';
+                 bodyContainer.innerHTML = '<div style="padding: 10px; text-align: center; color: #7f8c8d; ">Data aktivitas prospek kosong.</div>';
+                 titleElement.textContent = 'Timeline Proyek (Kosong)';
+                 const ganttChartContainer = document.querySelector('.gantt-chart-container');
+                 ganttChartContainer.style.width = '100%';
+                 return;
+            }
+            // ------------------------------------
+            
+            // --- Tentukan Bulan/Tahun yang akan dirender ---
+            const year = dateToRender.getFullYear();
+            const monthIndex = dateToRender.getMonth(); 
+            const currentRenderMonthStart = new Date(year, monthIndex, 1).getTime();
+            
+            // UPDATE JUDUL BULAN TAHUN
+            const monthYear = dateToRender.toLocaleDateString('id-ID', { year: 'numeric', month: 'long' });
+            titleElement.textContent = monthYear;
+            // ------------------------------------
+            
+            // --- LOGIKA TOMBOL NAVIGASI BARU ---
+            const minMonthStart = ganttMinDate ? new Date(ganttMinDate.getFullYear(), ganttMinDate.getMonth(), 1).getTime() : null;
+            const maxMonthStart = ganttMaxDate ? new Date(ganttMaxDate.getFullYear(), ganttMaxDate.getMonth(), 1).getTime() : null;
+
+            if (minMonthStart !== null) {
+                prevButton.disabled = currentRenderMonthStart <= minMonthStart;
+            } else {
+                prevButton.disabled = true;
+            }
+
+            if (maxMonthStart !== null) {
+                nextButton.disabled = currentRenderMonthStart >= maxMonthStart;
+            } else {
+                nextButton.disabled = true;
+            }
+            // ------------------------------------
+
+
+            // HITUNG JUMLAH HARI DALAM BULAN INI
+            const daysInMonth = new Date(year, monthIndex + 1, 0).getDate(); 
+
+            // Kita akan menampilkan SEMUA hari dalam bulan itu
+            let currentDate = new Date(year, monthIndex, 1); 
+            const endDate = new Date(year, monthIndex, daysInMonth); 
+            
+            let dateHeadersHtml = '';
+            let dayCounter = 0;
+            
+            // --- 2. Render Header Tanggal (01, 02, ...) ---
+            while (currentDate <= endDate) {
+                const dayOfMonth = currentDate.getDate();
+                
+                const monthShort = currentDate.toLocaleString('id-ID', { month: 'short' });
+                const dateHeaderLabel = `${dayOfMonth.toString().padStart(2, '0')}-${monthShort}`;
+                
+                dateHeadersHtml += `
+                    <div class="date-header" title="${dateHeaderLabel}">
+                        ${dayOfMonth}
+                    </div>
+                `;
+                
+                dayCounter++;
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            
+            headerContainer.innerHTML = dateHeadersHtml;
+
+            // --- 3. Render Baris Aktivitas (Highlight Upload) ---
+            let bodyHtml = '';
+            
+            activities.forEach((activity, index) => {
+                let cellsHtml = '';
+                
+                // Reset cellDate ke awal bulan untuk loop cell
+                let cellDate = new Date(year, monthIndex, 1);
+                
+                // ** PERSIAPAN DATA **
+                const indexNo = activity.indexNo || (index + 1); 
+                const activityTitle = activity.title || `Dokumen #${indexNo}`;
+                
+                // Ambil Tanggal Start
+                const startDateRaw = activity.date || null; 
+                
+                // Tentukan status untuk kelas CSS
+                const rawStatus = activity.status || 'Unknown';
+                let docStatus = rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1).toLowerCase();
+                
+                // Kustomisasi status untuk baris "Proyek Dibuat"
+                if (activity.status === 'Initial') {
+                    docStatus = 'Initial';
+                }
+                
+                // =========================================================================
+                // KRITIS: LOGIKA PENENTUAN END DATE (endDateRaw) BERDASARKAN STATUS
+                // =========================================================================
+                let endDateRaw = activity.statusDate || null; // Default: Gunakan StatusDate dari backend
+
+                if (docStatus === 'Proposed') {
+                    // UPDATE LOGIKA 2: Jika status Proposed, gunakan Tanggal Hari Ini
+                    const yearStr = today.getFullYear();
+                    const monthStr = String(today.getMonth() + 1).padStart(2, '0');
+                    const dayStr = String(today.getDate()).padStart(2, '0');
+                    endDateRaw = `${yearStr}-${monthStr}-${dayStr}`; 
+                } 
+                // Status Finished, Pending, Cancelled, Initial (sudah di set di awal) menggunakan endDateRaw default
+                
+                // Dapatkan objek Date dari Start Date & End Date yang telah dimodifikasi
+                const startDateObj = startDateRaw ? parseDateFromBackend(startDateRaw) : null;
+                const statusDateObj = endDateRaw ? parseDateFromBackend(endDateRaw) : null;
+                
+                // --- BARU: Tentukan Timestamp Start & End Date (Hanya tanggal) ---
+                const startTime = startDateObj ? new Date(startDateObj.getFullYear(), startDateObj.getMonth(), startDateObj.getDate()).getTime() : null;
+                const statusTime = statusDateObj ? new Date(statusDateObj.getFullYear(), statusDateObj.getMonth(), statusDateObj.getDate()).getTime() : null;
+                // ----------------------------------------------------
+
+                // Tentukan status untuk kelas CSS
+                const statusClass = `status-${docStatus}`;
+                
+                // ** Format nilai Start dan End menjadi DD/MM/YY **
+                const displayStart = formatGanttDateDisplay(startDateRaw); // DD/MM/YY
+                const displayEnd = formatGanttDateDisplay(endDateRaw); // DD/MM/YY
+
+                // Tentukan style khusus untuk baris Initial
+                const isInitial = activity.status === 'Initial';
+                const initialStyle = isInitial ? 'font-weight: 700; color: #2F75B5;' : 'font-weight: 500; color: #555555;';
+
+                // Loop untuk setiap sel tanggal (hingga hari terakhir)
+                for (let i = 0; i < dayCounter; i++) {
+                    
+                    let cellClass = '';
+                    
+                    // --- Buat timestamp untuk cellDate pada tengah malam ---
+                    const cellDateOnly = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate()).getTime();
+                    // -----------------------------------------------------------------------------------------
+                    
+                    
+                    // =========================================================================
+                    // 1. LOGIKA FILL UNTUK STATUS DOKUMEN (Proposed, Approved, Pending, Cancelled, Finished)
+                    // =========================================================================
+                    if (docStatus !== 'Initial' && startTime !== null && statusTime !== null) {
+                        // Cek apakah sel tanggal berada dalam rentang [startTime, statusTime]
+                        // Kita asumsikan End Date (statusTime) adalah hari terakhir yang di-fill.
+                        if (cellDateOnly >= startTime && cellDateOnly <= statusTime) {
+                            cellClass += ` ${statusClass}`;
+                        }
+                    } 
+                    
+                    // 2. LOGIKA Fill untuk Status Initial (Periode Proyek dibuat sampai dokumen pertama)
+                    else if (activity.status === 'Initial' && projectStart) {
+                        // Cek apakah sel tanggal berada dalam rentang [projectStart, firstDocTime]
+                        let limitTime = firstDocTime || Infinity;
+                        
+                        // Periksa apakah sel ini termasuk dalam bulan yang sedang dirender
+                        if (cellDate.getFullYear() === year && cellDate.getMonth() === monthIndex) {
+                            // PERUBAHAN KRITIS: Menggunakan <= limitTime (inklusi tanggal Start dokumen pertama)
+                            if (cellDateOnly >= projectStart && cellDateOnly <= limitTime) { 
+                                cellClass += ` ${statusClass}`;
+                            }
+                        }
+                    }
+                    // =========================================================================
+                    
+                    let cellContent = '';
+                    
+                    // Tentukan judul sel untuk tooltip
+                    const cellTitle = (cellClass.includes(statusClass)) ? activityTitle + ' (' + docStatus + ') Rentang ' + startDateRaw + ' s/d ' + endDateRaw : '';
+                    
+                    cellsHtml += `<div class="gantt-cell${cellClass}" title="${cellTitle}">${cellContent}</div>`;
+                    
+                    cellDate.setDate(cellDate.getDate() + 1); // Pindah ke hari berikutnya
+                }
+
+                // Baris Aktivitas (No, Nama, Kolom Tahap, Kolom Start, Kolom End, Sel Tanggal)
+                bodyHtml += `
+                    <div class="gantt-row">
+                        <div class="number-column" style="${initialStyle} border-right: 1px solid #ddd;">
+                            ${indexNo}
+                        </div>
+                        <div class="activity-column" style="${initialStyle} border-right: 1px solid #ddd;">
+                            ${activityTitle}
+                        </div>
+                        
+                        <div class="stage-gantt-column" title="${activity.stage || 'N/A'}">
+                            ${activity.stage || 'N/A'} 
+                        </div>
+
+                        <div class="date-label-column">
+                            ${displayStart} 
+                        </div>
+
+                        <div class="date-label-column">
+                            ${displayEnd}
+                        </div>
+
+                        ${cellsHtml}
+                    </div>
+                `;
+            });
+            
+            // --- LOGIKA PENGISI BARIS KOSONG (FILLER ROWS) ---
+            const MAX_ROWS = 20; 
+            const currentRows = activities.length;
+            const fillerRowsCount = Math.max(0, MAX_ROWS - currentRows);
+            
+            let fillerHtml = '';
+            
+            if (fillerRowsCount > 0) {
+                // Buat HTML untuk satu baris kosong (filler row)
+                let emptyCellsHtml = '';
+                for (let i = 0; i < dayCounter; i++) {
+                    emptyCellsHtml += `<div class="gantt-cell"></div>`; 
+                }
+                
+                // Buat baris kosong sebanyak yang diperlukan
+                const fillerRowTemplate = `
+                    <div class="gantt-row">
+                        <div class="number-column" style="font-weight: 500; color: #7f8c8d; border-right: 1px solid #ddd;">
+                            &bull;
+                        </div>
+                        <div class="activity-column" style="font-weight: 400; font-style: italic; color: #7f8c8d; border-right: 1px solid #ddd;">
+                            
+                        </div>
+                        <div class="stage-gantt-column" style="font-weight: 400; font-style: italic; color: #7f8c8d; border-right: 1px solid #ddd;">
+                        </div>
+                        
+                        <div class="date-label-column"></div>
+                        <div class="date-label-column"></div>
+                        
+                        ${emptyCellsHtml}
+                    </div>
+                `;
+                
+                for (let i = 0; i < fillerRowsCount; i++) {
+                    fillerHtml += fillerRowTemplate;
+                }
+            }
+            
+            // Gabungkan aktivitas asli dengan baris kosong (filler)
+            bodyContainer.innerHTML = bodyHtml + fillerHtml;
+            // --- END LOGIKA PENGISI BARIS KOSONG ---
+
+            // PENTING: Pastikan #ganttDateHeaders dan gantt-chart-container memiliki width 100% dan tidak ada paksaan lebar berlebihan.
+            headerContainer.style.width = `100%`; 
+            const ganttChartContainer = document.querySelector('.gantt-chart-container');
+            ganttChartContainer.style.width = `100%`; 
+        }
+
+
+        // ====================================================================
+        // === MAIN DATA LOADER & PROCESSOR (MODIFIKASI: CALL renderDocumentHistory) ===
+        // ====================================================================
+        
+        /**
+         * Mengambil data detail prospek dari server.
+         */
+        async function loadProspectData(isRestore = false) {
+            const prospectId = getQueryParameter('id');
+            const headerElement = document.getElementById('prospectHeaderTitle');
+            const idDisplayElement = document.getElementById('prospectIdDisplay');
+            const notesDisplayElement = document.getElementById('projectNotesDisplay');
+            
+            let prospectName = "Tidak Ditemukan"; 
+            
+            function formatCoordinate(coord) {
+                if (coord === null || coord === undefined || coord === "") {
+                    return "-"; 
+                }
+                const number = parseFloat(coord);
+                if (isNaN(number)) {
+                    return "-";
+                }
+                return number.toFixed(5);
+            }
+
+            // Fungsi utility untuk konversi YYYY-MM-DD ke DD/MM/YYYY untuk tampilan di tabel Slide 1
+            function formatDateDisplay(dateRaw) {
+                if (!dateRaw || typeof dateRaw !== 'string' || dateRaw.length !== 10) return "-";
+                const parts = dateRaw.split('-'); // YYYY, MM, DD
+                if (parts.length === 3) {
+                    return `${parts[2]}/${parts[1]}/${parts[0]}`; // DD/MM/YYYY
+                }
+                return "-";
+            }
+            
+            if (!prospectId) {
+                headerElement.textContent = "Detail Prospek Tidak Ditemukan";
+                idDisplayElement.textContent = "ID Kosong";
+                return; 
+            }
+            
+            idDisplayElement.textContent = prospectId; 
+            headerElement.textContent = `Prospek: Memuat Nama (${prospectId})...`;
+            
+            const mapAreaElement = document.getElementById('mapArea');
+            const tableBodyTimeline = document.getElementById('ganttBody'); 
+            
+            try {
+                // Gunakan URL yang sesuai dengan API Anda (asumsi: port 3000)
+                const apiUrl = `http://localhost:3000/api/project/${prospectId}`; 
+
+                const response = await fetch(apiUrl);
+                
+                if (!response.ok) {
+                    if (response.status === 404) {
+                         prospectName = `(ID ${prospectId} Tidak Ditemukan)`;
+                    } else {
+                         throw new Error(`Koneksi Gagal/HTTP Error! Status: ${response.status}`);
+                    }
+                } else {
+                    const data = await response.json();
+                    
+                    if (data.success && data.project) {
+                        const project = data.project;
+                        
+                        prospectName = project.prospek || `(Nama Kosong)`;
+                        const projectDateRaw = project.tanggal || null;
+                        
+                        // BARU: Logika untuk menampilkan logo
+                        const logoImageElement = document.getElementById('projectLogoImage');
+                        const logoPlaceholderElement = document.getElementById('logoPlaceholder');
+                        const logoUrl = project.logo; // Asumsi 'logoUrl' ada di object 'project'
+
+                        if (logoUrl && logoImageElement) {
+                            logoImageElement.src = logoUrl;
+                            logoImageElement.style.display = 'block'; 
+                            if (logoPlaceholderElement) logoPlaceholderElement.style.display = 'none';
+                        } else if (logoImageElement) {
+                            logoImageElement.style.display = 'none';
+                            if (logoPlaceholderElement) logoPlaceholderElement.style.display = 'block';
+                        }
+                        // END BARU: Logika logo
+                        
+                        // BARU: Simpan tanggal proyek ke variabel global
+                        initialProjectDate = projectDateRaw; 
+                        
+                        // --- Simpan dan Koreksi Document History (statusDate untuk End, date untuk Start) ---
+                        // CATATAN: Diharapkan data dokumen dari backend juga menyertakan properti 'link'
+                        projectDocuments = (project.documentHistory || []).map(doc => ({
+                            // Tambahkan properti 'date' dan 'statusDate' agar bisa digunakan di Gantt Chart
+                            ...doc,
+                            date: doc.date || null, // Digunakan untuk Start Date
+                            statusDate: doc.statusDate || doc.date || null, // Digunakan untuk End Date/Highlight
+                            stage: doc.stage || null, // BARU: Simpan Stage
+                            link: doc.link || null // BARU: Simpan Link Dokumen
+                        }));
+                        // -------------------------------------------
+                        
+                        // --- LOGIKA PENENTUAN BATAS TANGGAL GANTT CHART (DIPERTahankan) ---
+                        // Batas Min menggunakan projectDate (Start Date paling awal)
+                        let minTimestamp = projectDateRaw ? parseDateFromBackend(projectDateRaw).getTime() : Infinity;
+                        // Batas Max menggunakan statusDate (End Date paling akhir)
+                        let maxTimestamp = projectDateRaw ? parseDateFromBackend(projectDateRaw).getTime() : -Infinity;
+                        
+                        // Gunakan tanggal hari ini sebagai default max jika tidak ada status date
+                        const today = new Date();
+                        let defaultMaxDate = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+                        
+                        if (projectDocuments.length > 0) {
+                            projectDocuments.forEach(doc => {
+                                // Cek Start Date (date)
+                                const docStartDateObj = doc.date ? parseDateFromBackend(doc.date) : null;
+                                if (docStartDateObj) {
+                                    const timestamp = docStartDateObj.getTime();
+                                    if (timestamp < minTimestamp) minTimestamp = timestamp;
+                                    
+                                    // Jika status Proposed, hitung sampai hari ini
+                                    const statusLower = (doc.status || '').toLowerCase();
+                                    if (statusLower === 'proposed') {
+                                        if (defaultMaxDate > maxTimestamp) {
+                                            maxTimestamp = defaultMaxDate;
+                                        }
+                                    } else {
+                                        // Cek End Date (statusDate) untuk status lain
+                                        const docEndDateObj = doc.statusDate ? parseDateFromBackend(doc.statusDate) : null;
+                                        if (docEndDateObj) {
+                                            const timestamp = docEndDateObj.getTime();
+                                            if (timestamp > maxTimestamp) maxTimestamp = timestamp;
+                                        }
+                                    }
+                                }
+                            });
+                        } else {
+                             // Jika tidak ada dokumen, max date adalah project date atau hari ini
+                            if (projectDateRaw) {
+                                maxTimestamp = parseDateFromBackend(projectDateRaw).getTime();
+                            }
+                            if (defaultMaxDate > maxTimestamp) {
+                                maxTimestamp = defaultMaxDate;
+                            }
+                        }
+                        
+                        
+                        if (minTimestamp !== Infinity && maxTimestamp !== -Infinity) {
+                            // Atur tanggal min/max ke awal bulan masing-masing
+                            ganttMinDate = new Date(minTimestamp);
+                            ganttMinDate.setDate(1); 
+                            ganttMaxDate = new Date(maxTimestamp);
+                            ganttMaxDate.setDate(1);
+                            
+                            // Jika hanya satu bulan, biarkan
+                            if (ganttMinDate.getFullYear() === ganttMaxDate.getFullYear() && ganttMinDate.getMonth() === ganttMaxDate.getMonth()) {
+                                // Tambahkan 1 bulan ke max agar ada ruang gerak jika datanya hanya 1 bulan
+                                ganttMaxDate.setMonth(ganttMaxDate.getMonth() + 1);
+                            }
+                        } else if (projectDateRaw) {
+                            // Jika hanya tanggal proyek yang ada
+                            ganttMinDate = parseDateFromBackend(projectDateRaw);
+                            ganttMinDate.setDate(1);
+                            ganttMaxDate = new Date(ganttMinDate); // Min dan Max sama
+                        } else {
+                            // Jika tidak ada data tanggal sama sekali
+                            ganttMinDate = null;
+                            ganttMaxDate = null;
+                        }
+                        // --------------------------------------------------------
+
+
+                        // Update Field Detail Tabel 1 (Konversi YYYY-MM-DD ke DD/MM/YYYY)
+                        document.getElementById('projectDate').textContent = formatDateDisplay(projectDateRaw);
+                        document.getElementById('projectLocation').textContent = project.lokasi || "-";
+                        document.getElementById('projectSector').textContent = project.sektor || "-";
+                        document.getElementById('projectCommodity').textContent = project.komoditas || "-";
+                        document.getElementById('projectType').textContent = project.tipe || "-";
+                        
+                        // Update Field Detail Tabel 2 (Tahap & Status)
+                        document.getElementById('projectStage').textContent = project.tahap || "-"; 
+                        // REVISI: Menggunakan statusDate (End Date) untuk update dokumen terakhir
+                        document.getElementById('documentUpdate').textContent = project.upload || "-"; 
+                        document.getElementById('documentStatus').textContent = project.status || "-";
+                        
+                        const progressValue = project.progress;
+                        const progressBarElement = document.getElementById('progressBar');
+                        
+                        if (progressValue && !isNaN(parseFloat(progressValue))) {
+                            const numericProgress = parseFloat(progressValue);
+                            progressBarElement.textContent = `${numericProgress}%`;
+                            progressBarElement.style.width = `${numericProgress}%`;
+                            
+                            if (numericProgress < 15) {
+                                progressBarElement.style.color = '#555';
+                                progressBarElement.style.justifyContent = 'flex-end';
+                                progressBarElement.style.paddingRight = '5px';
+                            } else {
+                                progressBarElement.style.color = 'white';
+                                progressBarElement.style.justifyContent = 'flex-start';
+                                progressBarElement.style.paddingLeft = '5px';
+                            }
+
+                        } else {
+                            progressBarElement.textContent = progressValue || "0%";
+                            progressBarElement.style.width = '0%';
+                        }
+                        
+                        document.getElementById('projectCompletion').textContent = project.completion || "-";
+                        document.getElementById('projectDays').textContent = project.days || "-";
+
+                        // Update Field Detail Tabel 3
+                        document.getElementById('contactName').textContent = project.contact.name || "-";
+                        document.getElementById('contactTitle').textContent = project.contact.title || "-";
+                        document.getElementById('contactEmail').textContent = project.contact.email || "-";
+                        document.getElementById('contactPhone').textContent = project.contact.phone || "-";
+                        
+                        // Update Lokasi & Notes
+                        const latDisplay = formatCoordinate(project.lat);
+                        const lngDisplay = formatCoordinate(project.lng);
+                        document.getElementById('projectLatitude').textContent = latDisplay;
+                        document.getElementById('projectLongitude').textContent = lngDisplay;
+
+                        if (notesDisplayElement) {
+                            notesDisplayElement.textContent = project.notes || project.highlight || "Belum ada catatan.";
+                        }
+                        
+                        // Inisialisasi Peta
+                        if (latDisplay !== "-" && lngDisplay !== "-") {
+                            const projectLat = parseFloat(project.lat);
+                            const projectLng = parseFloat(project.lng);
+                            initializeMap(projectLat, projectLng);
+                        } else {
+                            mapAreaElement.innerHTML = "<p style='text-align:center; padding: 50px 0;'>Data koordinat tidak tersedia.</p>";
+                        }
+                        
+                        // ** Inisialisasi Current Gantt Date & Render **
+                        if (ganttMinDate) {
+                            // Tetapkan bulan pertama yang akan ditampilkan
+                            currentGanttDate = new Date(ganttMinDate.getFullYear(), ganttMinDate.getMonth(), 1); 
+                            renderGanttChart(currentGanttDate, projectDocuments);
+                            
+                            // *** PENTING: RENDER SLIDE 3 (RIWAYAT DOKUMEN PER TAHAP) & SETUP LINK CLICK ***
+                            renderDocumentHistory(projectDocuments);
+                        } else {
+                            if (tableBodyTimeline) {
+                                tableBodyTimeline.innerHTML = '<div style="padding: 10px; text-align: center; color: red;">Tanggal Proyek tidak tersedia.</div>';
+                            }
+                        }
+                        
+                    } else {
+                        prospectName = `(Data Proyek Kosong)`;
+                    }
+                }
+
+            } catch (error) {
+                console.error("Gagal mengambil data dari server (Check Port 3000):", error);
+                prospectName = `(Gagal Memuat Data: ${error.message})`; 
+                
+                if (mapAreaElement) mapAreaElement.innerHTML = "<p style='text-align:center; padding: 50px 0; color: red;'>Gagal memuat data peta.</p>";
+                if (tableBodyTimeline) tableBodyTimeline.innerHTML = '<div style="padding: 10px; text-align: center; color: red;">Gagal memuat data aktivitas.</div>';
+            }
+            
+            headerElement.textContent = `Prospek : ${prospectName}`;
+        }
+        
+        /**
+         * Fungsi untuk mengikatkan listener event.
+         */
+        function initializeListeners() {
+            document.getElementById('backButton').onclick = handleBackButton;
+            document.getElementById('exportButton').onclick = handleExport;
+            
+            // Listener untuk resize window agar peta menyesuaikan
+             window.addEventListener('resize', () => {
+                if (prospectMap) {
+                    prospectMap.invalidateSize();
+                }
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            initializeListeners();
+            loadProspectData();
+        });
+    </script>
+
+</body>
+</html>

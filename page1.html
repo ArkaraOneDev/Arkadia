@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web GIS Manager</title>
+    <style>
+        /* === SKEMA WARNA BARU ===
+           - Biru Navy (Aksen Primer): #192a56
+           - Biru Slate (Aksen Sekunder): #4682b4
+           - Hijau (Add/Success): #3CB371
+        ======================== */
+        
+        /* Reset dan Box Sizing */
+        * {
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #f4f4f4;
+            overflow: hidden;
+        }
+
+        /* 1. Header Halaman ('head') */
+        .head {
+            width: 100%;
+            height: 60px;
+            display: grid; 
+            grid-template-columns: auto 1fr; 
+            align-items: center;
+            padding: 0 20px;
+            font-size: 20px;
+            font-weight: 700;
+            color: #333;
+            background: linear-gradient(90deg, #192a56, #4682b4);
+            border-bottom: 4px solid #a28e2a; 
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            flex-shrink: 0; 
+        }
+
+        .controls-left {
+            display: flex; 
+            gap: 15px; 
+            align-items: center;
+        }
+
+        .controls-left select{
+            width: 300px;
+        } 
+
+        .controls-left select,
+        .controls-left button {
+            height: 35px;
+            padding: 0 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 400; 
+        }
+
+        /* REVISI: Tombol utama (Kelola) menggunakan Gold */
+        .controls-left button {
+            background-color: #a28e2a;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: background-color 0.2s;
+        }
+
+        .controls-left button:hover {
+            background-color: #d9c756;
+        }
+        
+        /* 2. Container Utama ('map') */
+        .map {
+            flex-grow: 1; 
+            padding: 10px;
+            overflow-y: auto; 
+            background-color: #ffffff;
+            
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-style: italic;
+            color: #999;
+        }
+
+        /* ========================== */
+        /* GAYA UNTUK POP UP / MODAL */
+        /* ========================== */
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1000; 
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.5); 
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background-color: #ffffff;
+            margin: 10% auto; 
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 95%; 
+            max-width: 700px; 
+        }
+
+        .modal-content h2 {
+            margin-top: 0;
+            color: #333;
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* GAYA UNTUK TABEL INPUT BARU */
+        .table-container {
+            max-height: 300px; 
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th, .data-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        /* REVISI: Header Tabel menggunakan Biru Navy */
+        .data-table th {
+            background-color: #192a56;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            position: sticky; 
+            top: 0;
+        }
+        
+        .data-table input[type="text"], .data-table input[type="url"] {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+
+        .delete-row-btn {
+            background: none;
+            border: none;
+            padding: 5px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 12px;
+	        opacity: 0.7;
+	        transition: opacity 0.2s ease-in-out;
+            color: #192a56; /* Warna default tombol hapus */
+        }
+
+        .delete-row-btn:hover {
+            opacity: 1;
+	        color: #ff0000;
+        }
+
+        /* REVISI: Tombol Add Row menggunakan Hijau Calem */
+        #add-row-btn {
+            background-color: #a28e2a;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        #add-row-btn:hover {
+            background-color: #d9c756;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .modal-buttons button {
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            transition: background-color 0.2s;
+        }
+
+        #btn-cancel {
+            background-color: #ddd;
+            color: #333;
+        }
+
+        #btn-cancel:hover {
+            background-color: #ccc;
+        }
+
+        /* REVISI: Tombol Simpan menggunakan Biru Navy */
+        #btn-save {
+            background-color: #192a56;
+            color: white;
+        }
+
+        #btn-save:hover {
+            background-color: #4682b4; /* Biru Slate saat hover */
+        }
+    </style>
+</head>
+<body>
+
+    <header class="head">
+        <div class="controls-left">
+            <select id="wk-selector">
+                <option value="" disabled selected>-- Pilih Web GIS --</option>
+            </select>
+            <button id="add-button">Kelola</button>
+        </div>
+        
+        <div></div> 
+    </header>
+
+    <div class="map">
+        </div>
+
+    <div id="add-modal" class="modal">
+        <div class="modal-content">
+            <h2>Kelola Web GIS</h2>
+            
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Nama</th>
+                            <th>URL</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        </tbody>
+                </table>
+            </div>
+
+            <button id="add-row-btn">(+) Add</button>
+
+            <div class="modal-buttons">
+                <button id="btn-cancel">Batal</button>
+                <button id="btn-save">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        const modal = document.getElementById('add-modal');
+        const addButton = document.getElementById('add-button');
+        const cancelButton = document.getElementById('btn-cancel');
+        const saveButton = document.getElementById('btn-save');
+        const tableBody = document.getElementById('table-body');
+        const addRowButton = document.getElementById('add-row-btn');
+        const webGisSelector = document.getElementById('wk-selector'); 
+        const apiUrl = 'http://localhost:3000/api/webgis-data'; 
+
+        /**
+         * Menambahkan baris input baru ke tabel
+         * @param {string} name - Nilai default untuk kolom Nama
+         * @param {string} url - Nilai default untuk kolom URL
+         */
+        function addRow(name = '', url = '') {
+            const newRow = tableBody.insertRow();
+            
+            // Kolom 1: Nama Web GIS (Input Text)
+            let cell1 = newRow.insertCell(0);
+            cell1.innerHTML = `<input type="text" class="input-name" placeholder="..." value="${name}">`;
+
+            // Kolom 2: URL Web GIS (Input URL)
+            let cell2 = newRow.insertCell(1);
+            cell2.innerHTML = `<input type="url" class="input-url" placeholder="..." value="${url}">`;
+
+            // Kolom 3: Aksi (Tombol Hapus)
+            let cell3 = newRow.insertCell(2);
+            cell3.innerHTML = '<button class="delete-row-btn">🗑️</button>';
+            
+            // Tambahkan event listener untuk tombol Hapus pada baris baru
+            cell3.querySelector('.delete-row-btn').onclick = function() {
+                newRow.remove();
+            };
+        }
+
+        // FUNGSI: Mengambil data Web GIS dari server dan mengisi dropdown selector
+        async function populateWebGisSelector() {
+            // Hapus opsi yang ada, biarkan opsi pertama (-- Pilih Web GIS --)
+            while (webGisSelector.options.length > 1) {
+                webGisSelector.remove(1);
+            }
+
+            try {
+                const response = await fetch(apiUrl); // GET /api/webgis-data
+                
+                if (!response.ok) {
+                    throw new Error(`Gagal memuat data Web GIS untuk dropdown. Status: ${response.status}`);
+                }
+
+                const jsonResponse = await response.json();
+                
+                if (jsonResponse.success && Array.isArray(jsonResponse.data)) {
+                    // Loop data dan tambahkan sebagai opsi baru
+                    jsonResponse.data.forEach(item => {
+                        const option = document.createElement('option');
+                        option.value = item.url; // Gunakan URL sebagai nilai yang bisa dipakai untuk memuat peta
+                        option.textContent = item.name;
+                        webGisSelector.appendChild(option);
+                    });
+                }
+            } catch (error) {
+                console.error("Error saat memuat data untuk dropdown:", error);
+            }
+        }
+
+        // FUNGSI DIPERBARUI: Memuat konten peta menggunakan IFRAME
+        /**
+         * Memuat konten peta berdasarkan URL yang dipilih menggunakan iframe, 
+         * atau memuat 'weather.html' jika URL kosong/tidak valid.
+         * @param {string} url - URL Web GIS yang dipilih
+         */
+        function loadWebGisMap(url) {
+            const mapDiv = document.querySelector('.map');
+            
+            // Atur tata letak mapDiv untuk menampung iframe 100%
+            mapDiv.style.padding = '0'; 
+            mapDiv.style.justifyContent = 'flex-start'; 
+            mapDiv.style.alignItems = 'flex-start'; 
+
+            // Hapus konten yang ada
+            mapDiv.innerHTML = '';
+
+            if (url && url !== '') {
+                // --- KASUS 1: URL Web GIS Tersedia ---
+                
+                const iframe = document.createElement('iframe');
+                iframe.src = url;
+                iframe.style.width = '100%';
+                iframe.style.height = '100%';
+                iframe.style.border = 'none';
+                iframe.title = 'Web GIS Content';
+                
+                // Tambahkan event listener untuk mendeteksi masalah pemuatan
+                iframe.onerror = function() {
+                    console.error(`Gagal memuat iframe dari URL: ${url}. Menampilkan weather.html.`);
+                    // Jika ada error, ganti sumber ke default
+                    iframe.src = 'weather.html';
+                };
+
+                mapDiv.appendChild(iframe);
+            } else {
+                // --- KASUS 2: URL Web GIS Kosong/Tidak Ada Pilihan (Default) ---
+                
+                const iframe = document.createElement('iframe');
+                iframe.src = 'weather.html'; // Tampilkan weather.html sebagai default
+                iframe.style.width = '100%';
+                iframe.style.height = '100%';
+                iframe.style.border = 'none';
+                iframe.title = 'Default Weather Content';
+                
+                mapDiv.appendChild(iframe);
+                
+                console.log("URL Web GIS kosong. Menampilkan weather.html.");
+            }
+        }
+
+
+        // FUNGSI UNTUK MEMUAT DATA KE MODAL (mengambil data dari server)
+        async function fetchDataAndRenderTable() {
+            modal.style.display = "flex"; // Tampilkan modal
+            tableBody.innerHTML = ''; // Kosongkan tabel
+            
+            try {
+                const response = await fetch(apiUrl); // GET /api/webgis-data
+                
+                if (!response.ok) {
+                    throw new Error(`Gagal mengambil data. Status HTTP: ${response.status}`);
+                }
+
+                const jsonResponse = await response.json();
+                
+                if (jsonResponse.success && Array.isArray(jsonResponse.data)) {
+                    const webGisData = jsonResponse.data;
+                    
+                    if (webGisData.length > 0) {
+                        // Jika ada data, tampilkan semua data yang tersimpan
+                        webGisData.forEach(item => {
+                            addRow(item.name, item.url);
+                        });
+                    } else {
+                        // Jika tidak ada data, tambahkan satu baris input kosong default
+                        addRow(); 
+                    }
+                } else {
+                    console.error("Format data server tidak valid:", jsonResponse);
+                    addRow(); 
+                }
+
+            } catch (error) {
+                console.error("Error saat memuat data Web GIS:", error);
+                alert(`Gagal memuat data dari server. Pastikan server berjalan di port 3000. Error: ${error.message}`);
+                addRow(); 
+            }
+        }
+
+        // --- Event Listeners ---
+        
+        // 1. Panggil saat dokumen dimuat untuk mengisi dropdown awal dan memuat peta default
+        document.addEventListener('DOMContentLoaded', () => {
+             populateWebGisSelector();
+             loadWebGisMap(''); // Muat konten default (weather.html) saat startup
+        }); 
+        
+        // 2. Tampilkan modal dan muat data saat tombol "Kelola" diklik
+        addButton.onclick = fetchDataAndRenderTable;
+
+        // 3. Fungsi untuk menyembunyikan modal
+        function closeModal() {
+            modal.style.display = "none";
+        }
+
+        cancelButton.onclick = closeModal;
+
+        // 4. Tambahkan baris saat tombol "Tambahkan Baris" diklik
+        addRowButton.onclick = function() {
+             addRow();
+        }
+
+        // 5. FUNGSI KETIKA TOMBOL SIMPAN DIKLIK
+        saveButton.onclick = async function() {
+            const rows = tableBody.querySelectorAll('tr');
+            const dataToSave = [];
+            let isValid = true;
+
+            rows.forEach((row) => {
+                const nameInput = row.querySelector('.input-name');
+                const urlInput = row.querySelector('.input-url');
+
+                const name = nameInput ? nameInput.value.trim() : '';
+                const url = urlInput ? urlInput.value.trim() : '';
+
+                if (name === '' || url === '') {
+                    isValid = false;
+                } else {
+                    dataToSave.push({
+                        name: name,
+                        url: url
+                    });
+                }
+            });
+
+            if (!isValid) {
+                alert("Mohon isi semua kolom 'Nama' dan 'URL' pada setiap baris!");
+                return;
+            }
+            
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(dataToSave) 
+                });
+
+                if (response.ok) {
+                    const result = await response.json(); 
+                    console.log("Server Response:", result);
+                    alert(`Berhasil menyimpan ${dataToSave.length} data Web GIS: ${result.message}`);
+                    closeModal();
+                    
+                    // PENTING: Perbarui dropdown setelah penyimpanan berhasil
+                    populateWebGisSelector(); 
+                    // Setel ulang konten peta ke default (weather.html) setelah menyimpan
+                    loadWebGisMap(''); 
+
+                } else {
+                    const errorText = await response.text();
+                    console.error("Server Error Response:", errorText);
+                    throw new Error(`Gagal menyimpan data. Status HTTP: ${response.status}. Detail: ${errorText}`);
+                }
+
+            } catch (error) {
+                console.error("Error saat menyimpan data:", error);
+                alert(`Gagal menyimpan data: ${error.message}. Pastikan server berjalan di port 3000.`);
+            }
+        }
+
+        // 6. Sembunyikan modal jika pengguna mengklik di luar konten modal
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+
+        // 7. Event Listener untuk perubahan pada Dropdown Selector
+        webGisSelector.addEventListener('change', function() {
+            const selectedUrl = this.value; // Nilai yang dipilih adalah URL
+            loadWebGisMap(selectedUrl);
+        });
+    </script>
+
+</body>
+</html>

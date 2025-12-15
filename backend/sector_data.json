@@ -1,0 +1,18 @@
+{
+  "customSectors": [
+    "Kafetaria",
+    "Entertainment"
+  ],
+  "customCommodityMap": {
+    "Logistik & Transportasi": [],
+    "Kafetaria": [
+      "Kopi Kekinian"
+    ],
+    "Pertambangan & Energi": [
+      "Uranium"
+    ],
+    "Entertainment": [
+      "Mobile Game"
+    ]
+  }
+}

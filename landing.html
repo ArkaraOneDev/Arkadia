@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard - Arkara Business Development</title>
+  <style>
+    /* === SKEMA WARNA ===
+       - Biru Navy (Aksen Primer): #192a56
+       - Biru Slate (Aksen Sekunder): #4682b4
+       - Kuning/Emas (Aksen Hangat): #efb23c
+    ======================== */
+    * {
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      margin: 0;
+      display: flex;
+      height: 100vh;
+      background: #192a56;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 250px;
+      background: rgba(255, 255, 255, 0.9); 
+      padding: 20px 10px;
+      box-shadow: 4px 0 12px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: fixed;
+      left: -200px; 
+      top: 0;
+      bottom: 0;
+      transition: all 0.3s ease;
+      z-index: 10;
+      overflow: hidden;
+    }
+
+    /* === MODIFIKASI: Mengganti Video dengan Image Background === */
+    .sidebar-img-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        z-index: 1;
+        opacity: 0.6;
+    }
+    /* ========================================================== */
+
+    /* Perilaku default: muncul saat hover */
+    .sidebar:hover {
+      left: 0;
+    }
+
+    /* CSS untuk Sidebar Terkunci (Locked) - Menimpa efek hover */
+    .sidebar.sidebar-locked {
+        left: 0 !important;
+        transition: all 0.3s ease;
+    }
+
+    /* Menonaktifkan efek hover saat sidebar terkunci */
+    .sidebar.sidebar-locked:hover {
+        left: 0;
+    }
+
+    .sidebar > div {
+        position: relative;
+        z-index: 2; 
+    }
+
+    .sidebar .logo {
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      cursor: pointer;
+    }
+    
+    .sidebar:hover .logo {
+      opacity: 1;
+    }
+    
+    .sidebar.sidebar-locked .logo {
+        opacity: 1 !important;
+    }
+    
+    .sidebar .logo img {
+      width: 160px;
+      transition: transform 0.3s ease; 
+    }
+
+    .sidebar .logo:hover img {
+      transform: scale(1.1); 
+    }
+
+    .sidebar nav {
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      display: flex; 
+      flex-direction: column;
+    }
+
+    .sidebar:hover nav {
+      opacity: 1;
+    }
+    
+    .sidebar.sidebar-locked nav {
+        opacity: 1 !important;
+    }
+    
+    .sidebar nav a {
+      display: block;
+      padding: 10px 16px; /* Padding seragam */
+      margin: 6px 0;
+      text-decoration: none;
+      color: #333;
+      border-radius: 12px;
+      transition: 0.2s;
+      white-space: nowrap;
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.7); 
+    }
+
+    .sidebar nav a:hover,
+    .sidebar nav a.active {
+      background: #4682b4;
+      color: white;
+      font-weight: 600;
+    }
+    
+    .separator {
+      height: 0px; 
+      background: #ccc; 
+      margin: 20px 0;
+      width: 90%;
+      align-self: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .sidebar:hover .separator {
+      opacity: 1;
+    }
+    
+    .sidebar.sidebar-locked .separator {
+        opacity: 1 !important;
+    }
+    
+    /* === CSS BARU: Separator Khusus untuk Teams === */
+    .separator-custom {
+      height: 1px; 
+      background: #ccc; /* Warna yang diminta */
+      margin: 10px 0;
+      width: 100%; /* Dibuat lebih kecil */
+      align-self: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .sidebar:hover .separator-custom {
+      opacity: 1;
+    }
+    
+    .sidebar.sidebar-locked .separator-custom {
+        opacity: 1 !important;
+    }
+    /* ============================================= */
+
+    .logo-bottom {
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      cursor: pointer;
+    }
+
+    .sidebar:hover .logo-bottom {
+      opacity: 1;
+    }
+
+    .sidebar.sidebar-locked .logo-bottom {
+        opacity: 1 !important;
+    }
+
+    .logo-bottom img {
+      width: 160px;
+      transition: transform 0.3s ease; 
+    }
+
+    .logo-bottom:hover img {
+      transform: scale(1.1); 
+    }
+
+
+    /* User Info Section */
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 15px;
+      padding: 5px 5px;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 10px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      position: relative;
+    }
+
+    .sidebar:hover .user-info {
+      opacity: 1;
+    }
+
+    .sidebar.sidebar-locked .user-info {
+        opacity: 1 !important;
+    }
+
+    .user-info .user-avatar {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, #192a56, #4682b4);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 18px;
+      font-weight: 600;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .user-info .user-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .user-info .user-details {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .user-info .user-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .user-info .user-role {
+      font-size: 13px;
+      color: #666;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .edit-profile-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 24px;
+      height: 24px;
+      background: #192a56;
+      border: none;
+      border-radius: 50%;
+      color: white;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: 0.2s;
+    }
+
+    .edit-profile-btn:hover {
+      background: #4682b4;
+      transform: scale(1.1);
+    }
+
+    /* Modal Popup */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 16px;
+      padding: 30px;
+      width: 90%;
+      max-width: 450px;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateY(-50px);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+      font-size: 22px;
+      color: #192a56;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 28px;
+      color: #999;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+      width: 30px;
+      height: 30px;
+    }
+
+    .close-btn:hover {
+      color: #333;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: 0.2s;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: #192a56;
+    }
+
+    .photo-upload {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .photo-preview {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #192a56, #4682b4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 40px;
+      font-weight: 600;
+      overflow: hidden;
+      cursor: pointer;
+      transition: 0.2s;
+      border: 3px solid #e0e0e0;
+      position: relative;
+    }
+
+    .photo-preview:hover {
+      transform: scale(1.05);
+      border-color: #192a56;
+    }
+
+    .photo-preview::after {
+      content: '📷';
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      background: #192a56;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      border: 2px solid white;
+    }
+
+    .photo-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .photo-upload input[type=file] {
+      display: none;
+    }
+
+    .photo-hint {
+      font-size: 12px;
+      color: #999;
+      text-align: center;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 25px;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .btn-primary {
+      background: #192a56;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #4682b4;
+    }
+
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #333;
+    }
+
+    .btn-secondary:hover {
+      background: #e0e0e0;
+    }
+
+    .logout {
+      text-align: center;
+      margin-top: 15px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .sidebar:hover .logout {
+      opacity: 1;
+    }
+
+    .sidebar.sidebar-locked .logout {
+        opacity: 1 !important;
+    }
+
+    .logout button {
+      background: #d9c756;
+      box-shadow: 0 2px 15px rgba(0,0,0,0.2);
+      border: none;
+      padding: 13px 20px;
+      color: #333333;
+      font-weight: 600;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: 0.3s;
+      position: relative;
+      width: 100%;
+    }
+
+    .logout button:hover {
+      background: #e6d35b;
+    }
+
+    /* Main content */
+    .main-content {
+      flex: 1;
+      margin-left: 60px;
+      padding: 15px;
+      background: linear-gradient(90deg, #B4CDE2, #192a56);
+      overflow-y: auto;
+      transition: margin-left 0.3s ease;
+    }
+    
+    /* === CSS BARU: Menonaktifkan Overflow Y untuk Main Content (Khusus Arkadia) === */
+    .main-content.no-overflow-y {
+        overflow-y: hidden !important;
+    }
+
+    /* === CSS BARU: Background Khusus untuk Company/Teams Page (REVISI) === */
+    .main-content.company-bg,
+    .main-content.teams-bg {
+        /* Atur background image */
+        background: url('assets/img/001_background.png') no-repeat center center; 
+        background-size: cover;
+        background-color: #192a56; 
+    }
+    
+    /* === CSS BARU: Background Khusus untuk Arkadia Page (Revisi) === */
+    .main-content.arkadia-bg {
+        /* Atur background image untuk Arkadia */
+        background: url('assets/img/001_background.png') no-repeat center center; 
+        background-size: cover;
+        background-color: #192a56;
+    }
+    /* ====================================================== */
+
+    .sidebar:hover ~ .main-content {
+      margin-left: 250px;
+    }
+
+    .sidebar-locked ~ .main-content {
+        margin-left: 250px !important;
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    
+    /* === CSS TAMBAHAN: Warna Judul Putih untuk Halaman Background Kustom === */
+    .main-content.company-bg #pageTitle,
+    .main-content.teams-bg #pageTitle,
+    .main-content.arkadia-bg #pageTitle {
+        color: white;
+    }
+    /* ====================================================================== */
+
+    /* CSS Default Iframe */
+    iframe {
+      width: 100%;
+      height: 90vh; /* Nilai default yang aman */
+      border: none;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3); 
+    }
+    
+    /* === CSS BARU: Iframe Tanpa Shadow (Khusus Teams) === */
+    .iframe-no-shadow {
+        box-shadow: none !important; 
+    }
+    /* ================================================= */
+
+    /* === CSS KHUSUS UNTUK IFRAME (Company) === */
+    .iframe-transparent {
+        background: transparent !important; /* Membuat latar belakang iframe transparan */
+        box-shadow: none !important;        /* Menghilangkan shadow */
+        border-radius: 0 !important;        /* Menghilangkan radius sudut */
+    }
+    
+    /* === CSS BARU: Iframe Full Height untuk Arkadia === */
+    .iframe-full-height {
+        /* 100vh - (15px padding top + 15px padding bottom main-content) - (sekitar 30px untuk h1 & margin-bottom) = 60px */
+        height: calc(100vh - 60px) !important; 
+        border-radius: 0 !important; /* Membuat mentok ke sudut */
+        box-shadow: none !important; /* Menghilangkan shadow */
+    }
+    
+  </style>
+</head>
+<body>
+
+  <div class="sidebar">
+    <img class="sidebar-img-bg" src="assets/img/sidebar.png" alt="Sidebar Background">
+    <div style="flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between;">
+      <div>
+        <div class="logo">
+          <img src="assets/img/001_logo.png" alt="Arkara Group">
+        </div>
+        <nav>
+          <a class="active" data-page="arkadia.html">Arkadia</a>
+          
+          <a data-page="company.html">Company</a>
+          <a data-page="teams.html">Teams</a>
+          <div class="separator-custom"></div> 
+          <a data-page="dashboard1.html">Dashboard</a>
+          <a data-page="projects.html">Projects</a>
+          <a data-page="reports.html">Reports</a>
+          <a data-page="logs.html">Logs</a> 
+          <a data-page="news.html">News</a>
+          <div class="separator"></div> 
+          
+          <div class="logo-bottom">
+            <img src="assets/img/002_logo.png" alt="Arkara Business Development Logo Bawah">
+          </div>
+          <a data-page="page1.html">Arkara Web GIS</a>
+          <a data-page="page2.html">Arkara One Dev</a> 
+          <a data-page="page3.html">Arkara One Mine</a> 
+
+        </nav>
+      </div>
+      <div>
+        <div class="user-info">
+          <button class="edit-profile-btn" onclick="openEditModal()">✎</button>
+          <div class="user-avatar" id="userAvatar">U</div>
+          <div class="user-details">
+            <div class="user-name" id="userName">User</div>
+            <div class="user-role" id="userRole">Business Development</div>
+          </div>
+        </div>
+        <div class="logout">
+          <button onclick="logout()">Logout</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <h1 id="pageTitle">Arkadia</h1>
+    <iframe id="contentFrame" src="arkadia.html"></iframe>
+  </div>
+
+  <div class="modal-overlay" id="editModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Edit Profile</h2>
+        <button class="close-btn" onclick="closeEditModal()">&times;</button>
+      </div>
+      
+      <form id="profileForm" onsubmit="saveProfile(event)">
+        <div class="form-group">
+          <label>Foto Profile</label>
+          <div class="photo-upload">
+            <div class="photo-preview" id="photoPreview" onclick="document.getElementById('photoInput').click()">
+              <span id="photoInitial">U</span>
+            </div>
+            <input type="file" id="photoInput" accept="image/*" onchange="handlePhotoUpload(event)">
+            <p class="photo-hint">Klik foto untuk upload (Maks 2MB, dikompres menjadi 480x480)</p>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Nama Lengkap</label>
+          <input type="text" id="fullName" placeholder="Masukkan nama lengkap" required>
+        </div>
+
+        <div class="form-group">
+          <label>Jabatan</label>
+          <input type="text" id="jobTitle" placeholder="Masukkan jabatan" required>
+        </div>
+
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="email" placeholder="Masukkan email" required>
+        </div>
+
+        <div class="form-group">
+          <label>Nomor Telepon</label>
+          <input type="tel" id="phone" placeholder="Masukkan nomor telepon" required>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Batal</button>
+          <button type="submit" class="btn btn-primary">Simpan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'http://localhost:3000';
+    // ==========================================================
+    // BARU: ImgBB API Key dan Variabel Global untuk File
+    // ==========================================================
+    const IMGBB_API_KEY = '21f90604d6de208720ee6830cf60a73a'; 
+    let resizedProfileFile = null; 
+    // ==========================================================
+    
+    // Sesi Check
+    const storedUser = localStorage.getItem('currentUser');
+    if (!storedUser) {
+        window.location.href = "index.html"; 
+        throw new Error("User not logged in."); 
+    }
+
+    const currentUser = storedUser;
+    
+    // Cache DOM Elements
+    const sidebarEl = document.querySelector('.sidebar');
+    const userNameEl = document.getElementById('userName');
+    const userAvatarEl = document.getElementById('userAvatar');
+    const userRoleEl = document.getElementById('userRole');
+    const editModal = document.getElementById('editModal');
+    const iframe = document.getElementById('contentFrame');
+    const pageTitle = document.getElementById('pageTitle');
+    const mainContentEl = document.querySelector('.main-content'); 
+    const navLinks = document.querySelectorAll('.sidebar nav a');
+    
+    // ==========================================================
+    // 1. FUNGSI MUAT PROFILE (DIREVISI)
+    // ==========================================================
+    
+    function setDefaultProfile() {
+      const displayName = currentUser.charAt(0).toUpperCase() + currentUser.slice(1);
+      userNameEl.textContent = displayName;
+      userRoleEl.textContent = 'Business Development';
+      userAvatarEl.textContent = displayName.charAt(0).toUpperCase();
+      userAvatarEl.style.background = 'linear-gradient(135deg, #192a56, #4682b4)';
+    }
+
+    async function loadProfile() {
+      try {
+        const response = await fetch(`${API_URL}/api/user/${currentUser}`);
+        
+        if (!response.ok) {
+            console.error('Error fetching profile:', response.statusText);
+            setDefaultProfile();
+            return;
+        }
+
+        const result = await response.json();
+        
+        if (result.success && result.user) {
+          const profileData = result.user;
+          
+          const displayName = profileData.fullName || (currentUser.charAt(0).toUpperCase() + currentUser.slice(1));
+          userNameEl.textContent = displayName;
+          
+          const jobTitle = profileData.jobTitle || 'Business Development';
+          userRoleEl.textContent = jobTitle;
+          
+          // >>> REVISI KRITIS: Menggunakan URL foto dari backend apa adanya (i.ibb.co.com) <<<
+          let displayPhotoUrl = profileData.photo;
+          // Logika koreksi dihapus di sini
+
+          if (displayPhotoUrl) {
+            userAvatarEl.innerHTML = `<img src="${displayPhotoUrl}" alt="Profile">`;
+            userAvatarEl.style.background = 'none';
+          } else {
+            userAvatarEl.textContent = displayName.charAt(0).toUpperCase();
+            userAvatarEl.style.background = 'linear-gradient(135deg, #192a56, #4682b4)';
+          }
+        } else {
+          setDefaultProfile();
+        }
+      } catch (error) {
+        console.error('Error loading profile:', error);
+        setDefaultProfile();
+      }
+    }
+
+    loadProfile();
+    
+    
+    // ==========================================================
+    // 2. SIDEBAR LOCK/UNLOCK (Tidak berubah)
+    // ==========================================================
+    
+    function toggleSidebarLock() {
+      const isCurrentlyLocked = sidebarEl.classList.contains('sidebar-locked');
+
+      if (isCurrentlyLocked) {
+        sidebarEl.classList.remove('sidebar-locked');
+        console.log('Sidebar: Auto-Hide (Unlocked)');
+      } else {
+        sidebarEl.classList.add('sidebar-locked');
+        console.log('Sidebar: Locked');
+      }
+    }
+
+    function loadSidebarState() {
+        // Atur default: Selalu terkunci saat halaman dimuat
+        sidebarEl.classList.add('sidebar-locked');
+    }
+    
+    document.querySelector('.sidebar .logo').addEventListener('click', toggleSidebarLock);
+    
+    document.addEventListener('DOMContentLoaded', loadSidebarState);
+    
+    // ==========================================================
+    // 3. FUNGSI MODAL PROFILE (DIREVISI)
+    // ==========================================================
+
+    async function openEditModal() {
+      resizedProfileFile = null; // <-- REVISI: Reset file yang siap diunggah
+      document.getElementById('photoInput').value = ''; // Reset input file
+
+      try {
+        const response = await fetch(`${API_URL}/api/user/${currentUser}`);
+        const result = await response.json();
+        
+        let profileData = {};
+        if (result.success && result.user) {
+          profileData = result.user;
+        }
+        
+        // Populate form
+        document.getElementById('fullName').value = profileData.fullName || currentUser;
+        document.getElementById('jobTitle').value = profileData.jobTitle || 'Business Development';
+        document.getElementById('email').value = profileData.email || '';
+        document.getElementById('phone').value = profileData.phone || '';
+        
+        // Set photo preview
+        const photoPreview = document.getElementById('photoPreview');
+        const initialText = (profileData.fullName || currentUser).charAt(0).toUpperCase();
+
+        // >>> REVISI KRITIS: Menggunakan URL foto dari backend apa adanya (i.ibb.co.com) <<<
+        let displayPhotoUrl = profileData.photo;
+        // Logika koreksi dihapus di sini
+
+        if (displayPhotoUrl) {
+          photoPreview.innerHTML = `<img src="${displayPhotoUrl}" alt="Profile">`;
+          photoPreview.style.background = 'none';
+        } else {
+          photoPreview.innerHTML = `<span id="photoInitial">${initialText}</span>`;
+          photoPreview.style.background = 'linear-gradient(135deg, #192a56, #4682b4)';
+        }
+      } catch (error) {
+        console.error('Error loading profile data:', error);
+        document.getElementById('fullName').value = currentUser;
+        document.getElementById('jobTitle').value = 'Business Development';
+        document.getElementById('photoPreview').innerHTML = `<span id="photoInitial">${currentUser.charAt(0).toUpperCase()}</span>`;
+      }
+      
+      editModal.classList.add('active');
+    }
+    
+    function closeEditModal() {
+      editModal.classList.remove('active');
+    }
+
+    // --- FUNGSI: Cropping ke 480x480 & Persiapan File untuk ImgBB (Tidak Berubah) ---
+    function handlePhotoUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      if (file.size > 2 * 1024 * 1024) {
+          alert('Ukuran file terlalu besar! Maksimal 2MB.');
+          event.target.value = ''; 
+          return;
+      }
+        
+      const reader = new FileReader();
+      reader.onload = function(e) {
+          const img = new Image();
+          img.onload = function() {
+              const canvas = document.createElement('canvas');
+              const ctx = canvas.getContext('2d');
+            
+              const TARGET_SIZE = 480; // Ukuran target: 480x480
+              canvas.width = TARGET_SIZE;
+              canvas.height = TARGET_SIZE;
+            
+              let sourceX = 0;
+              let sourceY = 0;
+              let sourceWidth = img.width;
+              let sourceHeight = img.height;
+              
+              // Tentukan sisi terpendek untuk pemotongan (Cropping Logic)
+              if (img.width > img.height) {
+                  // Gambar landscape: potong lebar
+                  sourceX = (img.width - img.height) / 2;
+                  sourceWidth = img.height;
+                  sourceHeight = img.height;
+              } else if (img.height > img.width) {
+                  // Gambar portrait: potong tinggi
+                  sourceY = (img.height - img.width) / 2;
+                  sourceWidth = img.width;
+                  sourceHeight = img.width;
+              }
+              
+              // 1. Gambar dipotong (cropping) di tengah berdasarkan sisi terpendek
+              // 2. Kemudian hasilnya di-scale ke 480x480
+              ctx.drawImage(
+                  img, 
+                  sourceX, sourceY, sourceWidth, sourceHeight, 
+                  0, 0, TARGET_SIZE, TARGET_SIZE                 
+              );
+            
+              // Dapatkan Blob dari Canvas dan persiapkan untuk ImgBB
+              canvas.toBlob(function(blob) {
+                  // Simpan objek File yang sudah di-resize secara global
+                  resizedProfileFile = new File([blob], file.name, { type: 'image/jpeg' });
+                  
+                  // Buat URL objek untuk preview
+                  const imageUrl = URL.createObjectURL(blob);
+  
+                  // Update preview
+                  const photoPreview = document.getElementById('photoPreview');
+                  photoPreview.innerHTML = `<img src="${imageUrl}" alt="Profile">`;
+                  photoPreview.style.background = 'none'; 
+                  
+              }, 'image/jpeg', 0.85); // Kualitas JPEG 85%
+          };
+          img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+    // -------------------------------------------------------------------------
+
+    // --- FUNGSI: Upload ImgBB dan kirim URL ke backend (Tidak Berubah) ---
+    async function saveProfile(event) {
+      event.preventDefault();
+      
+      let photoUrl = null;
+
+      // 1. LOGIKA UPLOAD IMGBB
+      if (resizedProfileFile) {
+          console.log('Mengunggah foto ke ImgBB...'); 
+          try {
+              const formData = new FormData();
+              formData.append('image', resizedProfileFile); 
+  
+              const response = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+                  method: 'POST',
+                  body: formData
+              });
+  
+              if (!response.ok) {
+                  const errorResult = await response.json();
+                  throw new Error(errorResult.error.message || `HTTP error! status: ${response.status}`);
+              }
+  
+              const imgbbResult = await response.json();
+              if (imgbbResult.success) {
+                  
+                  // ==========================================================
+                  // >>> MODIFIKASI: Paksakan URL menjadi 'i.ibb.co.com' (Logika ini dipertahankan) <<<
+                  // ==========================================================
+                  let rawUrl = imgbbResult.data.url; 
+                  photoUrl = rawUrl.replace('https://i.ibb.co/', 'https://i.ibb.co.com/'); 
+                  console.log('Foto berhasil diunggah ke ImgBB (URL Paksa):', photoUrl);
+                  // ==========================================================
+
+              } else {
+                  throw new Error('Gagal upload ke ImgBB: ' + (imgbbResult.error.message || 'Unknown error.'));
+              }
+          } catch (error) {
+              console.error('Error ImgBB upload:', error);
+              alert('Gagal mengunggah foto. Menyimpan profil tanpa foto baru.');
+              photoUrl = null; 
+          }
+      }
+
+      // 2. Dapatkan URL foto yang sudah ada jika tidak ada file baru diupload/gagal
+      if (photoUrl === null) {
+          const photoPreview = document.getElementById('photoPreview');
+          const photoImg = photoPreview.querySelector('img');
+          
+          if (photoImg && photoImg.src) {
+              // Jika menggunakan foto LAMA, dan URL adalah URL ImgBB yang valid (https://i.ibb.co.com/),
+              // Ambil src-nya apa adanya.
+              // Logic replace di sini juga dihapus/tidak diperlukan lagi karena openEditModal sudah tidak mengoreksi
+              photoUrl = photoImg.src; 
+          } else {
+              photoUrl = null;
+          }
+      }
+  
+      const profileData = {
+          fullName: document.getElementById('fullName').value,
+          jobTitle: document.getElementById('jobTitle').value,
+          email: document.getElementById('email').value,
+          phone: document.getElementById('phone').value,
+          photo: photoUrl // Kirim URL ImgBB yang sudah dimodifikasi (i.ibb.co.com)
+      };
+
+      // Reset file setelah digunakan
+      resizedProfileFile = null;
+      
+      // 3. LOGIKA KIRIM KE BACKEND ANDA
+      try {
+        const response = await fetch(`${API_URL}/api/user/${currentUser}/profile`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(profileData)
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        
+        if (result.success) {
+          await loadProfile(); // Memuat ulang profil dengan data baru
+          closeEditModal();
+          alert('Profile berhasil disimpan!');
+        } else {
+          alert('Gagal menyimpan profile: ' + (result.error || 'Server error.'));
+        }
+      } catch (error) {
+        console.error('Error saving profile:', error);
+        alert('Gagal menyimpan profile. Pastikan server sudah berjalan dan merespons dengan benar.');
+      }
+    }
+    // -----------------------------------------------------------
+
+    // Expose functions to global scope for HTML onclick
+    window.openEditModal = openEditModal;
+    window.closeEditModal = closeEditModal;
+    window.handlePhotoUpload = handlePhotoUpload;
+    window.saveProfile = saveProfile;
+    
+    // Close modal when clicking outside
+    editModal.addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeEditModal();
+      }
+    });
+
+    // ==========================================================
+    // 4. NAVIGASI (DENGAN LOGIKA IFRAME TRANSPARAN & BACKGROUND) (Telah dimodifikasi)
+    // ==========================================================
+    
+    // Fungsi Navigasi Utama yang dapat dipanggil dari mana saja
+    function handleNavigation(page, title) {
+        iframe.src = page;
+        pageTitle.textContent = title;
+        
+        // --- Reset semua styling kustom iframe/main-content ---
+        iframe.classList.remove('iframe-transparent', 'iframe-full-height', 'iframe-no-shadow');
+        mainContentEl.classList.remove('company-bg', 'no-overflow-y', 'arkadia-bg', 'teams-bg'); 
+        
+        // --- Logika Tampilan Khusus ---
+        if (page === 'company.html') {
+            iframe.classList.add('iframe-transparent');
+            mainContentEl.classList.add('company-bg'); 
+        } else if (page === 'arkadia.html') {
+            iframe.classList.add('iframe-full-height');
+            mainContentEl.classList.add('no-overflow-y', 'arkadia-bg'); 
+        } else if (page === 'teams.html') { 
+            mainContentEl.classList.add('teams-bg');
+            // Menambahkan kelas baru untuk menghilangkan shadow
+            iframe.classList.add('iframe-no-shadow'); 
+        }
+        
+        // Update kelas 'active' pada sidebar
+        navLinks.forEach(l => l.classList.remove('active'));
+        const activeLink = document.querySelector(`.sidebar nav a[data-page="${page}"]`);
+        if (activeLink) {
+             activeLink.classList.add('active');
+        }
+    }
+    
+    // 4.1 Navigasi dari Sidebar (Link yang Sudah Ada)
+    navLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const page = link.getAttribute('data-page');
+        const title = link.textContent.trim();
+        handleNavigation(page, title);
+      });
+    });
+    
+    // 4.2 Navigasi dari Iframe (Event Listener untuk Pesan)
+    window.addEventListener('message', (event) => {
+        // Pastikan asal pesan sesuai (misalnya, dari domain yang sama, atau gunakan '*' seperti di bawah jika tidak yakin)
+        // if (event.origin !== 'http://example.com') return; // Contoh cek keamanan
+        
+        // Cek jika pesan berasal dari Iframe dan memiliki targetPage
+        if (event.data.fromIframe && event.data.targetPage) {
+            const page = event.data.targetPage;
+            // Dapatkan judul dari elemen tautan di sidebar
+            const linkElement = document.querySelector(`.sidebar nav a[data-page="${page}"]`);
+            if (linkElement) {
+                const title = linkElement.textContent.trim();
+                handleNavigation(page, title);
+            }
+        }
+    });
+    
+    // ==========================================================
+    // 5. LOGOUT (Tidak berubah)
+    // ==========================================================
+    
+    function logout() {
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('currentUser');
+      window.location.href = "index.html"; 
+    }
+    
+    window.logout = logout;
+
+    // ==========================================================
+    // 6. EVENT LISTENER LAIN & STARTUP (Tidak berubah)
+    // ==========================================================
+    
+    document.querySelector('.logo-bottom').addEventListener('click', () => {
+        console.log('Logo Bawah Diklik');
+    });
+    
+    // Panggil handleNavigation pada saat startup untuk memastikan styling Arkadia diterapkan dengan benar
+    document.addEventListener('DOMContentLoaded', () => {
+        // Memastikan Arkadia dimuat sebagai halaman awal dengan styling yang benar
+        handleNavigation('arkadia.html', 'Arkadia');
+    });
+
+  </script>
+
+</body>
+</html>

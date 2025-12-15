@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company Profile Slideshow</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- GAYA GLOBAL --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; width: 100%; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            overflow: hidden;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            font-size: 12px;
+        }
+
+        .slide {
+            height: 100%; width: 100%;
+            position: absolute; top: 0; left: 0;
+            background-size: contain;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0; visibility: hidden;
+        }
+
+        .slide.active { opacity: 1; visibility: visible; }
+
+        /* --- KEYFRAMES DAN TRANSISI (TETAP) --- */
+
+        /* Transition 1: Fade */
+        .slide[data-slide="0"].active { animation: fadeIn 1s ease; }
+        /* Transition 2: Slide Left */
+        .slide[data-slide="1"].active { animation: slideLeft 1s ease; }
+        /* Transition 3: Slide Right */
+        .slide[data-slide="2"].active { animation: slideRight 1s ease; }
+        /* Transition 4: Slide Up */
+        .slide[data-slide="3"].active { animation: slideUp 1s ease; }
+        /* Transition 5: Slide Down */
+        .slide[data-slide="4"].active { animation: slideDown 1s ease; }
+        /* Transition 6: Zoom In */
+        .slide[data-slide="5"].active { animation: zoomIn 1s ease; }
+        /* Transition 7: Zoom Out */
+        .slide[data-slide="6"].active { animation: zoomOut 1s ease; }
+        /* Transition 8: Rotate In */
+        .slide[data-slide="7"].active { animation: rotateIn 1s ease; }
+        /* Transition 9: Flip Horizontal */
+        .slide[data-slide="8"].active { animation: flipH 1s ease; }
+        /* Transition 10: Flip Vertical */
+        .slide[data-slide="9"].active { animation: flipV 1s ease; }
+        /* Transition 11: Bounce In */
+        .slide[data-slide="10"].active { animation: bounceIn 1s ease; }
+        /* Transition 12: Slide Diagonal */
+        .slide[data-slide="11"].active { animation: slideDiagonal 1s ease; }
+        /* Transition 13: Swing In */
+        .slide[data-slide="12"].active { animation: swingIn 1s ease; }
+        /* Transition 14: Blur In */
+        .slide[data-slide="13"].active { animation: blurIn 1s ease; }
+        /* Transition 15: Spiral In */
+        .slide[data-slide="14"].active { animation: spiralIn 1s ease; }
+        /* Transition 16: Curtain */
+        .slide[data-slide="15"].active { animation: curtain 1s ease; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideLeft { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideRight { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes zoomIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes zoomOut { from { transform: scale(2); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes rotateIn { from { transform: rotate(-360deg) scale(0); opacity: 0; } to { transform: rotate(0) scale(1); opacity: 1; } }
+        @keyframes flipH { from { transform: perspective(400px) rotateY(90deg); opacity: 0; } to { transform: perspective(400px) rotateY(0); opacity: 1; } }
+        @keyframes flipV { from { transform: perspective(400px) rotateX(90deg); opacity: 0; } to { transform: perspective(400px) rotateX(0); opacity: 1; } }
+        @keyframes bounceIn {
+            0% { transform: scale(0.3); opacity: 0; }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.9); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes slideDiagonal { from { transform: translate(-100%, -100%); opacity: 0; } to { transform: translate(0, 0); opacity: 1; } }
+        @keyframes swingIn { 0% { transform: rotate(-45deg) translateX(-100%); opacity: 0; } 100% { transform: rotate(0) translateX(0); opacity: 1; } }
+        @keyframes blurIn { from { filter: blur(20px); opacity: 0; } to { filter: blur(0); opacity: 1; } }
+        @keyframes spiralIn { 
+            from { transform: rotate(-720deg) scale(0); opacity: 0; }
+            to { transform: rotate(0) scale(1); opacity: 1; }
+        }
+        @keyframes curtain { 
+            from { clip-path: inset(0 50% 0 50%); opacity: 0; } 
+            to { clip-path: inset(0 0 0 0); opacity: 1; }
+        }
+
+        /* --- GAYA NAVIGASI & KONTROL (REVISI HOVER DIMULAI) --- */
+
+        .slide-warp {
+            position: fixed; right: 2rem; top: 50%; 
+            transform: translateY(-50%); z-index: 1000;
+            display: flex; flex-direction: column; align-items: center; gap: 1.5rem; 
+            /* REVISI: Sembunyikan secara default */
+            opacity: 0; 
+            transition: opacity 0.5s ease;
+        }
+        
+        body:hover .slide-warp {
+            /* REVISI: Tampilkan saat body di-hover */
+            opacity: 1;
+        }
+
+        .navigation {
+            position: static; top: auto; left: auto; transform: none; 
+            z-index: 1000; display: flex; flex-direction: column; gap: 0.8rem;
+        }
+
+        .nav-dot {
+            width: 12px; height: 12px; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            cursor: pointer; transition: all 0.3s ease;
+            border: 2px solid rgba(255, 255, 255, 0.6);
+        }
+
+        .nav-dot.active {
+            background: #fff; transform: scale(1.3);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+
+        .nav-dot:hover {
+            background: rgba(255, 255, 255, 0.8); transform: scale(1.2);
+        }
+
+        .controls {
+            position: fixed; bottom: 2rem; left: 50%;
+            transform: translateX(-50%); z-index: 1000;
+            display: flex; gap: 1rem; align-items: center;
+            /* REVISI: Sembunyikan secara default */
+            opacity: 0; 
+            transition: opacity 0.5s ease;
+        }
+        
+        body:hover .controls {
+            /* REVISI: Tampilkan saat body di-hover */
+            opacity: 1;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            color: #fff; padding: 0.6rem 1.2rem;
+            border-radius: 50px; cursor: pointer; font-size: 1em; 
+            backdrop-filter: blur(10px); transition: all 0.3s ease;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.4); transform: translateY(-2px);
+        }
+
+        .pause-btn { font-weight: 500; }
+        .pause-btn.paused { background: rgba(255, 255, 255, 0.2); border: 2px solid rgba(255, 255, 255, 0.5); }
+        .pause-btn.paused:hover { background: rgba(255, 255, 255, 0.4); }
+
+        .slide-counter {
+            position: fixed; bottom: 2rem; right: 2rem; z-index: 1000;
+            background: rgba(0, 0, 0, 0.5); color: #fff;
+            padding: 1rem 1.5rem; border-radius: 50px;
+            backdrop-filter: blur(10px); font-size: 1em; 
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            /* REVISI: Sembunyikan secara default */
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        
+        body:hover .slide-counter {
+            /* REVISI: Tampilkan saat body di-hover */
+            opacity: 1;
+        }
+        
+        .manage-btn {
+            position: static; top: auto; right: auto; z-index: 1000;
+            width: 40px; height: 40px; border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.6);
+            color: #fff; cursor: pointer; font-size: 1.5em; 
+            backdrop-filter: blur(10px); transition: all 0.3s ease;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 300; line-height: 1;
+        }
+        
+        /* Gaya untuk tombol nav multifungsi */
+        #jumpNavBtn {
+            font-size: 1.8em; /* Ukuran font lebih besar untuk simbol < dan > */
+            line-height: 0.9;
+        }
+
+
+        .manage-btn:hover {
+            background: rgba(255, 255, 255, 0.8); transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+
+        /* --- GAYA MODAL --- */
+
+        .modal {
+            display: none; position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.8); z-index: 2000;
+            justify-content: center; align-items: center;
+        }
+
+        .modal.active { display: flex; }
+
+        .modal-content {
+            background: #fff; padding: 20px 30px; 
+            border-radius: 10px; max-width: 800px; /* Lebar lebih besar untuk tabel */
+            width: 95%; max-height: 80vh; 
+            overflow-y: auto; font-size: 10px; 
+            font-family: 'Poppins', sans-serif; 
+        }
+
+        .modal-header {
+            display: flex; justify-content: flex-start; align-items: center;
+            position: sticky; top: 0; background: #fff; z-index: 2050; 
+            padding-top: 8px; padding-bottom: 8px; 
+        }
+
+        .modal-header h2 { margin: 0; color: #333; font-size: 18px; }
+
+        .table-wrapper {
+            max-height: 400px; overflow-y: auto; margin-bottom: 0; 
+            border: 1px solid #ddd; border-radius: 6px; 
+        }
+
+        .manage-table { width: 100%; border-collapse: collapse; }
+
+        .manage-table th {
+            background: #192a56; font-weight: 600; color: white;
+            position: sticky; top: 0; z-index: 10; 
+        }
+
+        .manage-table th, .manage-table td {
+            padding: 10px 10px; text-align: left; border-bottom: 1px solid #ddd;
+        }
+        
+        /* CSS Penyesuaian Kolom - REVISI 1: Lebar File Name (200px) dan URL (250px) FIXED */
+        .manage-table th:nth-child(1), .manage-table td:nth-child(1) { width: 50px; text-align: center; } /* Page */
+        .manage-table th:nth-child(2), .manage-table td:nth-child(2) { width: 200px; min-width: 200px; max-width: 200px; } /* File Name (Fixed) */
+        .manage-table th:nth-child(3), .manage-table td:nth-child(3) { width: 85px; min-width: 85px; max-width: 85px; text-align: center; } /* Transition */
+        .manage-table th:nth-child(4), .manage-table td:nth-child(4) { width: 50px; min-width: 50px; max-width: 50px; text-align: center; } /* Status */
+        .manage-table th:nth-child(5), .manage-table td:nth-child(5) { width: 50px; min-width: 50px; max-width: 50px; text-align: center; } /* Aksi */
+        .manage-table th:nth-child(6), .manage-table td:nth-child(6) { width: 50px; min-width: 50px; text-align: center; } /* URL (Fixed) */
+        
+        .manage-table tr:last-child td { border-bottom: none; }
+
+        .manage-table input, .manage-table select {
+            padding: 6px; border: 1px solid #ddd;
+            border-radius: 4px; font-size: 10px; 
+        }
+
+        .url-input-group { 
+            /* Perubahan untuk mengakomodasi teks tautan */
+            display: flex; /* REVISI: Mengganti block menjadi flex untuk centering */
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+        .url-input-group .url-input { flex-grow: 1; margin: 0; width: 100%; }
+
+        /* Gaya untuk nama file di modal - Sudah ada ellipsis di .file-name-text */
+        .file-input-display {
+            display: flex; align-items: center; justify-content: space-between; 
+            gap: 4px; padding: 4px; border: 1px solid #ddd; border-radius: 4px;
+            font-size: 10px; background-color: #f9f9f9; overflow: hidden; 
+            width: 100%;
+        }
+
+        .file-name-text {
+            color: #192a56; font-weight: 500; overflow: hidden; 
+            text-overflow: ellipsis; white-space: nowrap; flex-grow: 1; 
+            line-height: 1; min-width: 0; 
+        }
+        
+        .file-select-btn {
+            background: #e0e0e0; color: #333; border: 1px solid #ccc;
+            border-radius: 4px; cursor: pointer; line-height: 1;
+            font-size: 10px; font-weight: bold; transition: background 0.2s;
+            height: 22px; display: flex; align-items: center;
+            justify-content: center; flex-shrink: 0;
+            padding: 2px 6px;
+        }
+
+        .file-select-btn:hover { background: #d0d0d0; }
+
+        .delete-btn {
+            background: none; color: black; border: none;
+            padding: 5px 8px; border-radius: 4px;
+            cursor: pointer; font-size: 12px; line-height: 1;
+            transition: opacity 0.2s, color 0.2s;
+        }
+
+        .delete-btn:hover { color: #ff0000; }
+        
+        .add-slide-btn-wrapper {
+            display: flex; justify-content: flex-start; margin-top: 15px; 
+            padding-right: 32px; 
+        }
+        
+        .modal-footer {
+            justify-content: flex-end; margin-top: 0; 
+            position: sticky; bottom: -32px; background: #fff; 
+            z-index: 2050; padding-top: 5px; padding-bottom: 0;
+            display: block; 
+        }
+        
+        .save-controls {
+            display: flex; justify-content: flex-end; gap: 10px; 
+            width: 100%; align-items: center; 
+        }
+
+        .cancel-btn {
+            padding: 10px 20px; background: #ccc; 
+            color: #333; border: none; border-radius: 5px;
+            cursor: pointer; font-size: 14px; transition: background 0.2s;
+            width: auto; 
+        }
+
+        .cancel-btn:hover { background: #bbb; }
+
+        .add-slide-btn {
+            background: #a28e2a; color: white; border: none;
+            padding: 10px 20px; border-radius: 5px;
+            cursor: pointer; font-size: 14px; transition: background 0.2s;
+        }
+
+        .add-slide-btn:hover { background: #d9c756; }
+
+        .save-btn {
+            padding: 10px 20px; background: #4CAF50;
+            color: white; border: none; border-radius: 5px;
+            cursor: pointer; font-size: 14px; width: auto; 
+        }
+
+        .save-btn:hover { background: #45a049; }
+
+        /* REVISI 2: Gaya untuk tampilan URL (sekarang ikon) */
+        .url-display-text {
+            /* Dihapus karena diganti ikon */
+            display: none; 
+        }
+
+        /* --- PENAMBAHAN GAYA UNTUK IKON URL BARU --- */
+        .url-icon-link {
+            text-decoration: none; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px; 
+            height: 30px; 
+            border-radius: 50%;
+            background-color: #f0f0f0;
+            transition: background-color 0.2s;
+        }
+
+        .url-icon-link:hover {
+            background-color: #e0e0e0;
+        }
+
+        .url-icon {
+            font-size: 18px; 
+            line-height: 1;
+            color: #333; /* Warna ikon mata yang netral */
+            display: block;
+        }
+        /* --- AKHIR PENAMBAHAN GAYA IKON URL --- */
+
+        /* --- GAYA STATUS UPLOAD --- */
+
+        .status-cell { width: 60px; text-align: center; }
+
+        .loading-circle {
+            display: inline-block; width: 14px; height: 14px;
+            border: 2px solid #f3f3f3; border-radius: 50%;
+            border-top: 2px solid #3498db; 
+            animation: spin 1s linear infinite; margin-right: 4px; 
+        }
+        
+        .status-pending { color: orange; font-size: 16px; font-weight: bold; line-height: 1; }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .status-success { color: #4CAF50; font-size: 16px; font-weight: bold; line-height: 1; }
+        .status-failure { color: #ff4d4d; font-size: 16px; font-weight: bold; line-height: 1; }
+        
+        /* Gaya untuk Loading Bar di Modal Footer */
+        .loading-bar-wrapper {
+            width: 150px; height: 10px; background-color: #e0e0e0; 
+            border-radius: 5px; overflow: hidden; display: flex; 
+            align-items: center; margin-right: 10px;
+        }
+
+        .loading-bar {
+            height: 100%; width: 0%; background-color: #4CAF50; 
+            transition: width 0.3s ease; 
+        }
+        
+        /* Gaya untuk status server */
+        .status-message {
+            color: #333;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* --- MEDIA QUERIES --- */
+
+        @media (max-width: 768px) {
+            .slide-warp { right: 1rem; gap: 1rem; }
+            .navigation { gap: 0.6rem; }
+            .nav-dot { width: 10px; height: 10px; }
+            .controls { bottom: 1rem; }
+            .control-btn { padding: 0.5rem 1rem; font-size: 0.9em; }
+            .slide-counter { bottom: 1rem; right: 1rem; padding: 0.8rem 1.2rem; font-size: 1em; }
+            .manage-btn { width: 35px; height: 35px; font-size: 1.3em; }
+            .modal-content { font-size: 12px; max-width: 90%; }
+            .manage-table th, .manage-table td { padding: 8px; font-size: 12px; }
+            .manage-table input, .manage-table select { font-size: 12px; }
+            .table-wrapper { max-height: 200px; }
+            .add-slide-btn-wrapper { margin-top: 8px; margin-bottom: 8px; padding-right: 0; }
+            .modal-footer { padding-top: 8px; }
+            .save-controls { flex-direction: column; gap: 8px; }
+            .add-slide-btn, .cancel-btn, .save-btn { width: 100%; font-size: 14px; }
+            
+            /* Penyesuaian Kolom Mobile */
+            .manage-table th:nth-child(1), .manage-table td:nth-child(1) { width: 40px; } 
+            .manage-table th:nth-child(2), .manage-table td:nth-child(2) { width: 120px; } 
+            .manage-table th:nth-child(6), .manage-table td:nth-child(6) { min-width: 120px; }
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="modal" id="manageModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Kelola Halaman</h2>
+            </div>
+            
+            <div class="table-wrapper">
+                <table class="manage-table">
+                    <thead>
+                        <tr>
+                            <th>Page</th>
+                            <th>File Name</th> <th>Transition</th> 
+                            <th>Status</th> <th>Aksi</th> 
+                            <th>URL</th> </tr>
+                    </thead>
+                    <tbody id="pageTableBody">
+                    </tbod>
+                </table>
+            </div>
+            
+            <div class="add-slide-btn-wrapper">
+                <button class="add-slide-btn" onclick="addNewSlide()">+ Add Slide</button>
+            </div>
+            
+            <div class="modal-footer">
+                <div class="save-controls">
+                    <span id="serverStatus" class="status-message" style="display: none;"></span>
+                    <button class="cancel-btn" onclick="cancelModal()">Batal</button>
+                    <button class="save-btn" onclick="savePages()">Simpan</button>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <div class="slide-counter">
+        <span id="current">0</span> / <span id="total">0</span>
+    </div>
+
+    <div class="slide-warp">
+        <button class="manage-btn" onclick="openModal()">+</button>
+
+        <button 
+            class="manage-btn nav-btn" 
+            id="jumpNavBtn" 
+            onclick="jumpSlide()" 
+            title="Jump 10 Slides"
+            style="display: none;" 
+        >
+            &gt;
+        </button>
+        <div class="navigation">
+            </div>
+    </div>
+
+    <div class="controls">
+        <button class="control-btn" onclick="prevSlide()">◀ Previous</button>
+        <button class="control-btn pause-btn" id="pauseBtn" onclick="toggleAutoSlide()">⏸ Pause</button>
+        <button class="control-btn" onclick="nextSlide()">Next ▶</button>
+    </div>
+
+    <script>
+        // --- KONFIGURASI APLIKASI ---
+        const API_URL = 'http://localhost:3000/api/company-data';
+        
+        let currentSlide = 0;
+        let slides = document.querySelectorAll('.slide');
+        let navDotsContainer = document.querySelector('.navigation');
+        let navDots; 
+        let totalSlides = slides.length;
+        let isTransitioning = false;
+        let autoSlideInterval;
+        const autoSlideDelay = 5000;
+        let isPaused = false;
+        
+        // Elemen DOM
+        const pauseBtn = document.getElementById('pauseBtn');
+        const slideCounterCurrent = document.getElementById('current');
+        const slideCounterTotal = document.getElementById('total');
+        const manageModal = document.getElementById('manageModal');
+        const pageTableBody = document.getElementById('pageTableBody');
+        const serverStatus = document.getElementById('serverStatus');
+
+        const MAX_NAV_DOTS = 10; // Batasan titik navigasi
+        const jumpNavBtn = document.getElementById('jumpNavBtn'); // Elemen tombol jump
+        
+        const transitionNames = [
+            'Fade In', 'Slide Left', 'Slide Right', 'Slide Up', 
+            'Slide Down', 'Zoom In', 'Zoom Out', 'Rotate In', 
+            'Flip Horizontal', 'Flip Vertical', 'Bounce In', 'Slide Diagonal', 
+            'Swing In', 'Blur In', 'Spiral In', 'Curtain'
+        ];
+
+        let slideData = [];
+        let slideDataBackup = []; 
+        let currentSlideBackup = 0; 
+        
+        // FUNGSI BANTU: Mengambil nama file dari URL
+        function getFilenameFromUrl(url) {
+            if (!url || url.trim() === '') return 'Choose File';
+            const urlParts = url.split('/');
+            let filename = urlParts[urlParts.length - 1].split('?')[0];
+            return filename.length > 30 ? filename.substring(0, 27) + '...' : filename;
+        }
+
+
+        // --- INISIALISASI DATA SLIDE DARI SERVER ---
+        async function initializeSlideData() {
+            slideData = [];
+            
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch data, status: ${response.status}`);
+                }
+                const result = await response.json();
+
+                if (result.success && Array.isArray(result.data) && result.data.length > 0) {
+                    // REVISI: Ambil data lengkap (page, filename, url, transitionIndex)
+                    slideData = result.data.map((item, index) => ({
+                        page: item.page || (index + 1), // Tambahkan page
+                        filename: item.filename || getFilenameFromUrl(item.url), // Tambahkan filename
+                        url: item.url,
+                        transitionIndex: item.transitionIndex,
+                        status: 'success',
+                        pendingFile: null
+                    }));
+                    console.log(`[INIT] ${slideData.length} slides loaded from API.`);
+                } else {
+                    throw new Error("API returned no valid slide data.");
+                }
+
+            } catch (error) {
+                console.warn(`[INIT] Error loading data from ${API_URL}. Falling back to placeholder.`, error);
+                // Fallback ke placeholder jika server tidak berjalan atau data kosong
+                slideData.push({
+                    page: 1, // Tambahkan page
+                    filename: getFilenameFromUrl('https://i.ibb.co/bvkx6fN/placeholder-slide.png'), // Tambahkan filename
+                    url: 'https://i.ibb.co/bvkx6fN/placeholder-slide.png', 
+                    transitionIndex: 0, 
+                    status: 'success',
+                    pendingFile: null 
+                });
+            }
+
+            totalSlides = slideData.length;
+            
+            // Buat DOM setelah data terisi
+            finalizeSave(); 
+            
+            // Inisialisasi backup
+            slideDataBackup = JSON.parse(JSON.stringify(slideData));
+        }
+
+        // --- FUNGSI UTAMA NAVIGASI DAN KONTROL ---
+
+        function updateCounter() {
+            slideCounterCurrent.textContent = currentSlide + 1;
+        }
+
+        function startAutoSlide() {
+            if (isPaused) return;
+            stopAutoSlide();
+            autoSlideInterval = setInterval(() => {
+                nextSlide();
+            }, autoSlideDelay);
+        }
+
+        function stopAutoSlide() {
+            if (autoSlideInterval) {
+                clearInterval(autoSlideInterval);
+            }
+        }
+
+        function resetAutoSlide() {
+            if (isPaused) return;
+            stopAutoSlide();
+            startAutoSlide();
+        }
+
+        function toggleAutoSlide() {
+            isPaused = !isPaused;
+            if (isPaused) {
+                stopAutoSlide();
+                pauseBtn.innerHTML = '▶ Play';
+                pauseBtn.classList.add('paused');
+            } else {
+                startAutoSlide();
+                pauseBtn.innerHTML = '⏸ Pause';
+                pauseBtn.classList.remove('paused');
+            }
+        }
+        
+        /* REVISI FUNGSI buildNavigationDots() */
+        function buildNavigationDots() {
+            navDotsContainer.innerHTML = '';
+            
+            const numDotsToShow = MAX_NAV_DOTS;
+            // Menghitung indeks awal blok saat ini (misal: 0, 10, 20, ...)
+            const currentBlockStart = Math.floor(currentSlide / MAX_NAV_DOTS) * MAX_NAV_DOTS;
+
+            for (let i = 0; i < numDotsToShow; i++) {
+                const actualIndex = currentBlockStart + i;
+                if (actualIndex >= totalSlides) break;
+                
+                const newDot = document.createElement('div');
+                newDot.className = 'nav-dot';
+                
+                if (actualIndex === currentSlide) {
+                    newDot.classList.add('active');
+                }
+                
+                // Gunakan index aktual untuk navigasi
+                newDot.addEventListener('click', () => goToSlide(actualIndex)); 
+                navDotsContainer.appendChild(newDot);
+            }
+            navDots = document.querySelectorAll('.nav-dot');
+            
+            // Logika Tombol Jump Multifungsi 
+            
+            // Tentukan apakah kita berada di blok navigasi terakhir
+            const isLastBlock = currentBlockStart + MAX_NAV_DOTS >= totalSlides;
+
+            if (totalSlides > MAX_NAV_DOTS) {
+                jumpNavBtn.style.display = 'flex'; // Tampilkan tombol
+                
+                if (!isLastBlock) {
+                    // Jika BUKAN blok terakhir (misal: slide 1-10 dari 15), tampilkan '>' (Next 10)
+                    jumpNavBtn.innerHTML = '&gt;';
+                    jumpNavBtn.setAttribute('data-direction', 'next');
+                } else {
+                    // Jika blok terakhir (misal: slide 11-15 dari 15), tampilkan '<' (Previous 10)
+                    jumpNavBtn.innerHTML = '&lt;';
+                    jumpNavBtn.setAttribute('data-direction', 'prev');
+                }
+                
+            } else {
+                jumpNavBtn.style.display = 'none'; // Sembunyikan jika <= 10 slide
+            }
+        }
+
+        function goToSlide(index) {
+            slides = document.querySelectorAll('.slide'); 
+            
+            if (isTransitioning || index === currentSlide || index < 0 || index >= totalSlides || totalSlides === 0) return;
+            
+            isTransitioning = true;
+
+            if (slides[currentSlide]) slides[currentSlide].classList.remove('active');
+            
+            currentSlide = index;
+
+            if (slides[currentSlide]) slides[currentSlide].classList.add('active');
+            
+            updateCounter();
+            resetAutoSlide();
+            
+            // Panggil buildNavigationDots di sini agar dot dan tombol jump diupdate
+            buildNavigationDots(); 
+
+            setTimeout(() => {
+                isTransitioning = false;
+            }, 1000);
+        }
+
+        function nextSlide() {
+            const next = (currentSlide + 1) % totalSlides;
+            goToSlide(next);
+        }
+
+        function prevSlide() {
+            const prev = (currentSlide - 1 + totalSlides) % totalSlides;
+            goToSlide(prev);
+        }
+        
+        /* FUNGSI BARU jumpSlide() */
+        function jumpSlide() {
+            if (isTransitioning) return;
+
+            const direction = jumpNavBtn.getAttribute('data-direction');
+            const currentBlockStart = Math.floor(currentSlide / MAX_NAV_DOTS) * MAX_NAV_DOTS;
+            let nextIndex = 0;
+            
+            if (direction === 'next') {
+                // Lompat ke awal blok berikutnya (misal: dari slide 5 ke slide 10)
+                nextIndex = currentBlockStart + MAX_NAV_DOTS;
+                // Pastikan tidak melebihi slide terakhir
+                if (nextIndex >= totalSlides) {
+                    nextIndex = totalSlides - 1; 
+                }
+            } else if (direction === 'prev') {
+                // Lompat ke awal blok sebelumnya (misal: dari slide 15 ke slide 0)
+                nextIndex = Math.max(currentBlockStart - MAX_NAV_DOTS, 0);
+            }
+            
+            // Lompat ke slide pertama di blok baru
+            goToSlide(nextIndex);
+        }
+
+        // --- FUNGSI MODAL & PENGELOLAAN ---
+
+        function updateStatusDisplay(index, status) {
+            const row = pageTableBody.querySelector(`tr:nth-child(${index + 1})`);
+            if (!row) return;
+
+            const statusCell = row.querySelector('.status-cell');
+            let statusContent = '';
+            
+            if (status === 'success') {
+                statusContent = `<span class="status-success">✔️</span>`;
+            } else if (status === 'failure') {
+                statusContent = `<span class="status-failure">❌</span>`;
+            } else if (status === 'loading') {
+                statusContent = `<div class="loading-circle"></div>`;
+            } else if (status === 'pending') {
+                statusContent = `<span class="status-pending">...</span>`; 
+            } else {
+                statusContent = `<span class="status-success">✔️</span>`; 
+            }
+            
+            if (statusCell) {
+                statusCell.innerHTML = statusContent;
+            }
+        }
+
+        function showConfirmationDialog() {
+            return new Promise(resolve => {
+                const dialogHtml = `
+                    <div id="customConfirmModal" class="modal active" style="z-index: 3000; background: rgba(0, 0, 0, 0.7);">
+                        <div class="modal-content" style="max-width: 400px; padding: 30px; text-align: center;">
+                            <h2 style="color: #4CAF50; font-size: 20px; margin-bottom: 15px;">Pembaruan Berhasil!</h2>
+                            <p style="font-size: 14px; margin-bottom: 25px; color: #333;">Company Profile telah diupdate</p>
+                            <button id="confirmReadyBtn" style="
+                                padding: 10px 30px; 
+                                background: #4CAF50; 
+                                color: white; 
+                                border: none; 
+                                border-radius: 5px; 
+                                cursor: pointer; 
+                                font-size: 16px;
+                            ">Siap!</button>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.insertAdjacentHTML('beforeend', dialogHtml);
+                
+                document.getElementById('confirmReadyBtn').onclick = () => {
+                    document.getElementById('customConfirmModal').remove();
+                    resolve(true);
+                };
+            });
+        }
+
+
+        function openModal() {
+            slideDataBackup = JSON.parse(JSON.stringify(slideData));
+            currentSlideBackup = currentSlide;
+            
+            pageTableBody.innerHTML = '';
+            
+            slideData.forEach((data, index) => {
+                const transitionSelect = transitionNames.map((name, idx) => 
+                    `<option value="${idx}" ${data.transitionIndex === idx ? 'selected' : ''}>${name}</option>`
+                ).join('');
+
+                let statusContent = '';
+                if (data.status === 'success') {
+                    statusContent = `<span class="status-success">✔️</span>`;
+                } else if (data.status === 'failure') {
+                    statusContent = `<span class="status-failure">❌</span>`;
+                } else if (data.status === 'loading') {
+                    statusContent = `<div class="loading-circle"></div>`;
+                } else if (data.status === 'pending') {
+                    statusContent = `<span class="status-pending">...</span>`;
+                } else {
+                    statusContent = `<span class="status-success">✔️</span>`;
+                }
+
+                // REVISI: Tentukan nama file yang akan ditampilkan
+                let filenameDisplayText = '';
+                if (data.pendingFile) {
+                    filenameDisplayText = data.pendingFile.name;
+                } else if (data.filename) {
+                    filenameDisplayText = data.filename;
+                } else {
+                    filenameDisplayText = getFilenameFromUrl(data.url);
+                }
+                
+                const filenameText = `<span class="file-name-text" title="${filenameDisplayText}">${filenameDisplayText}</span>`;
+                
+                // --- AWAL PERUBAHAN UNTUK IKON URL (PERMINTAAN USER) ---
+                let urlContent = '';
+
+                if (data.url.trim() !== '') {
+                    // Hanya tampilkan ikon '👁️' (link) jika URL tidak kosong
+                    urlContent = `<a 
+                                    href="${data.url}" 
+                                    target="_blank" 
+                                    title="Klik untuk melihat gambar: ${data.url}" 
+                                    class="url-icon-link"
+                                  >
+                                    <span class="url-icon">👁️</span>
+                                  </a>`;
+                } else {
+                    urlContent = '—'; // Tampilan default jika URL kosong
+                }
+                // --- AKHIR PERUBAHAN UNTUK IKON URL ---
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="text-align: center;">${index + 1}</td> <td style="font-size: 10px; color: #888; padding: 10px;">
+                        <div class="file-input-display">
+                            ${filenameText}
+                            
+                            <input 
+                                type="file" 
+                                accept="image/*" 
+                                id="fileInput-${index}" 
+                                data-index="${index}" 
+                                class="hidden-file-input" 
+                                onchange="handleFileSelect(event)" 
+                                style="display: none;"
+                            />
+                            
+                            <button 
+                                class="file-select-btn" 
+                                title="Pilih file gambar untuk diunggah"
+                                onclick="document.getElementById('fileInput-${index}').click();"
+                                style="flex-shrink: 0; padding: 2px 6px; height: auto;" 
+                            >
+                                Pilih
+                            </button>
+                        </div>
+                    </td>
+                    
+                    <td>
+                        <select data-index="${index}" class="transition-select">
+                            ${transitionSelect}
+                        </select>
+                    </td>
+                    
+                    <td class="status-cell">${statusContent}</td> <td>
+                        <button class="delete-btn" onclick="deleteSlideImmediate(${index})">🗑️</button>
+                    </td>
+
+                    <td> <div class="url-input-group">
+                        ${urlContent}
+                        </div>
+                    </td>
+                `;
+                pageTableBody.appendChild(row);
+            });
+            
+            manageModal.classList.add('active');
+        }
+
+        function closeModal() {
+            manageModal.classList.remove('active');
+        }
+        
+        function cancelModal() {
+            if (confirm("Perubahan yang belum disimpan akan hilang. Batalkan dan keluar?")) {
+                slideData = JSON.parse(JSON.stringify(slideDataBackup));
+                currentSlide = currentSlideBackup;
+                closeModal();
+                finalizeSave(); 
+            }
+        }
+        
+        function addNewSlide() {
+            const newIndex = slideData.length;
+
+            slideData.push({
+                page: newIndex + 1, // REVISI: Tambahkan Page
+                filename: 'Choose File', // REVISI: Default filename
+                url: '', 
+                transitionIndex: 0, 
+                status: 'pending', 
+                pendingFile: null
+            });
+
+            openModal(); 
+            
+            const wrapper = document.querySelector('.table-wrapper');
+            if (wrapper) {
+                wrapper.scrollTop = wrapper.scrollHeight; 
+            }
+        }
+
+        function deleteSlideImmediate(index) {
+            if (slideData.length <= 1) {
+                alert("Tidak dapat menghapus slide terakhir.");
+                return;
+            }
+            
+            slideData.splice(index, 1);
+            
+            // REVISI: Perbarui properti page setelah penghapusan
+            slideData.forEach((data, idx) => {
+                data.page = idx + 1;
+            });
+
+            openModal(); 
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            const index = parseInt(event.target.getAttribute('data-index'));
+            
+            if (file && file.type.startsWith('image/')) {
+                slideData[index].pendingFile = file; 
+                slideData[index].status = 'pending'; 
+                slideData[index].url = ''; // Kosongkan URL saat file dipilih
+                slideData[index].filename = file.name; // REVISI: Simpan nama file
+                
+                openModal(); 
+                
+                event.target.value = '';
+            } else if (file) {
+                alert("File yang dipilih bukan gambar.");
+            }
+        }
+        
+        // --- FUNGSI UNGGAH KE IMGBB ---
+        
+        function getImgbbKey() {
+            // !!! PENTING: Ganti '21f90604d6de208720ee6830cf60a73a' dengan kunci API ImgBB Anda yang sebenarnya
+            return '21f90604d6de208720ee6830cf60a73a'; 
+        }
+
+        async function uploadToImgbb(file) {
+            const apiKey = getImgbbKey();
+            if (apiKey === 'RIZKY_KURNIA_RUBIANTO_YANG_BIKIN_WEBSITE_INI' || !apiKey) {
+                console.error("Kunci API ImgBB belum diatur atau masih menggunakan placeholder. Unggahan tidak akan dilakukan.");
+                return null; 
+            }
+
+            const formData = new FormData();
+            formData.append("image", file); 
+
+            try {
+                const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Gagal mengunggah file ke ImgBB:', response.status, errorText);
+                    return null;
+                }
+
+                const data = await response.json();
+                
+                if (data.data && data.data.url) {
+                    // Mendapatkan URL asli (misal: https://i.ibb.co/XYZ/image.jpg)
+                    let originalUrl = data.data.url; 
+                    
+                    // Menganalisis dan Mengganti Awalan Sesuai Permintaan
+                    if (originalUrl.startsWith('https://i.ibb.co/')) {
+                        // REVISI KRITIS: Ganti i.ibb.co/ menjadi i.ibb.co.com/
+                        const path = originalUrl.substring('https://i.ibb.co/'.length);
+                        // URL yang dikembalikan ke slideData akan memiliki awalan yang diminta
+                        // PERINGATAN: Domain 'i.ibb.co.com' kemungkinan besar TIDAK VALID dan akan menyebabkan gambar tidak tampil.
+                        return 'https://i.ibb.co.com/' + path; 
+                    }
+                    
+                    // Jika format URL tidak terduga, kembalikan URL yang telah diubah dengan awalan yang diminta
+                    return originalUrl.replace('https://', 'https://i.ibb.co.com/');
+                    
+                } else {
+                    console.error('Unggahan berhasil, tetapi tidak ditemukan URL yang valid di respons:', data);
+                    return null;
+                }
+            } catch (error) {
+                console.error('Terjadi kesalahan jaringan/fetch saat mengunggah:', error);
+                return null;
+            }
+        }
+
+        async function processUploads() {
+            const filesPending = slideData.filter(data => data.pendingFile);
+            const totalFiles = filesPending.length;
+            let uploadedCount = 0;
+            const bar = document.getElementById('uploadLoadingBar');
+
+            for (let i = 0; i < slideData.length; i++) {
+                const data = slideData[i];
+                
+                if (data.pendingFile) {
+                    updateStatusDisplay(i, 'loading'); 
+                    
+                    const imgbbUrl = await uploadToImgbb(data.pendingFile);
+                            
+                    if (imgbbUrl) {
+                        data.status = 'success';
+                        data.url = imgbbUrl;
+                        // Nama file sudah disimpan di handleFileSelect
+                        console.log(`Unggah file ${data.pendingFile.name} berhasil. URL baru: ${imgbbUrl}`);
+                    } else {
+                        data.status = 'failure';
+                        // Jika gagal, kembalikan filename/url ke kondisi sebelum upload
+                        // Gunakan filename/url dari backup untuk kondisi "No File/Placeholder"
+                        const backupData = slideDataBackup[i] || {};
+                        data.filename = backupData.filename || 'Upload Failed';
+                        data.url = backupData.url || ''; 
+                        console.error(`Gagal mengunggah file ${data.pendingFile.name}.`);
+                    }
+                    data.pendingFile = null; 
+                    uploadedCount++;
+                    
+                    if (bar) {
+                        bar.style.width = `${(uploadedCount / totalFiles) * 100}%`;
+                    }
+                    
+                    updateStatusDisplay(i, data.status);
+                }
+            }
+        }
+        
+        // --- FUNGSI REVISI: SIMPAN DATA KE SERVER LOCALHOST ---
+        async function saveToServer(data) {
+            const url = API_URL; // http://localhost:3000/api/company-data
+            
+            // REVISI: Kirim properti yang lebih lengkap: page, filename, url, transitionIndex
+            const dataToSave = data.map(({ page, filename, url, transitionIndex }) => ({ 
+                page, 
+                filename, 
+                url, 
+                transitionIndex 
+            })); 
+
+            serverStatus.style.display = 'inline';
+            serverStatus.innerHTML = `<div class="loading-circle"></div> Mengirim ke Server...`;
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(dataToSave),
+                });
+                
+                if (response.ok || response.status === 200 || response.status === 201) { 
+                    serverStatus.innerHTML = `<span class="status-success">✔️</span> Server Success`;
+                    return true;
+                } else {
+                    // Coba baca error dari body
+                    const errorBody = await response.text(); 
+                    serverStatus.innerHTML = `<span class="status-failure">❌</span> Server Error (${response.status})`;
+                    console.error('Gagal menyimpan ke server. Status:', response.status, 'Body:', errorBody);
+                    alert(`Gagal menyimpan data ke server: ${response.status}. Pastikan server.js berjalan di port 3000.`);
+                    return false;
+                }
+            } catch (error) {
+                serverStatus.innerHTML = `<span class="status-failure">❌</span> Jaringan/Fetch Error`;
+                console.error('Error saat menyimpan ke server. Pastikan server.js berjalan:', error);
+                alert("Koneksi gagal! Pastikan Node.js server berjalan di http://localhost:3000.");
+                return false;
+            } finally {
+                setTimeout(() => {
+                    serverStatus.style.display = 'none';
+                }, 3000);
+            }
+        }
+        
+        // --- FUNGSI REVISI 2: savePages() ---
+        async function savePages() {
+            // Hapus const urlInputs = ... (Karena URL tidak dapat diedit)
+            const transitionSelects = document.querySelectorAll('#pageTableBody .transition-select');
+            const saveBtn = document.querySelector('.save-btn');
+            const cancelBtn = document.querySelector('.cancel-btn');
+            const saveControls = document.querySelector('.save-controls');
+
+            // 1. Kumpulkan data saat ini dari modal (Hanya transisi yang bisa berubah, URL tetap dari slideData)
+            const newSlideData = slideData.map((oldData, index) => {
+                const transitionSelect = transitionSelects[index]; // Ambil select yang relevan
+
+                let determinedFilename = '';
+                if (oldData.pendingFile) {
+                    // 1. Prioritas: Pending file
+                    determinedFilename = oldData.pendingFile.name;
+                } else if (oldData.url.trim() !== '') {
+                    // 2. Jika ada URL, gunakan filename yang sudah ada atau ambil dari URL
+                    determinedFilename = oldData.filename || getFilenameFromUrl(oldData.url);
+                } else {
+                    // 3. Default
+                    determinedFilename = 'No File/Placeholder';
+                }
+
+                return {
+                    page: index + 1,
+                    filename: determinedFilename,
+                    url: oldData.url, // <-- TETAPKAN URL YANG SUDAH ADA
+                    transitionIndex: parseInt(transitionSelect.value), // <-- AMBIL DARI SELECT
+                    status: oldData.status,
+                    pendingFile: oldData.pendingFile || null
+                };
+            });
+
+            slideData = newSlideData;
+            let uploadSuccess = true; 
+            let uploadPending = slideData.filter(data => data.pendingFile).length > 0;
+
+            if (uploadPending) {
+                const loadingBarWrapper = document.createElement('div');
+                loadingBarWrapper.className = 'loading-bar-wrapper';
+                loadingBarWrapper.id = 'uploadLoadingBarWrapper';
+                loadingBarWrapper.innerHTML = '<div id="uploadLoadingBar" class="loading-bar"></div>';
+                
+                saveControls.insertBefore(loadingBarWrapper, cancelBtn);
+                
+                saveBtn.disabled = true;
+                cancelBtn.disabled = true;
+                saveBtn.textContent = 'Mengunggah...';
+
+                await processUploads();
+                
+                if (slideData.some(data => data.status === 'failure')) {
+                    uploadSuccess = false;
+                }
+                
+                loadingBarWrapper.remove();
+                saveBtn.disabled = false;
+                cancelBtn.disabled = false;
+                saveBtn.textContent = 'Simpan';
+                
+                openModal(); // Muat ulang modal untuk menampilkan URL ImgBB baru dan status
+            } 
+            
+            // 2. Finalisasi DOM (Wajib)
+            finalizeSave(); 
+            
+            if (uploadSuccess) {
+                // 3. SIMPAN KE SERVER (Langkah baru)
+                saveBtn.disabled = true;
+                cancelBtn.disabled = true;
+                saveBtn.textContent = 'Menyimpan...';
+
+                const serverSaveSuccess = await saveToServer(slideData); 
+
+                saveBtn.disabled = false;
+                cancelBtn.disabled = false;
+                saveBtn.textContent = 'Simpan';
+
+                if (serverSaveSuccess) {
+                    // Update backup hanya jika server berhasil menyimpan
+                    slideDataBackup = JSON.parse(JSON.stringify(slideData));
+                    currentSlideBackup = currentSlide;
+                    
+                    await showConfirmationDialog(); 
+                    closeModal();
+                } else {
+                    // Server gagal menyimpan, biarkan modal terbuka untuk debug/retry
+                    // Data di slideData tetap pada kondisi terakhir (sudah upload)
+                }
+            } else {
+                alert("Peringatan: Beberapa file gagal diunggah. Data tidak disimpan ke server.");
+            }
+        }
+        
+        // FUNGSI PERBAIKAN: MEMPERBARUI DOM SECARA EFISIEN
+        function finalizeSave() {
+            const container = document.body;
+            
+            totalSlides = slideData.length;
+            let tempCurrentSlide = currentSlide;
+            if (currentSlide >= totalSlides) {
+                currentSlide = Math.max(0, totalSlides - 1);
+                tempCurrentSlide = currentSlide;
+            }
+            
+            document.querySelectorAll('.slide').forEach(slide => slide.remove());
+            
+            slideData.forEach((data, index) => {
+                const newSlide = document.createElement('div');
+                newSlide.className = 'slide';
+                newSlide.setAttribute('data-slide', data.transitionIndex); 
+                // Jika URL kosong, tidak ada background-image yang diset
+                if (data.url.trim() !== '') {
+                    newSlide.style.backgroundImage = `url('${data.url}')`;
+                } else {
+                    newSlide.style.backgroundColor = '#ccc'; // Placeholder visual
+                }
+                
+                if (index === tempCurrentSlide) {
+                    newSlide.classList.add('active');
+                }
+                container.insertBefore(newSlide, document.querySelector('.slide-counter'));
+            });
+            
+            slides = document.querySelectorAll('.slide');
+            
+            buildNavigationDots();
+
+            slideCounterTotal.textContent = totalSlides;
+            
+            if (totalSlides > 0) {
+                updateCounter();
+                goToSlide(currentSlide); 
+                startAutoSlide();
+            } else {
+                stopAutoSlide();
+                slideCounterCurrent.textContent = 0;
+            }
+        }
+
+
+        // --- EVENT LISTENER UTAMA ---
+        
+        manageModal.addEventListener('click', (e) => {
+            if (e.target.id === 'manageModal') {
+                cancelModal();
+            }
+        });
+
+        let scrollTimeout;
+        document.addEventListener('wheel', (e) => {
+            if (manageModal.classList.contains('active')) return;
+            
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                if (e.deltaY > 0) {
+                    nextSlide();
+                } else {
+                    prevSlide();
+                }
+            }, 50);
+        });
+
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        document.addEventListener('touchstart', (e) => {
+            if (manageModal.classList.contains('active')) return;
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        });
+
+        document.addEventListener('touchend', (e) => {
+            if (manageModal.classList.contains('active')) return;
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+            const diffX = touchStartX - touchEndX;
+            const diffY = touchStartY - touchEndY;
+
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                if (Math.abs(diffX) > 50) {
+                    if (diffX > 0) {
+                        nextSlide();
+                    } else {
+                        prevSlide();
+                    }
+                }
+            } else {
+                if (Math.abs(diffY) > 50) {
+                    if (diffY > 0) {
+                        nextSlide();
+                    } else {
+                        prevSlide();
+                    }
+                }
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (manageModal.classList.contains('active')) return;
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                prevSlide();
+            }
+        });
+        
+        // --- INI HANYA DIPANGGIL SEKALI SAAT START ---
+        initializeSlideData();
+    </script>
+</body>
+</html>

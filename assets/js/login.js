@@ -4,11 +4,16 @@
   const form = document.getElementById("loginForm");
   if (!form) return;
 
-  // Akun dummy yang diizinkan
-  const VALID_USERNAME = "staff";
-  const VALID_PASSWORD = "0987651!";
+  // --- KEAMANAN RENDAH: Daftar Akun Disimpan di Sisi Klien ---
+  // PENTING: Daftar ini rentan dan bisa dilihat oleh siapa saja.
+  const VALID_USERS = [
+    { username: "busdev1", password: "arkara111!" },
+    { username: "busdev2", password: "arkara222@" },
+    { username: "busdev", password: "arkara888*" }
+  ];
 
-  // Elemen pesan error (buat kalau belum ada)
+  // --- Elemen UI dan State ---
+
   let msgEl = document.querySelector(".login-error");
   if (!msgEl) {
     msgEl = document.createElement("div");
@@ -18,9 +23,11 @@
     msgEl.style.fontSize = "14px";
     msgEl.style.textAlign = "left";
     msgEl.style.display = "none";
-    // letakkan di atas tombol submit (di dalam form)
+    
     const btn = form.querySelector("button[type='submit']");
-    btn.parentNode.insertBefore(msgEl, btn);
+    if (btn) {
+      btn.parentNode.insertBefore(msgEl, btn);
+    }
   }
 
   // Proteksi percobaan login
@@ -54,10 +61,26 @@
     }, 1000);
   }
 
+  // Fungsi untuk validasi user lokal
+  function isValidUser(username, password) {
+    return VALID_USERS.some(
+      user => user.username === username && user.password === password
+    );
+  }
+
+  // --- Cek Sesi Awal ---
+  // Jika user sudah login, langsung alihkan
+  if (localStorage.getItem('currentUser')) {
+      window.location.href = "landing.html";
+      return;
+  }
+  
+  // --- Event Listener ---
+
   form.addEventListener("submit", function (e) {
     e.preventDefault();
 
-    // cek locked
+    // 1. Cek Locked
     if (Date.now() < lockedUntil) {
       const remaining = Math.ceil((lockedUntil - Date.now()) / 1000);
       setError(`Terlalu banyak percobaan salah. Coba lagi dalam ${remaining} detik.`);
@@ -66,22 +89,29 @@
 
     const username = (document.getElementById("username")?.value || "").trim();
     const password = document.getElementById("password")?.value || "";
-
-    // validasi sederhana
-    if (username === VALID_USERNAME && password === VALID_PASSWORD) {
-      // login success
+    
+    // 2. Validasi Kredensial (Client-Side)
+    if (isValidUser(username, password)) {
+      // ✅ Login Sukses
       setError("");
-      // contoh: set flag di localStorage lalu redirect ke dashboard
-      try {
-        localStorage.setItem("isLoggedIn", "true");
-      } catch (err) { /* ignore jika storage diblokir */ }
+      attempts = 0; // Reset percobaan
 
-      // redirect (ganti dashboard.html sesuai strukturmu)
-      window.location.href = "dashboard.html";
+      // 3. Simpan username ke localStorage untuk sesi
+      try {
+        localStorage.setItem("currentUser", username);
+        // localStorage.setItem("isLoggedIn", "true"); // 'currentUser' sudah cukup
+      } catch (err) { 
+        console.warn("Gagal mengakses localStorage. Sesi tidak tersimpan.", err);
+      }
+
+      // 4. Redirect ke landing page
+      window.location.href = "landing.html";
+      
     } else {
-      // login gagal
+      // ❌ Login Gagal
       attempts += 1;
       const remainingAttempts = MAX_ATTEMPTS - attempts;
+      
       if (remainingAttempts > 0) {
         setError(`Username atau password salah. Sisa percobaan: ${remainingAttempts}.`);
       } else {

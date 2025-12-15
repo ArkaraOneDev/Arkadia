@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arkadia Page</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Playfair+Display:wght@400;600;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 15px 15px 0 15px; 
+            font-family: 'Poppins', sans-serif;
+            background-color: transparent; 
+            overflow-x: hidden; 
+            overflow-y: hidden; 
+            height: 100vh; 
+            box-sizing: border-box; 
+        }
+
+        .box1 {
+            margin: 0 0 0 0; 
+            width: 100%; 
+            max-width: none; 
+            height: 100px;
+            border-radius: 20px;
+            background: transparent; 
+            border: 0px solid white; 
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0 50px;
+            font-size: 20px;
+            font-weight: 600;
+            box-sizing: border-box; 
+            opacity: 0;
+            transform: translateY(-50px);
+            animation: slideDownFadeIn 0.5s ease-out forwards;
+        }
+
+        @keyframes slideDownFadeIn {
+            0% { opacity: 0; transform: translateY(-50px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        
+        .box1 .logo-image {
+            max-height: 120px;
+            height: auto;
+            width: auto;
+            object-fit: contain;
+        }
+        
+        @keyframes slideRightFadeIn {
+            0% { opacity: 0; left: -50px; }
+            100% { opacity: 1; left: 30px; }
+        }
+
+        @keyframes slideLeftFadeIn {
+            0% { opacity: 0; right: -50px; }
+            100% { opacity: 1; right: 30px; }
+        }
+
+        @keyframes slideLeftFadeOut {
+            0% { opacity: 1; left: 30px; }
+            100% { opacity: 0; left: -50px; }
+        }
+
+        @keyframes slideRightFadeOut {
+            0% { opacity: 1; right: 30px; }
+            100% { opacity: 0; right: -50px; }
+        }
+
+        @keyframes textFadeIn {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            0% { opacity: 0; transform: translateY(50px) rotate(0deg); }
+            100% { opacity: 1; transform: translateY(0) rotate(0deg); }
+        }
+
+        @keyframes rotateGlobe {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes slideRightToLeftFadeIn {
+            0% {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .box2 { 
+            padding: 0;
+            max-width: none; 
+            width: 100%; 
+            margin: 20px 0 0 0; 
+            background: transparent; 
+            border: 0px solid white; 
+            border-bottom: none;
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0);
+            border-radius: 10px 10px 0 0;
+            box-sizing: border-box;
+            color: white;
+            height: calc(100vh - 135px); 
+            overflow-y: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .globe-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+            pointer-events: none;
+        }
+        
+        .nine-box-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            height: auto; 
+            display: flex;
+            gap: 15px;
+            z-index: 20; 
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease-out; 
+        }
+
+        .box-wrapper {
+            /* Disesuaikan untuk 10 kotak: (100% - 135px total gap) / 10 */
+            flex: 1 1 calc((100% - 135px) / 10); 
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            opacity: 0;
+            transform: translateX(100px);
+            pointer-events: auto;
+            transition: transform 0.3s ease;
+            cursor: pointer;
+        }
+
+        .box-wrapper:hover {
+            transform: translateY(-5px) scale(1.1) !important;
+        }
+
+        .box-wrapper.animate {
+            animation: slideRightToLeftFadeIn 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+
+        .header-box {
+            background: rgba(212, 175, 55, 0.5);
+            backdrop-filter: blur(12px);
+            border: 0px solid rgba(255, 215, 0, 0.4);
+            border-radius: 8px;
+            padding: 8px 10px;
+            color: #d4af37;
+            font-family: 'Cinzel', serif;
+            font-size: 10px;
+            font-weight: 600;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .box-wrapper:hover .header-box {
+            border-color: #ffd700;
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+        }
+
+        .info-box {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(12px);
+            border: 0px solid rgba(255, 255, 255, 0.4);
+            border-radius: 10px;
+            padding: 10px;
+            color: #c0c0c0;
+            font-family: 'Poppins', sans-serif;
+            font-size: 10px;
+            font-weight: 400;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.2;
+        }
+        
+        .box-wrapper:hover .info-box {
+            border-color: #ffd700;
+            box-shadow: 0 8px 15px rgba(255, 215, 0, 0.3);
+        }
+
+        .info-box img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .wrapper-1.animate { animation-delay: 1.0s; }
+        .wrapper-2.animate { animation-delay: 0.9s; }
+        .wrapper-3.animate { animation-delay: 0.8s; }
+        .wrapper-4.animate { animation-delay: 0.7s; }
+        .wrapper-5.animate { animation-delay: 0.6s; }
+        .wrapper-6.animate { animation-delay: 0.5s; }
+        .wrapper-7.animate { animation-delay: 0.4s; }
+        .wrapper-8.animate { animation-delay: 0.3s; }
+        .wrapper-9.animate { animation-delay: 0.2s; }
+        .wrapper-10.animate { animation-delay: 0.1s; }
+
+        .side-box {
+            position: absolute;
+            width: 380px; 
+            height: calc(100% - 60px); 
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 0px solid rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+            padding: 20px;
+            box-sizing: border-box;
+            pointer-events: auto;
+            opacity: 0;
+            transition: opacity 0.8s ease, left 0.8s ease, right 0.8s ease;
+            overflow-y: auto; 
+        }
+
+        .side-box.left {
+            left: 30px; 
+            top: 30px; 
+            transform: none; 
+            animation: slideRightFadeIn 1.5s ease-out forwards; 
+            animation-delay: 1s; 
+        }
+
+        .side-box.right {
+            right: 30px;
+            top: 30px; 
+            transform: none; 
+            animation: slideLeftFadeIn 1.5s ease-out forwards; 
+            animation-delay: 1s; 
+        }
+
+        .fade-in-text {
+            opacity: 0;
+            animation: textFadeIn 1.2s ease-out forwards;
+        }
+
+        .fade-in-text.delay-1 { animation-delay: 0.3s; }
+        .fade-in-text.delay-2 { animation-delay: 0.6s; }
+        .fade-in-text.delay-3 { animation-delay: 0.9s; }
+        .fade-in-text.delay-4 { animation-delay: 1.2s; }
+        .fade-in-text.delay-5 { animation-delay: 1.5s; }
+        .fade-in-text.delay-6 { animation-delay: 1.8s; }
+        .fade-in-text.delay-7 { animation-delay: 2.1s; }
+        .fade-in-text.delay-8 { animation-delay: 2.4s; }
+        .fade-in-text.delay-9 { animation-delay: 2.7s; }
+        .fade-in-text.delay-10 { animation-delay: 3.0s; }
+
+        .globe-image {
+            max-width: 65%;
+            max-height: 65%;
+            object-fit: contain;
+            animation: fadeInUp 2s ease-out forwards 0.4s, rotateGlobe 250s linear infinite; 
+            opacity: 0;
+            transform-origin: center center;
+            position: relative;
+            top: 0%;
+            cursor: pointer;
+            transition: 
+                top 1.8s cubic-bezier(0.34, 1.56, 0.64, 1),
+                max-width 1.8s cubic-bezier(0.34, 1.56, 0.64, 1),
+                max-height 1.8s cubic-bezier(0.34, 1.56, 0.64, 1),
+                transform 1.8s cubic-bezier(0.34, 1.56, 0.64, 1),
+                filter 1.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+            filter: brightness(1) drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
+            pointer-events: auto;
+            z-index: 1;
+        }
+
+        .globe-image.zoomed {
+            max-width: 80%;
+            max-height: 160%;
+            top: 65%;
+            filter: brightness(1.1) drop-shadow(0 0 40px rgba(255, 215, 0, 0.4));
+            transform: scale(1.05);
+        }
+
+        .designer-text {
+            position: absolute;
+            bottom: 80px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: #c0c0c0;
+            font-family: 'Poppins', sans-serif;
+            font-size: 14px;
+            font-weight: 300;
+            letter-spacing: 1px;
+            z-index: 5;
+            opacity: 0; /* Dimulai dari 0 untuk dikontrol oleh JS dan fade in */
+            transition: opacity 0.8s ease; /* Transisi untuk fade in/out */
+            white-space: nowrap;
+        }
+
+        /* Menghapus .designer-text.hide */
+
+        .designer-text span {
+            opacity: 0;
+            animation: typewriterChar 0.1s ease-in forwards;
+        }
+
+        @keyframes typewriterChar {
+            to { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="box1">
+        <img src="assets/img/003_logo.png" alt="Arkadia Logo" class="logo-image">
+    </div>
+
+    <div class="box2" id="box2Container">
+        <div class="globe-container">
+            <img src="assets/img/globe.png" alt="Globe" class="globe-image" id="globeImage">
+            
+            <div class="designer-text" id="designerText"></div>
+            
+            <div class="nine-box-container" id="nineBoxContainer">
+                
+                <div class="box-wrapper wrapper-1" data-page="company.html">
+                    <div class="header-box">Company</div>
+                    <div class="info-box">
+                        <img src="assets/img/ico1.png" alt="Company Icon">
+                    </div>
+                </div>
+                
+                <div class="box-wrapper wrapper-2" data-page="teams.html">
+                    <div class="header-box">Teams</div>
+                    <div class="info-box">
+                        <img src="assets/img/ico2.png" alt="Teams Icon">
+                    </div>
+                </div>
+                
+                <div class="box-wrapper wrapper-3" data-page="dashboard.html">
+                    <div class="header-box">Dashboard</div>
+                    <div class="info-box">
+                        <img src="assets/img/ico3.png" alt="Dashboard Icon">
+                    </div>
+                </div>
+                
+                <div class="box-wrapper wrapper-4" data-page="projects.html">
+                    <div class="header-box">Projects</div>
+                    <div class="info-box">
+                        <img src="assets/img/ico4.png" alt="Projects Icon">
+                    </div>
+                </div>
+                
+                <div class="box-wrapper wrapper-5" data-page="reports.html">
+                    <div class="header-box">Reports</div>
+                    <div class="info-box">
+                        <img src="assets/img/ico5.png" alt="Reports Icon">
+                    </div>
+                </div>
+                
+                <div class="box-wrapper wrapper-6" data-page="logs.html">
+                    <div class="header-box">Logs</div>
+                    <div class="info-box">
+                        <img src="assets/img/ico6.png" alt="Logs Icon">
+                    </div>
+                </div>
+                
+                <div class="box-wrapper wrapper-7" data-page="news.html">
+                    <div class="header-box">News</div>
+                    <div class="info-box">
+                        <img src="assets/img/ico7.png" alt="News Icon">
+                    </div>
+                </div>
+                
+                <div class="box-wrapper wrapper-8" data-page="page1.html">
+                    <div class="header-box">Arkara Web GIS</div>
+                    <div class="info-box">
+                        <img src="assets/img/ico8.png" alt="Arkara Web GIS Icon">
+                    </div>
+                </div>
+                
+                <div class="box-wrapper wrapper-9" data-page="page2.html">
+                    <div class="header-box">Arkara One Dev</div>
+                    <div class="info-box">
+                        <img src="assets/img/ico9.png" alt="Arkara One Dev Icon">
+                    </div>
+                </div>
+
+                <div class="box-wrapper wrapper-10" data-page="page3.html">
+                    <div class="header-box">Arkara One Mine</div>
+                    <div class="info-box">
+                        <img src="assets/img/ico10.png" alt="Arkara One Mine Icon">
+                    </div>
+                </div>
+                </div>
+
+            <div class="side-box left" id="leftBox">
+                <h3 class="fade-in-text" style="color: #d4af37; font-family: 'Cinzel', serif; margin: 0 0 16px 0;">Introduction</h3>
+                <p class="fade-in-text delay-1" style="color: #c0c0c0; font-size: 15px; line-height: 1.6;">Arkadia adalah platform manajemen strategis yang dirancang untuk memonitor dan mempercepat proses investasi dinamis perusahaan Arkara dengan sistem tracking terintegrasi untuk berbagai skema investasi dan kolaborasi bisnis mulai dari Organic Business, Take Over, Joint Operation, Joint Venture, Partnership, Franchising dan Licensing.</p>
+                
+                <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(212, 175, 55, 0.3);">
+                    <h3 class="fade-in-text delay-2" style="color: #d4af37; font-family: 'Cinzel', serif; margin: 0 0 16px 0;">One Dashboard. One Report. Real-time Progress.</h3>
+                    <p class="fade-in-text delay-3" style="color: #c0c0c0; font-size: 15px; line-height: 1.6;">Kelola skema investasi dengan visibilitas penuh dari tahap awal hingga akhir. Arkadia memastikan setiap langkah investasi terukur, transparan, dan on-track.</p>
+                </div>
+            </div>
+            
+            <div class="side-box right" id="rightBox">
+                <h3 class="fade-in-text" style="color: #d4af37; font-family: 'Cinzel', serif; margin: 0 0 16px 0;">CONTENTS</h3>
+                <ul style="list-style-type: disc; padding-left: 20px; color: #c0c0c0; font-size: 14.6px; line-height: 1.6;">
+                    <li class="fade-in-text delay-1">
+                        <strong style="color: #ffffff;">Company:</strong> Kelola dan Update Company Profile Arkara secara langsung.
+                    </li>
+                    <li class="fade-in-text delay-2">
+                        <strong style="color: #ffffff;">Teams:</strong> Kelola Struktur Organisasi Arkara agar sistem kerja lebih terarah.
+                    </li>
+                    <li class="fade-in-text delay-3">
+                        <strong style="color: #ffffff;">Dashboard:</strong> Seluruh Tracking Completion Proyek ditampilkan secara detail.
+                    </li>
+                    <li class="fade-in-text delay-4">
+                        <strong style="color: #ffffff;">Projects:</strong> Membuat & mengupdate informasi proyek serta upload dokumen penting.
+                    </li>
+                    <li class="fade-in-text delay-5">
+                        <strong style="color: #ffffff;">Reports:</strong> Buat Quick Review suatu proyek dan langsung export ke PDF.
+                    </li>
+                    <li class="fade-in-text delay-6">
+                        <strong style="color: #ffffff;">Logs:</strong> Cek aktivitas user, log data dapat menyimpan aktivitas selama 15 hari.
+                    </li>
+                    <li class="fade-in-text delay-7">
+                        <strong style="color: #ffffff;">News:</strong> Memantau berita terkini terkait sektor yang dipilih.
+                    </li>
+                    <li class="fade-in-text delay-8">
+                        <strong style="color: #ffffff;">Arkara Web GIS:</strong> Informasi Geospasial yang dikelola Team Operation & Development.
+                    </li>
+                    <li class="fade-in-text delay-9">
+                        <strong style="color: #ffffff;">Arkara One Dev:</strong> Informasi Laporan Geologi yang telah dilakukan Team Operation & Development.
+                    </li>
+                    <li class="fade-in-text delay-10">
+                        <strong style="color: #ffffff;">Arkara One Mine:</strong> Tools untuk menghitung produktivitas alat dan geometri tambang yang standard agar terwujud Good Mining Practice.
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const globeImage = document.getElementById('globeImage');
+        const box2Container = document.getElementById('box2Container');
+        const leftBox = document.getElementById('leftBox');
+        const rightBox = document.getElementById('rightBox');
+        const designerText = document.getElementById('designerText');
+        
+        const nineBoxContainer = document.getElementById('nineBoxContainer');
+        const boxWrappers = document.querySelectorAll('.box-wrapper');
+
+        // Typewriter effect
+        const text = "Web Design by Rizky Kurnia Rubianto";
+        
+        function typeWriter() {
+            // FADE IN: Set opacity kontainer menjadi 1 untuk memicu fade-in seluruh elemen kontainer.
+            designerText.style.opacity = '1'; 
+            
+            // Loop untuk menambahkan setiap karakter sebagai span dengan delay animasi
+            for (let i = 0; i < text.length; i++) {
+                const span = document.createElement('span');
+                span.textContent = text.charAt(i);
+                // Menentukan penundaan (delay) untuk setiap karakter agar tampak mengetik dari kiri ke kanan
+                span.style.animationDelay = `${(i * 0.05)}s`; 
+                designerText.appendChild(span);
+            }
+        }
+        
+        // Mulai typewriter setelah delay
+        setTimeout(typeWriter, 1000);
+
+        // Fungsi untuk mengirim pesan ke parent (landing.html)
+        function navigateToParent(pageName) {
+            if (window.parent) {
+                window.parent.postMessage({
+                    targetPage: pageName,
+                    fromIframe: true
+                }, '*'); 
+            }
+        }
+
+        function showNineBoxes() {
+            nineBoxContainer.style.opacity = '1';
+            boxWrappers.forEach(wrapper => {
+                wrapper.classList.remove('animate');
+                void wrapper.offsetWidth; 
+                wrapper.classList.add('animate');
+            });
+        }
+        
+        function hideNineBoxes() {
+            nineBoxContainer.style.opacity = '0';
+            boxWrappers.forEach(wrapper => {
+                wrapper.classList.remove('animate');
+            });
+        }
+
+        globeImage.addEventListener('click', function(e) {
+            e.stopPropagation();
+            if (!this.classList.contains('zoomed')) {
+                this.classList.add('zoomed');
+                
+                leftBox.style.animation = 'slideLeftFadeOut 0.8s ease-out forwards';
+                rightBox.style.animation = 'slideRightFadeOut 0.8s ease-out forwards';
+                
+                // === EFEK FADE OUT untuk teks "Web Design by..." ===
+                designerText.style.opacity = '0';
+                
+                showNineBoxes();
+            }
+        });
+        
+        // Loop melalui semua box-wrapper dan tambahkan event listener
+        boxWrappers.forEach(wrapper => {
+            wrapper.addEventListener('click', function(e) {
+                e.stopPropagation();
+                
+                // Ambil nilai data-page dari atribut elemen
+                const page = this.getAttribute('data-page');
+                
+                if (page) {
+                    navigateToParent(page);
+                } else {
+                    console.warn("Box clicked but no data-page attribute found.");
+                }
+            });
+        });
+        
+        box2Container.addEventListener('click', function(e) {
+            // Memeriksa apakah klik terjadi di luar globe/kotak, dan jika globe sedang di-zoom
+            if (e.target !== globeImage && !nineBoxContainer.contains(e.target) && globeImage.classList.contains('zoomed')) {
+                globeImage.classList.remove('zoomed');
+                
+                leftBox.style.animation = 'slideRightFadeIn 0.8s ease-out forwards';
+                rightBox.style.animation = 'slideLeftFadeIn 0.8s ease-out forwards';
+                
+                // === EFEK FADE IN kembali untuk teks "Web Design by..." ===
+                designerText.style.opacity = '1'; 
+                
+                hideNineBoxes();
+            }
+        });
+    </script>
+
+</body>
+</html>

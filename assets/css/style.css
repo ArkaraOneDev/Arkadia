@@ -1,4 +1,15 @@
-/* Fullscreen video background */
+/* ===================================
+   RESET & BASE STYLES
+   =================================== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ===================================
+   VIDEO BACKGROUND
+   =================================== */
 .bg-video {
   position: fixed;
   top: 0;
@@ -7,10 +18,12 @@
   height: 100%;
   object-fit: cover;        /* isi layar penuh, tetap proporsional */
   z-index: -1;              /* biar di belakang form */
-  filter: brightness(1);  /* opsional: bikin sedikit gelap biar form lebih jelas */
+  filter: brightness(1);    /* opsional: bikin sedikit gelap biar form lebih jelas */
 }
 
-/* Layout dasar */
+/* ===================================
+   LAYOUT DASAR
+   =================================== */
 body.login-page {
   margin: 0;
   height: 100vh;
@@ -26,15 +39,21 @@ body.login-page {
   z-index: 2;
 }
 
+/* ===================================
+   LOGO
+   =================================== */
 .logo {
   width: 300px;
   margin-bottom: 10px;
 }
 
+/* ===================================
+   LOGIN BOX
+   =================================== */
 .login-box {
-  background: rgba(255, 255, 255, 0.8); /* transparan sedikit biar video kelihatan */
+  background: rgba(255, 255, 255, 0.85); /* transparan sedikit biar video kelihatan */
   border-radius: 15px;
-  padding: 30px 40px;
+  padding: 35px 45px;
   width: 350px;
   margin-bottom: 100px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
@@ -43,51 +62,147 @@ body.login-page {
 .login-box p {
   font-size: 13px;
   color: #555;
-  margin-bottom: 20px;
-  line-height: 1.4;
+  margin: 0 0 25px 0;
+  line-height: 1.5;
 }
 
+/* ===================================
+   FORM ELEMENTS
+   =================================== */
 label {
   display: block;
   text-align: left;
-  margin-top: 10px;
-  color: #d8702e;
+  margin-top: 15px;
+  margin-bottom: 6px;
+  color: #a28e2a;
   font-weight: 500;
   font-size: 14px;
 }
 
 input {
   width: 100%;
-  padding: 10px;
-  margin-top: 5px;
+  padding: 12px 14px;
+  margin: 0;
   border: none;
   border-radius: 8px;
   background-color: #e6e6e6;
   font-size: 14px;
+  box-sizing: border-box;
+  transition: background-color 0.3s ease;
 }
 
+input:focus {
+  outline: none;
+  background-color: #ddd;
+}
+
+input::placeholder {
+  color: #999;
+}
+
+/* ===================================
+   BUTTON
+   =================================== */
 button {
   width: 100%;
   padding: 12px;
   margin-top: 20px;
-  background-color: #e3aa4b;
+  background-color: #a28e2a;
   color: #fff;
   font-weight: bold;
   font-size: 16px;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  transition: background 0.3s ease;
+  transition: background 0.3s ease, transform 0.1s ease;
 }
 
 button:hover {
-  background-color: #d6982f;
+  background-color: #d9c756;
 }
 
+button:active {
+  transform: scale(0.98);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ===================================
+   ERROR MESSAGE
+   =================================== */
 .login-error {
   color: #b00020;
   font-size: 14px;
   margin-top: 8px;
   text-align: left;
+  display: none;
 }
 
+.login-error.show {
+  display: block;
+}
+
+/* ===================================
+   RESPONSIVE DESIGN
+   =================================== */
+@media (max-width: 480px) {
+  .logo {
+    width: 200px;
+  }
+  
+  .login-box {
+    width: 90%;
+    padding: 25px 30px;
+    margin-bottom: 50px;
+  }
+  
+  .login-box p {
+    font-size: 12px;
+  }
+  
+  input {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  
+  button {
+    padding: 10px;
+    font-size: 15px;
+  }
+}
+
+/* ===================================
+   ANIMATION (Optional)
+   =================================== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.login-container {
+  animation: fadeIn 0.6s ease-out;
+}
+
+/* ===================================
+   ADDITIONAL UTILITIES
+   =================================== */
+.text-center {
+  text-align: center;
+}
+
+.mt-10 {
+  margin-top: 10px;
+}
+
+.mb-10 {
+  margin-bottom: 10px;
+}

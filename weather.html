@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peta Provinsi Indonesia dengan Data Cuaca</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* === SKEMA WARNA BARU ===
+           - Biru Navy (Aksen Primer): #192a56
+           - Biru Slate (Aksen Sekunder): #4682b4
+           - Kuning/Emas (Aksen Hangat): #efb23c
+        ======================== */
+        
+        /* MODIFIKASI: Terapkan font-family Poppins ke seluruh body */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* Container Utama untuk Layout Dua Kolom */
+        #app-container {
+            display: flex;
+            height: 100vh; 
+            margin: 0;
+            padding: 0;
+            overflow: hidden; 
+        }
+
+        /* Styling untuk Peta (75% lebar) */
+        #map {
+            flex-grow: 1; 
+            width: 75%;
+            height: 100%;
+        }
+
+        /* Styling untuk Panel Data (25% lebar) */
+        #data-panel {
+            width: 25%; 
+            height: 100%;
+            
+            /* LATAR BELAKANG GAMBAR */
+            background-image: url('assets/img/002_background.png');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-attachment: fixed;
+            
+            padding: 15px;
+            
+            /* Pengaturan Flex untuk kontrol tinggi elemen anak */
+            display: flex; 
+            flex-direction: column; 
+            
+            /* REVISI: Bayangan menggunakan Biru Navy */
+            box-shadow: -4px 0 10px rgba(25, 42, 86, 0.4); 
+        }
+        
+        /* Container Tabel yang dapat di-scroll */
+        /* REVISI: Background menggunakan Biru Slate Transparan */
+        #table-container {
+            flex-grow: 1; 
+            overflow-y: auto; 
+            overflow-x: hidden; 
+            margin-top: 15px;
+            margin-bottom: 30px; 
+            padding-right: 5px; 
+            background-color: rgba(70, 130, 180, 0.2); /* Biru Slate Transparan */
+            border-radius: 5px;
+        }
+
+        /* Styling untuk Judul Panel */
+        /* REVISI: Gradien header menggunakan Biru Navy/Slate */
+        #data-panel h2 {
+            margin-top: 0;
+            margin-bottom: 0; 
+            background: linear-gradient(90deg, #192a56, #4682b4);
+            box-shadow: 0 3px 14px rgba(0,0,0,0.2); 
+            padding: 5px;
+            border-radius: 16px;
+            color: #fff;
+            padding: 20px;
+            font-size: 1.2em;
+	        text-align: center;
+        }
+
+        /* Styling Tabel */
+        #weatherTable {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px; 
+        }
+        #weatherTable th, #weatherTable td {
+            border: 1px solid #ddd;
+            padding: 5px 8px; 
+            text-align: left;
+            background: rgba(255, 255, 255, 0.8); 
+        }
+        /* REVISI: Header Tabel menggunakan Emas/Mustard */
+        #weatherTable th {
+            background-color: #192a56; 
+            color: #ffffff; /* Teks Navy untuk kontras */
+            cursor: pointer; 
+            position: sticky; 
+            top: 0; 
+            z-index: 10; 
+        }
+        
+        /* Kolom Provinsi (Posisi ke-2) harus fleksibel */
+        #weatherTable th:nth-child(2), #weatherTable td:nth-child(2) { 
+            width: auto; 
+        }
+        
+        /* Kolom Cuaca dengan Teks */
+        .weather-text-cell { 
+            vertical-align: middle;
+            text-align: left;
+            white-space: normal; 
+        }
+
+        /* Styling Popup (dari kode asli) */
+        .leaflet-popup-content-wrapper {
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.95); 
+            box-shadow: 0 3px 14px rgba(0,0,0,0.4);
+        }
+        .leaflet-popup-content {
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+        }
+        .weather-popup-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center; 
+        }
+        .weather-popup-content .emoji-icon {
+            font-size: 50px; 
+            margin-right: 0; 
+            margin-bottom: 5px; 
+            width: 50px;
+            height: 50px;
+            text-align: center;
+            line-height: 50px;
+        }
+        .two-column-info {
+            display: grid;
+            grid-template-columns: auto 1fr; 
+            gap: 5px 15px; 
+            text-align: left;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+        .two-column-info strong {
+            text-align: right;
+            font-weight: 700;
+            white-space: nowrap; 
+        }
+        .two-column-info .label {
+            font-weight: 500;
+            color: #555;
+        }
+
+        .loading-marker {
+            font-size: 10px;
+            font-weight: bold;
+            color: gray;
+        }
+        .weather-emoji-marker {
+            font-size: 30px;
+            line-height: 30px;
+            width: 30px !important;
+            height: 30px !important;
+            text-align: center;
+            background: none; 
+            border: none;
+            box-shadow: none;
+        }
+        
+        .map-toggle-button {
+            position: absolute;
+            top: 15px;
+            right: 15px; 
+            z-index: 500;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.7);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            color: #333;
+        }
+        .map-toggle-button:hover {
+            background: rgba(255, 255, 255, 0.9);
+        }
+    </style>
+</head>
+<body>
+    
+    <div id="app-container">
+        <div id="map">
+            <button id="mapToggle" class="map-toggle-button">
+                Satellite Map
+            </button>
+        </div>
+        
+        <div id="data-panel">
+            <h2 id="panelTitle">Memuat Waktu...</h2>
+            <div id="table-container">
+                <table id="weatherTable">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            <th>Provinsi</th>
+                            <th>Cuaca</th> 
+                            <th id="tempHeader">Suhu (°C) 🔽</th>
+                        </tr>
+                    </thead>
+                    <tbody id="weatherTableBody">
+                        <tr><td colspan="4" style="text-align: center;">Memuat data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        // =========================================================================
+        // KUNCI API OPENWEATHERMAP
+        // =========================================================================
+        const API_KEY = '89fd0e2fee5bb6769ef4439e06371684'; 
+
+        // Data Provinsi (Tidak Berubah)
+        const provincesData = [
+            { id: 1, name: "Aceh", lat: 5.5400, long: 95.3300 },
+            { id: 2, name: "Sumatera Utara", lat: 3.5900, long: 98.6700 },
+            { id: 3, name: "Sumatera Barat", lat: -0.9200, long: 100.3600 },
+            { id: 4, name: "Riau", lat: 0.5000, long: 101.5500 },
+            { id: 5, name: "Jambi", lat: -1.6000, long: 103.6200 },
+            { id: 6, name: "Sumatera Selatan", lat: -2.9900, long: 104.7600 },
+            { id: 7, name: "Bengkulu", lat: -3.8000, long: 102.2700 },
+            { id: 8, name: "Lampung", lat: -5.4300, long: 105.2600 },
+            { id: 9, name: "Kepulauan Bangka Belitung", lat: -2.0800, long: 106.1100 },
+            { id: 10, name: "Kepulauan Riau", lat: 0.9400, long: 104.4600 },
+            { id: 11, name: "DKI Jakarta", lat: -6.2100, long: 106.8500 },
+            { id: 12, name: "Jawa Barat", lat: -6.9200, long: 107.6100 },
+            { id: 13, name: "Jawa Tengah", lat: -6.9900, long: 110.4200 },
+            { id: 14, name: "DI Yogyakarta", lat: -7.7900, long: 110.3700 },
+            { id: 15, name: "Jawa Timur", lat: -7.2600, long: 112.7400 },
+            { id: 16, name: "Banten", lat: -6.1200, long: 106.1600 },
+            { id: 17, name: "Bali", lat: -8.6500, long: 115.2200 },
+            { id: 18, name: "Nusa Tenggara Barat", lat: -8.5800, long: 116.1200 },
+            { id: 19, name: "Nusa Tenggara Timur", lat: -10.1700, long: 123.6000 },
+            { id: 20, name: "Kalimantan Barat", lat: -0.0200, long: 109.3400 },
+            { id: 21, name: "Kalimantan Tengah", lat: -2.2000, long: 113.9100 },
+            { id: 22, name: "Kalimantan Selatan", lat: -3.3200, long: 114.5900 },
+            { id: 23, name: "Kalimantan Timur", lat: -0.4900, long: 117.1500 },
+            { id: 24, name: "Kalimantan Utara", lat: 2.8400, long: 117.3700 },
+            { id: 25, name: "Sulawesi Utara", lat: 1.4700, long: 124.8400 },
+            { id: 26, name: "Sulawesi Tengah", lat: -0.8900, long: 119.8800 },
+            { id: 27, name: "Sulawesi Selatan", lat: -5.1400, long: 119.4300 },
+            { id: 28, name: "Sulawesi Tenggara", lat: -3.9800, long: 122.5200 },
+            { id: 29, name: "Gorontalo", lat: 0.5400, long: 123.0600 },
+            { id: 30, name: "Sulawesi Barat", lat: -2.6800, long: 118.8800 },
+            { id: 31, name: "Maluku", lat: -3.7000, long: 128.1800 },
+            { id: 32, name: "Maluku Utara", lat: 0.7800, long: 127.5900 },
+            { id: 33, name: "Papua", lat: -2.5300, long: 140.7200 },
+            { id: 34, name: "Papua Barat", lat: -0.8600, long: 134.0700 },
+            { id: 35, name: "Papua Selatan", lat: -8.4500, long: 140.4000 },
+            { id: 36, name: "Papua Tengah", lat: -3.3700, long: 135.4900 },
+            { id: 37, name: "Papua Pegunungan", lat: -4.1000, long: 138.8300 },
+            { id: 38, name: "Papua Barat Daya", lat: -0.8500, long: 131.2500 }
+        ];
+        
+        // =========================================================================
+        // PENGATURAN KONFIGURASI LEBAR KOLOM TABEL (MUDAH DIUBAH DI SINI)
+        // =========================================================================
+        const COLUMN_CONFIG = {
+            no: '30px',          // Kolom Nomor (Posisi ke-1)
+            province: 'auto',    // Kolom Provinsi (Posisi ke-2, dibiarkan 'auto' agar fleksibel)
+            weather: '110px',    // Kolom Cuaca (Posisi ke-3)
+            temp: '40px'         // Kolom Suhu (°C) (Posisi ke-4)
+        };
+
+        function applyTableColumnWidths() {
+            // Cek apakah style sudah ada, agar tidak diduplikasi jika fungsi dipanggil ulang
+            if (document.getElementById('dynamic-column-widths')) return;
+
+            const style = document.createElement('style');
+            style.id = 'dynamic-column-widths';
+            
+            const css = `
+                /* Kolom No (ke-1) */
+                #weatherTable th:nth-child(1), #weatherTable td:nth-child(1) {
+                    width: ${COLUMN_CONFIG.no};
+                    min-width: ${COLUMN_CONFIG.no};
+                    max-width: ${COLUMN_CONFIG.no};
+                    text-align: center !important;
+                }
+                
+                /* Kolom Cuaca (ke-3) */
+                #weatherTable th:nth-child(3), #weatherTable td:nth-child(3) { 
+                    width: ${COLUMN_CONFIG.weather};
+                    min-width: ${COLUMN_CONFIG.weather}; 
+                    max-width: ${COLUMN_CONFIG.weather}; 
+                    text-align: left;
+                }
+
+                /* Kolom Suhu (ke-4) */
+                #weatherTable th:nth-child(4), #weatherTable td:nth-child(4) { 
+                    width: ${COLUMN_CONFIG.temp};
+                    min-width: ${COLUMN_CONFIG.temp};
+                    max-width: ${COLUMN_CONFIG.temp};
+                    text-align: right;
+                    font-weight: bold;
+                    white-space: nowrap;
+                }
+            `;
+            style.appendChild(document.createTextNode(css));
+            document.head.appendChild(style);
+        }
+        // =========================================================================
+
+        // =========================================================================
+        // FUNGSI JUDUL WAKTU BERJALAN (MODIFIKASI FINAL)
+        // =========================================================================
+        function updatePanelTitleTime() {
+            const now = new Date();
+            
+            // Opsi format untuk tanggal dan waktu
+            const dateOptions = { 
+                day: '2-digit', 
+                month: 'short', // 'mmm'
+                year: 'numeric' 
+            };
+            const timeOptions = {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit', // Ditambahkan: 'ss'
+                hour12: false
+            };
+
+            // Bagian Tanggal (dd mmm yyyy)
+            const formattedDate = now.toLocaleDateString('en-US', dateOptions).replace(/,/g, ''); 
+            const dateParts = formattedDate.split(' ');
+            const dateString = `${dateParts[1]} ${dateParts[0]} ${dateParts[2]}`;
+
+            // Bagian Waktu (hh : mm : ss)
+            let formattedTime = now.toLocaleTimeString('id-ID', timeOptions);
+            
+            // Menghapus AM/PM atau teks zona waktu jika ada dan memastikan format hh:mm:ss
+            if (formattedTime.length > 8) { 
+                formattedTime = formattedTime.substring(0, 8);
+            }
+            
+            // Mengubah format hh:mm:ss menjadi hh : mm : ss (memasukkan spasi)
+            const timeString = formattedTime.replace(/:/g, ' : ');
+            
+            // Menggabungkan menjadi format dd mmm yyyy | hh : mm : ss
+            const finalTitle = `${dateString} | ${timeString}`;
+
+            // Perbarui elemen H2
+            const panelTitleElement = document.getElementById('panelTitle');
+            if (panelTitleElement) {
+                panelTitleElement.textContent = finalTitle;
+            }
+        }
+        
+        // Panggil fungsi saat dimuat dan atur interval 1 detik
+        updatePanelTitleTime();
+        setInterval(updatePanelTitleTime, 1000);
+        // =========================================================================
+
+
+        // FUNGSI MAPPING KODE OWM KE EMOJI (Tidak Berubah)
+        const emojiMap = {
+            '2': '⛈️', 
+            '3': '🌧️', 
+            '5': '☔', 
+            '6': '❄️', 
+            '7': '🌫️', 
+            '800': '☀️', 
+            '801': '🌤️', 
+            '8': '☁️', 
+            '9': '🚨' 
+        };
+
+        function getWeatherEmoji(weatherId) {
+            const idString = String(weatherId);
+            
+            if (idString === '800') {
+                return emojiMap['800'];
+            }
+            if (idString === '801') {
+                return emojiMap['801'];
+            }
+
+            const firstDigit = idString.charAt(0);
+            return emojiMap[firstDigit] || '❓';
+        }
+
+        // =========================================================================
+        // FUNGSI HELPER: Mengubah Waktu Unix (timestamp) menjadi format hh:mm
+        // =========================================================================
+        function formatTime(unixTimestamp) {
+            const date = new Date(unixTimestamp * 1000);
+            
+            const formatter = new Intl.DateTimeFormat('id-ID', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false, 
+                timeZone: 'Asia/Jakarta' 
+            });
+            return formatter.format(date); 
+        }
+
+        // =========================================================================
+        // PENGATURAN BATAS (BOUNDS) PETA INDONESIA (TIDAK DIGUNAKAN LAGI UNTUK BATAS MAKSIMUM)
+        // =========================================================================
+        const INDONESIA_BOUNDS = L.latLngBounds([
+            [-11.0, 95.0],  
+            [6.0, 141.5]   
+        ]);
+        
+        // --- Layer Definitions ---
+        const satelliteTiles = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+            maxZoom: 20,
+            attribution: 'Peta &copy; Google' 
+        });
+
+        const darkTiles = L.tileLayer(
+            'https://api.maptiler.com/maps/dataviz-dark/{z}/{x}/{y}.png?key=bNsicycXlwWOQeeLrUqR',
+            { maxZoom: 20, attribution: 'Peta &copy; <a href="https://www.maptiler.com/">MapTiler</a> &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors' }
+        );
+        // --- End Layer Definitions ---
+
+        // 1. Inisialisasi Peta
+        const map = L.map('map', {
+            minZoom: 5,
+            layers: [darkTiles]
+        }).setView([-2.5, 118.0], 5); 
+
+        // Panggil fungsi untuk mengatur lebar kolom tabel
+        applyTableColumnWidths();
+        
+        let currentLayer = 'dark'; 
+        
+        // Array untuk menyimpan semua data cuaca yang berhasil diambil
+        let allWeatherData = []; 
+        const tableBody = document.getElementById('weatherTableBody');
+
+        // Event listener untuk tombol toggle peta (Dipersonalisasi: Anda meminta untuk mengingat fitur ini)
+        document.getElementById('mapToggle').addEventListener('click', toggleBaseMap);
+
+        // =========================================================================
+        // FUNGSI TOGGLE PETA
+        // =========================================================================
+        function toggleBaseMap() {
+            const toggleButton = document.getElementById('mapToggle');
+
+            if (currentLayer === 'satellite') {
+                map.removeLayer(satelliteTiles);
+                darkTiles.addTo(map);
+                toggleButton.textContent = 'Satellite Map';
+                currentLayer = 'dark';
+            } else {
+                map.removeLayer(darkTiles);
+                satelliteTiles.addTo(map);
+                toggleButton.textContent = 'Dark Map';
+                currentLayer = 'satellite';
+            }
+        }
+        // =========================================================================
+
+        // =========================================================================
+        // FUNGSI MENGISI & MENGURUTKAN TABEL
+        // =========================================================================
+        let sortDirection = 'asc'; // 'asc' untuk terdingin, 'desc' untuk terpanas
+
+        function updateWeatherTable() {
+            // Urutkan data berdasarkan suhu
+            allWeatherData.sort((a, b) => {
+                if (sortDirection === 'asc') {
+                    return a.temp - b.temp;
+                } else {
+                    return b.temp - a.temp;
+                }
+            });
+
+            // Update Header Sort Indicator
+            const tempHeader = document.getElementById('tempHeader');
+            if (sortDirection === 'asc') {
+                 tempHeader.innerHTML = 'Suhu (°C) &uarr;'; 
+            } else {
+                 tempHeader.innerHTML = 'Suhu (°C) &darr;'; 
+            }
+
+            // Bangun HTML untuk baris tabel
+            let html = '';
+            allWeatherData.forEach((data, index) => {
+                const descriptionText = data.description.charAt(0).toUpperCase() + data.description.slice(1);
+                
+                html += `
+                    <tr data-province-name="${data.name}">
+                        <td>${index + 1}</td>
+                        <td>${data.name}</td>
+                        <td class="weather-text-cell" title="${descriptionText}">${data.emoji} ${descriptionText}</td>
+                        <td>${data.temp.toFixed(1)}</td>
+                    </tr>
+                `;
+            });
+            tableBody.innerHTML = html;
+        }
+
+        // Event listener untuk header tabel Suhu
+        document.getElementById('tempHeader').addEventListener('click', () => {
+            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            updateWeatherTable();
+        });
+        // =========================================================================
+
+
+        // 3. Fungsi untuk mengambil data cuaca dari OWM (Tidak Berubah)
+        async function getWeatherData(lat, lon) {
+            const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&lang=id&appid=${API_KEY}`;
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error("Gagal mengambil data cuaca:", error);
+                return null;
+            }
+        }
+
+        // 4. Fungsi untuk membuat marker dan ikon cuaca
+        async function addProvinceMarker(province) {
+            const { name, lat, long } = province;
+            
+            const loadingIcon = L.divIcon({
+                className: 'loading-marker',
+                html: '⏳',
+                iconSize: [20, 20]
+            });
+
+            const marker = L.marker([lat, long], { icon: loadingIcon }).addTo(map);
+            marker.bindPopup(`<b>${name}</b><br>Memuat data cuaca...`);
+
+            const weatherData = await getWeatherData(lat, long);
+
+            if (weatherData && weatherData.weather && weatherData.weather.length > 0) {
+                const weather = weatherData.weather[0];
+                const weatherId = weather.id;
+                const temp = weatherData.main.temp;
+                const description = weather.description;
+                
+                // --- EKSTRAKSI DATA UTAMA ---
+                const pressure = weatherData.main.pressure;
+                const windSpeed = weatherData.wind.speed.toFixed(1);
+                const clouds = weatherData.clouds.all;
+                const sunriseTime = formatTime(weatherData.sys.sunrise); 
+                const sunsetTime = formatTime(weatherData.sys.sunset); 
+                
+                const rainValue = weatherData.rain ? (weatherData.rain['1h'] || weatherData.rain['3h'] || 0).toFixed(1) : 0;
+                const snowValue = weatherData.snow ? (weatherData.snow['1h'] || weatherData.snow['3h'] || 0).toFixed(1) : 0;
+
+                let precipitation = '';
+
+                if (rainValue > 0) {
+                    precipitation += `<div class="label">Curah Hujan:</div><strong>${rainValue} mm</strong>`;
+                }
+                if (snowValue > 0) {
+                    precipitation += `<div class="label">Curah Salju:</div><strong>${snowValue} mm</strong>`;
+                }
+                
+                const precipitationHtml = precipitation ? `${precipitation}` : '';
+                // --- AKHIR EKSTRAKSI DATA ---
+
+                const emoji = getWeatherEmoji(weatherId);
+
+                // SIMPAN DATA KE ARRAY GLOBAL
+                allWeatherData.push({
+                    name: name,
+                    temp: temp,
+                    emoji: emoji,
+                    description: description 
+                });
+                
+                const weatherEmojiIcon = L.divIcon({
+                    className: 'weather-emoji-marker',
+                    html: emoji,
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 30],
+                    popupAnchor: [0, -30]
+                });
+
+                marker.setIcon(weatherEmojiIcon);
+                
+                // Konten Popup
+                const popupContent = `
+                    <div class="weather-popup-content">
+                        <div class="emoji-icon">${emoji}</div>
+                        <div>
+                            <b>${name}</b><br>
+                            ${description.charAt(0).toUpperCase() + description.slice(1)}
+                        </div>
+                        
+                        <div class="two-column-info">
+                            <div class="label">Suhu:</div><strong>${temp.toFixed(1)}°C</strong>
+                            <div class="label">Tekanan Udara:</div><strong>${pressure} hPa</strong>
+                            <div class="label">Kecepatan Angin:</div><strong>${windSpeed} m/s</strong>
+                            <div class="label">Persentase Awan:</div><strong>${clouds}%</strong>
+                            
+                            ${precipitationHtml}
+
+                            <div class="label">Matahari Terbit:</div><strong>${sunriseTime}</strong>
+                            <div class="label">Matahari Terbenam:</div><strong>${sunsetTime}</strong>
+                        </div>
+                    </div>
+                `;
+                
+                marker.setPopupContent(popupContent);
+                
+                // Panggil update tabel setiap kali data baru berhasil didapatkan
+                updateWeatherTable(); 
+
+            } else {
+                marker.setIcon(L.divIcon({
+                    className: 'loading-marker',
+                    html: '❌',
+                    iconSize: [20, 20]
+                }));
+                marker.setPopupContent(`<b>${name}</b><br>Gagal mendapatkan data cuaca.`);
+            }
+        }
+
+        // 5. Iterasi dan tambahkan semua provinsi
+        provincesData.forEach(province => {
+            addProvinceMarker(province);
+        });
+
+    </script>
+</body>
+</html>

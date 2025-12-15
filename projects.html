@@ -3,197 +3,1223 @@
 <head>
   <meta charset="UTF-8">
   <title>Projects - Arkara</title>
-  <link rel="stylesheet" href="assets/css/projects.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+  
   <style>
-    /* Jika tidak ingin file CSS terpisah, style ini bisa langsung dipakai */
+    /* === SKEMA WARNA BARU ===
+       - Biru Navy (Aksen Primer): #192a56
+       - Biru Slate (Aksen Sekunder): #4682b4
+       - Kuning/Emas (Aksen Hangat): #efb23c
+       - Hijau (Progress): #3CB371
+    ======================== */
+    
+    html, body {
+        height: 100%;
+        min-height: 100%;
+    }
+    
     * {
-      box-sizing: border-box;
+      box-sizing: border-box; /* PERBAIKAN: Mengganti border-sizing menjadi border-box */
       font-family: 'Poppins', sans-serif;
     }
 
     body {
-      background: #f7f8fa;
-      margin: 15px;
+      background-image: url('assets/img/002_background.png'); 
+      background-size: cover; 
+      background-position: center center; 
+      background-attachment: fixed; 
+      
+      padding: 15px; 
+      margin: 0;
       color: #333;
+      overflow-x: hidden; 
+      overflow-y: hidden; 
     }
 
-    h2 {
-      font-size: 22px;
-      margin-bottom: 15px;
-      color: #333;
-      font-weight: 600;
+    .header-controls {
+        display: flex; 
+        align-items: center; 
+        gap: 15px; 
+        margin-bottom: 12px;
     }
-
+    
     .add-button {
       display: inline-block;
-      background: linear-gradient(90deg, #7ac142, #a5d86f);
+      background: #a28e2a;
       color: #fff;
-      padding: 10px 18px;
+      padding: 6px 12px;
       border-radius: 8px;
       font-weight: 600;
       text-decoration: none;
       transition: background 0.3s ease;
       border: none;
       cursor: pointer;
-      font-size: 14px;
-      margin-bottom: 15px;
+      font-size: 12px;
+      margin-bottom: 0; 
+      backdrop-filter: blur(5px);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
-
     .add-button:hover {
-      background: linear-gradient(90deg, #6ab13b, #96c85e);
+        background: #d9c756;
     }
 
+    .search-input {
+        padding: 6px 10px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 12px;
+        width: 350px; 
+        background: rgba(70, 130, 180, 0.2);
+        backdrop-filter: blur(2px);
+    }
+    
+    .table-container {
+        padding: 15px; 
+        border-radius: 12px;
+        background: rgba(70, 130, 180, 0.2); 
+        backdrop-filter: blur(8px); 
+        box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1); 
+        border: 1px solid rgba(255, 255, 255, 0.18); 
+        display: flex; 
+        flex-direction: column;
+        height: calc(100vh - 30px); 
+    }
+    
     table {
       width: 100%;
       border-collapse: collapse;
-      position: relative;
+    }
+
+    .scrollable-table-body {
+        overflow-y: auto; 
+        overflow-x: auto; 
+        flex-grow: 1; 
+    }
+    
+    th, td {
+        font-size: 11px !important; 
+        padding: 6px 8px !important; 
+        white-space: normal; 
     }
 
     thead {
-      background: linear-gradient(90deg, #b6d7a8, #a9d18e);
+      background: linear-gradient(90deg, #192a56, #4682b4);
+      border-bottom: 4px solid #a28e2a; 
+      position: sticky;
+      top: 0; 
+      z-index: 10;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); 
     }
 
     th {
       text-align: left;
-      padding: 12px 14px;
       font-weight: 600;
-      font-size: 14px;
-      border-bottom: 2px solid #e5e5e5;
+      color: #fff;
+    }
+
+    th.sortable {
+        cursor: pointer;
+        position: relative;
+        padding-right: 25px !important; 
+    }
+
+    th.sortable .sort-icon {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 10px;
+        color: rgba(255, 255, 255, 0.8);
     }
 
     td {
-      padding: 10px 14px;
-      font-size: 14px;
       border-bottom: 1px solid #eee;
       background: #fff;
       transition: background 0.3s ease;
       position: relative;
-      cursor: pointer;
+      height: auto; 
     }
 
-    tr:hover td {
-      background: #eaf5e3 !important;
-    }
+    tr:hover td { background: #fff0d6 !important; }
 
-    /* Progress bar */
     .progress-bar {
       background: #e4f1e1;
       border-radius: 8px;
-      height: 10px;
+      height: 15px;
       width: 100%;
       overflow: hidden;
+      position: relative;
     }
 
     .progress-fill {
-      background: linear-gradient(90deg, #7ac142, #a5d86f);
+      background: linear-gradient(90deg, #3CB371, #69d899); 
       height: 100%;
       width: 0%;
-      border-radius: 8px;
       transition: width 0.6s ease;
     }
 
-    /* Responsive */
-    @media (max-width: 768px) {
-      table, thead, tbody, th, td, tr {
-        display: block;
-      }
-      tr {
-        margin-bottom: 15px;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      }
-      th { display: none; }
-      td {
-        border: none;
-        padding-left: 30%;
-      }
-      td:before {
-        content: attr(data-label);
+    .progress-text-inner {
         position: absolute;
-        left: 15px;
+        top: 50%;
+        right: 8px;
+        transform: translateY(-50%);
         font-weight: 600;
-        color: #555;
-      }
+        font-size: 11px;
+        color: #333; 
+    }
+
+    .contact-icon-desktop {
+      cursor: pointer;
+      color: #5B9BD5;
+      font-size: 18px;
+    }
+    
+    .notes-icon-desktop {
+      cursor: pointer;
+      color: #efb23c; 
+      font-size: 16px;
+    }
+
+    .map-icon {
+        font-size: 16px;
+        color: #FF7C80; 
+    }
+
+    .status-Open {
+      background-color: #fffbe6 !important; 
+      color: #856404;
+      font-weight: 600;
+    }
+    td.status-Finished {
+      background-color: #e6ffe6 !important; 
+      color: #155724;
+      font-weight: 600;
+    }
+    td.status-Terminated {
+      background-color: #f8d7da !important; 
+      color: #721c24;
+      font-weight: 600;
+    }
+    td.status-Rejected {
+      background-color: #dc3545 !important; 
+      color: white;
+      font-weight: 600;
+    }
+    
+    .highlight-text {
+        background-color: #fff0d6; 
+        font-weight: bold;
+        padding: 1px 2px;
+        border-radius: 3px;
+    }
+
+    /* Modal */
+    .modal {
+      display: none; 
+      position: fixed;
+      z-index: 1000; 
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.4); 
+      padding-top: 60px;
+    }
+
+    .modal-content {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(5px);
+      margin: 10% auto;
+      padding: 20px;
+      border-radius: 12px;
+      width: 80%;
+      max-width: 400px;
+      position: relative;
+    }
+
+    .close {
+      color: #888;
+      font-size: 28px;
+      font-weight: bold;
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      cursor: pointer;
+    }
+    
+    #modalEmail, #modalPhone {
+        color: #2a7ae2; 
+        text-decoration: underline; 
+        cursor: pointer;
+    }
+    #modalEmail:hover, #modalPhone:hover {
+        color: #1a5ac3;
+    }
+    
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 16px;
+        font-weight: 600;
+        color: #192a56; 
+        z-index: 11;
+        border-radius: 12px;
+    }
+    
+    .confirm-modal {
+      display: none; 
+      position: fixed;
+      z-index: 2000; 
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5); 
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .confirm-content {
+      background: rgba(70, 130, 180, 0.5); 
+      backdrop-filter: blur(8px); 
+      padding: 30px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+      color: #fff;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      border: 0px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .confirm-content h3 {
+        margin-top: 0;
+        font-size: 20px;
+        font-weight: 700;
+        color: #D9C756; 
+    }
+
+    .confirm-actions {
+        margin-top: 25px;
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+    }
+
+    .confirm-button {
+        flex-grow: 1;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .cancel-button {
+        background-color: #f8d7da; 
+        color: #721c24;
+    }
+    .cancel-button:hover {
+        background-color: #e6c5c7;
+    }
+
+    .continue-button {
+        background-color: #3CB371; 
+        color: #fff;
+    }
+    .continue-button:hover {
+        background-color: #339962;
     }
   </style>
 </head>
+
 <body>
 
   <div class="table-container">
-    <button class="add-button" onclick="addData()">(+) Add Data</button>
+    <div class="header-controls">
 
-    <table>
+      <button class="add-button" onclick="addData()">(+) Add Data</button>
+
+      <button class="add-button" style="background:#4682b4;" onclick="openImportConfirmation()">
+        <i class="fas fa-file-import"></i> Import
+      </button>
+
+      <button class="add-button" style="background:#3CB371;" onclick="exportData()">
+        <i class="fas fa-file-export"></i> Export
+      </button>
+
+      <select id="sectorFilter" class="search-input" style="width: 150px;" onchange="searchTable()">
+        <option value="">Semua Sektor</option>
+        </select>
+      <input type="text" id="projectSearch" class="search-input" placeholder="Cari (Tanggal, Lokasi, Prospek, Status, Notes, dll.)">
+    </div>
+
+    <table id="projectTableHeader"> 
+      <colgroup id="colGroupHeader">
+        </colgroup>
       <thead>
         <tr>
           <th>No</th>
-          <th>Tanggal</th>
-          <th>Lokasi</th>
-          <th>Perusahaan</th>
+          <th class="sortable" id="sort-tanggal">
+            Tanggal 
+            <span class="sort-icon"><i class="fas fa-sort"></i></span>
+          </th>
+          <th class="sortable" id="sort-lokasi">
+            Lokasi
+            <span class="sort-icon"><i class="fas fa-sort"></i></span>
+          </th>
+          <th class="sortable" id="sort-prospek">
+            Prospek
+            <span class="sort-icon"><i class="fas fa-sort"></i></span>
+          </th>
           <th>Sektor</th>
+          <th>Komoditas</th>
           <th>Tipe</th>
+          <th>Tahap</th>
           <th>Dokumen Update</th>
+          <th>Dokumen Link</th>
           <th>Dokumen Status</th>
-          <th>Notes / Next Action</th>
           <th>Progress</th>
+          <th>Completion</th>
+          <th>Days</th> 
+          <th class="sortable" id="sort-notes">Notes</th>
+          <th>Kontak</th>
+          <th>Maps</th>
         </tr>
       </thead>
-      <tbody id="projectTable"></tbody>
-    </table>
+      </table>
+    
+    <div class="scrollable-table-body">
+      <table id="projectTableBody"> 
+        <colgroup id="colGroupBody"></colgroup>
+        <tbody id="projectTable"></tbody>
+      </table>
+    </div>
+    
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <i class="fas fa-spinner fa-spin" style="margin-right: 10px;"></i> Memuat data...
+    </div>
   </div>
 
-  <script>
-    const tbody = document.getElementById("projectTable");
+  <div id="contactModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeContactModal()">×</span>
+      <h3 id="modalName">Data Kontak</h3>
+      <p id="modalJabatan"></p>
+      
+      <p>Email: <a id="modalEmail" href="#" target="_blank"></a></p>
+      <p>HP: <a id="modalPhone" href="#" target="_blank"></a></p>
+    </div>
+  </div>
 
-    const projects = [
-      { no: 1, lokasi: "Jakarta", perusahaan: "PT Alpha", sektor: "Property", tipe: "Joint Venture", start: "2025-01-05", upload: "Ada", status: "Approved", notes: "Survey lokasi", progress: 80 },
-      { no: 2, lokasi: "Bandung", perusahaan: "CV Beta", sektor: "Mining", tipe: "Take Over", start: "2025-02-12", upload: "Belum", status: "Pending", notes: "Negosiasi harga", progress: 50 },
-      { no: 3, lokasi: "Medan", perusahaan: "PT Gamma", sektor: "Plantation", tipe: "Partnership", start: "2025-03-01", upload: "Ada", status: "On Progress", notes: "Menunggu legalitas", progress: 30 },
-      { no: 4, lokasi: "Surabaya", perusahaan: "PT Delta", sektor: "Hospitality", tipe: "Joint Venture", start: "2025-04-10", upload: "Ada", status: "Completed", notes: "Selesai", progress: 100 },
+  <div id="notesModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeNotesModal()">×</span>
+      <h3>Catatan Proyek</h3>
+      <p id="modalNotesContent" style="white-space: pre-wrap; font-size: 14px; color: #555;"></p>
+    </div>
+  </div>
+  
+  <div id="importConfirmationModal" class="confirm-modal" style="display: none;">
+      <div class="confirm-content">
+          <h3>Apakah anda yakin untuk meng-import data dari Google Spreadsheet?</h3>
+          <p>Data lama tidak akan terganggu, hanya data baru yang akan ditambahkan ke Database.</p>
+          <div class="confirm-actions">
+              <button class="confirm-button cancel-button" onclick="closeImportConfirmation()">Batal</button>
+              <button class="confirm-button continue-button" onclick="confirmImportAndClose()">Ya, Lanjutkan</button>
+          </div>
+      </div>
+  </div>
+  <script>
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx4fQ_O8AiiimRo-ZRyXqHan0GazRHQot166bOaWTAqQLyiO5YUVua_r4-qPhB5Sk6SYw/exec";
+    const API_URL = "http://localhost:3000/api"; 
+
+    let sortDirection = 'none'; 
+    let currentSortColumn = 'tanggal'; 
+    let currentData = []; 
+    let debounceTimer;
+
+    const tbody = document.getElementById("projectTable");
+    const contactModal = document.getElementById("contactModal"); 
+    const notesModal = document.getElementById("notesModal");
+    const modalNotesContent = document.getElementById("modalNotesContent");
+    const modalName = document.getElementById("modalName");
+    const modalJabatan = document.getElementById("modalJabatan");
+    const modalEmail = document.getElementById("modalEmail");
+    const modalPhone = document.getElementById("modalPhone");
+    const loadingOverlay = document.getElementById("loadingOverlay");
+    const importConfirmationModal = document.getElementById("importConfirmationModal");
+    
+    // Lebar Kolom Diperbarui (Total 17 kolom)
+    const COLUMN_WIDTHS = [
+      '25px:25px',    
+      '100px:100px',    
+      '100px:100px',  
+      '100px:100px',   
+      '75px:75px',    
+      '75px:75px',    
+      '75px:75px',    
+      '75px:75px',    
+      '75px:75px',    
+      '60px:60px',    
+      '60px:60px',    
+      '60px:60px',   
+      '60px:60px',   
+      '60px:60px',   
+      '40px:40px',  
+      '40px:40px',    
+      '40px:40px'     
     ];
 
-    /**
-     * Fungsi untuk mengubah format tanggal dari YYYY-MM-DD menjadi DD / MM / YYYY
-     * @param {string} dateString - Tanggal dalam format YYYY-MM-DD
-     * @returns {string} Tanggal dalam format DD / MM / YYYY
-     */
-    function formatDate(dateString) {
-        if (!dateString) return '';
-        // Membagi string berdasarkan '-' (misal: ["2025", "01", "05"])
-        const parts = dateString.split('-');
-        // Menggabungkan kembali dalam urutan Hari / Bulan / Tahun
-        return `${parts[2]} / ${parts[1]} / ${parts[0]}`;
+    /* ========================================= */
+    /* UTILS: Sanitasi, Date, Coordinates */
+    /* ========================================= */
+
+    // Fungsi untuk membersihkan string dari HTML sebelum di-render
+    function sanitizeText(str) {
+        if (!str) return '';
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#x27;',
+            '/': '&#x2F;',
+        };
+        const reg = /[&<>"'/]/ig;
+        return String(str).replace(reg, (match)=>(map[match]));
+    }
+    
+    function createMapUrl(lat, lng) {
+        // PERBAIKAN: Menggunakan format Google Maps standar dengan template literal yang benar
+        if (lat && lng) {
+            return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+        }
+        return null;
+    }
+    
+    function calculateDaysDifference(startDateString) {
+        if (!startDateString) return 0;
+        const cleanString = cleanDateString(startDateString);
+        if (!cleanString) return 0;
+        const oneDay = 24 * 60 * 60 * 1000;
+        const startDate = new Date(cleanString);
+        const today = new Date();
+        startDate.setHours(0, 0, 0, 0);
+        today.setHours(0, 0, 0, 0);
+        const timeDifference = today.getTime() - startDate.getTime();
+        const daysDifference = Math.round(timeDifference / oneDay);
+        return daysDifference > 0 ? daysDifference : 0;
     }
 
-    projects.forEach(p => {
-      const formattedDate = formatDate(p.start); // Panggil fungsi formatDate
+    function cleanPercentage(percentString) {
+        if (percentString === null || percentString === undefined || percentString === "") return 0;
+        if (typeof percentString === 'number') {
+            return percentString;
+        }
+        const cleanString = String(percentString).replace(/[^0-9.]/g, ''); 
+        const number = parseFloat(cleanString);
+        return isNaN(number) ? 0 : number;
+    }
+
+    function setColumnWidths(widths) {
+        const colGroupHeader = document.getElementById('colGroupHeader');
+        const colGroupBody = document.getElementById('colGroupBody');
+        
+        colGroupHeader.innerHTML = '';
+        colGroupBody.innerHTML = '';
+
+        widths.forEach(widthString => {
+            const [width, minWidth] = widthString.split(':');
+            const style = `width: ${width}; min-width: ${minWidth};`;
+
+            const colH = document.createElement('col');
+            colH.style.cssText = style;
+            colGroupHeader.appendChild(colH);
+
+            const colB = document.createElement('col');
+            colB.style.cssText = style;
+            colGroupBody.appendChild(colB);
+        });
+        
+        document.getElementById('projectTableHeader').style.tableLayout = 'fixed';
+        document.getElementById('projectTableBody').style.tableLayout = 'fixed';
+    }
+
+    function cleanDateString(isoString) {
+        if (!isoString || typeof isoString !== 'string') return '';
+        if (isoString.includes('T') && isoString.includes('-')) {
+            return isoString.split('T')[0];
+        }
+        return isoString;
+    }
+
+    function formatDate(dateString) {
+      if (!dateString) return '';
+      const cleanString = cleanDateString(dateString); 
+      if (!cleanString) return '';
       
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td data-label="No">${p.no}</td>
-        <td data-label="Tanggal">${formattedDate}</td> <td data-label="Lokasi">${p.lokasi}</td>
-        <td data-label="Perusahaan">${p.perusahaan}</td>
-        <td data-label="Sektor">${p.sektor}</td>
-        <td data-label="Tipe">${p.tipe}</td>
-        <td data-label="Dokumen Update">${p.upload}</td>
-        <td data-label="Dokumen Status">${p.status}</td>
-        <td data-label="Notes / Next Action">${p.notes}</td>
-        <td data-label="Progress">
-          <div class="progress-bar">
-            <div class="progress-fill" style="width: ${p.progress}%;"></div>
-          </div>
-        </td>
-      `;
-      tr.addEventListener("click", () => {
-        // Arahkan ke halaman edit
-        window.location.href = `edit_project.html?id=${p.no}`;
-      });
-      tbody.appendChild(tr);
+      const parts = cleanString.split('-');
+      // Menggunakan new Date(year, monthIndex, day) untuk menghindari masalah timezone
+      const date = new Date(parts[0], parts[1] - 1, parts[2]); 
+      
+      const days = ["Min","Sen","Sel","Rab","Kam","Jum","Sab"]; 
+      const months = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"]; 
+
+      return `${days[date.getDay()]}, ${parts[2]} ${months[date.getMonth()]} ${parts[0]}`;
+    }
+    
+    function formatCoordinate(coord) {
+        if (coord === null || coord === undefined || coord === "") {
+            return ""; 
+        }
+        const number = parseFloat(coord);
+        if (isNaN(number)) {
+            return "";
+        }
+        return number.toFixed(5);
+    }
+    
+    function getCompletionClass(status) {
+        if (!status) return '';
+        const cleanStatus = status.replace(/\s/g, ''); 
+        return `status-${cleanStatus}`;
+    }
+    
+    function populateSectorFilter(data) {
+        const sectorFilter = document.getElementById('sectorFilter');
+        sectorFilter.innerHTML = '<option value="">Semua Sektor</option>'; 
+        const sectors = new Set();
+        data.forEach(p => {
+            if (p.sektor && p.sektor.trim() !== '') {
+                sectors.add(p.sektor.trim());
+            }
+        });
+        
+        const sortedSectors = Array.from(sectors).sort();
+
+        sortedSectors.forEach(sector => {
+            const option = document.createElement('option');
+            option.value = sector;
+            option.textContent = sector;
+            sectorFilter.appendChild(option);
+        });
+    }
+    
+    /* ========================================= */
+    /* RENDER & SEARCH UTILS */
+    /* ========================================= */
+
+    function highlightMatch(text, query) {
+        if (!text || !query) return sanitizeText(text); // Sanitasi teks jika tidak ada query
+        
+        // Sanitasi query sebelum dimasukkan ke regex
+        const cleanQuery = sanitizeText(query).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); 
+        if (cleanQuery === '') return sanitizeText(text);
+
+        const regex = new RegExp(`(${cleanQuery})`, 'gi'); 
+        
+        // Sanitasi teks asli, lalu ganti teks yang cocok dengan span highlight
+        return sanitizeText(String(text)).replace(regex, '<span class="highlight-text">$1</span>');
+    }
+
+    function renderProjects(data) {
+        setColumnWidths(COLUMN_WIDTHS); 
+        tbody.innerHTML = '';
+        const fragment = document.createDocumentFragment();
+        
+        // Sanitasi input pencarian
+        const searchQuery = document.getElementById('projectSearch').value; 
+        
+        if (data.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="17" style="text-align:center;color:#777;font-style:italic;">Tidak ada data.</td></tr>`;
+            return;
+        }
+
+        data.forEach((p, index) => {
+            const tr = document.createElement("tr");
+            
+            // PERBAIKAN: Menggunakan fungsi createMapUrl yang benar
+            const mapUrl = createMapUrl(p.lat, p.lng);
+            
+            const completionStatus = p.completion || 'Open'; 
+            const completionClass = getCompletionClass(completionStatus);
+            
+            const daysDisplay = p.daysInProject || (completionStatus === 'Open' ? '0 hari' : '-'); 
+
+            tr.innerHTML = `
+                <td>${index+1}</td> 
+                <td>${highlightMatch(formatDate(p.tanggal), searchQuery)}</td> 
+                <td>${highlightMatch(p.lokasi, searchQuery)}</td>
+                <td>${highlightMatch(p.prospek, searchQuery)}</td>
+                <td>${highlightMatch(p.sektor, searchQuery)}</td>
+                <td>${highlightMatch(p.komoditas || '-', searchQuery)}</td>
+                <td>${highlightMatch(p.tipe, searchQuery)}</td>
+                <td>${highlightMatch(p.tahap || '-', searchQuery)}</td>
+                <td>${highlightMatch(p.upload, searchQuery)}</td>
+                
+                <td>${p.link && p.link !== '-' ? `<a href="${sanitizeText(p.link)}" target="_blank">Lihat</a>` : '-'}</td>
+                
+                <td>${highlightMatch(p.status, searchQuery)}</td>
+                <td>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width:${p.progress || 0}%"></div>
+                        <span class="progress-text-inner">${p.progress || 0}%</span>
+                    </div>
+                </td>
+                <td class="${completionClass}" style="font-weight: 600; text-align: center;">
+                    ${highlightMatch(completionStatus, searchQuery)}
+                </td>
+                <td class="${completionClass}" style="text-align: center;">${daysDisplay}</td> 
+                
+                <td>
+                    ${(p.notes && p.notes.trim()) ? 
+                        `<span class="notes-icon-desktop" 
+                              onclick="openNotesModal(${p.no}, event)">
+                            <i class="fas fa-note-sticky"></i>
+                        </span>` 
+                        : ''}
+                </td>
+                <td>
+                    ${(p.contact && (p.contact.name || p.contact.email || p.contact.phone)) ? 
+                        `<span class="contact-icon-desktop" onclick="openContactModal(${p.no}, event)">
+                            <i class="fas fa-address-book"></i>
+                        </span>` 
+                        : ''}
+                </td>
+                <td>
+                    ${mapUrl ? 
+                        `<a href="${mapUrl}" target="_blank" class="map-icon"><i class="fas fa-map-marker-alt"></i></a>` 
+                        : ''}
+                </td>
+                `;
+
+            tr.addEventListener("click", () => {
+                window.location.href = `projects_edit.html?id=${p.no}`;
+            });
+
+            fragment.appendChild(tr);
+        });
+        
+        tbody.appendChild(fragment);
+        updateSortIcons();
+    }
+
+    /* ========================================= */
+    /* DATA FETCHING & INITIALIZATION */
+    /* ========================================= */
+    
+    function fetchProjectsFromBackend() {
+        loadingOverlay.style.display = 'flex';
+        fetch(`${API_URL}/projects`)
+            .then(response => {
+                if (!response.ok) {
+                    tbody.innerHTML = `<tr><td colspan="17" style="text-align:center;color:#ff4d4d;font-weight:bold;">Gagal terhubung ke Server Backend (Node.js). Pastikan server berjalan di port 3000.</td></tr>`;
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(result => {
+                if (result.success) {
+                    currentData = (result.projects || []).map(p => {
+                        const completionStatus = p.completion || "Open";
+                        let daysDisplay;
+
+                        if (completionStatus === "Open") {
+                            const days = calculateDaysDifference(p.tanggal);
+                            daysDisplay = `${days} hari`;
+                        } else {
+                            daysDisplay = p.days || '-'; 
+                        }
+
+                        return {
+                            ...p,
+                            tanggalNumeric: p.tanggal ? Date.parse(cleanDateString(p.tanggal)) : 0,
+                            daysInProject: daysDisplay 
+                        };
+                    }); 
+                    
+                    populateSectorFilter(currentData); 
+                } else {
+                    console.error("Server error:", result.error);
+                    currentData = [];
+                }
+            })
+            .catch(error => {
+                console.error("Gagal mengambil data proyek dari server lokal:", error);
+                currentData = []; 
+            })
+            .finally(() => {
+                loadingOverlay.style.display = 'none';
+                sortTable('tanggal', true); 
+            });
+    }
+    
+    function debounce(func, delay) {
+        return function(...args) {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => func.apply(this, args), delay);
+        };
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        fetchProjectsFromBackend(); 
+        
+        document.getElementById('projectSearch').addEventListener('keyup', debounce(searchTable, 300));
+        
+        document.getElementById('sort-tanggal').addEventListener('click', () => sortTable('tanggal'));
+        document.getElementById('sort-lokasi').addEventListener('click', () => sortTable('lokasi'));
+        document.getElementById('sort-prospek').addEventListener('click', () => sortTable('prospek'));
     });
 
     function addData() {
-      alert("Fungsi tambah data belum diimplementasikan.");
+        window.location.href = "projects_edit.html";
     }
-  </script>
+    
+    /* ======================= */
+    /* IMPORT CONFIRMATION & LOGIC */
+    /* ======================= */
+    function openImportConfirmation() {
+        importConfirmationModal.style.display = 'flex';
+    }
 
+    function closeImportConfirmation() {
+        importConfirmationModal.style.display = 'none';
+    }
+    
+    function confirmImportAndClose() {
+        closeImportConfirmation();
+        importData(); 
+    }
+
+    function importData() {
+        loadingOverlay.style.display = 'flex';
+        fetch(WEB_APP_URL)
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                }
+                return res.json();
+            })
+            .then(data => {
+                const existingProjects = currentData; 
+                const existingKeys = new Set(existingProjects.map(p => 
+                    `${(p.lokasi || '').toLowerCase().trim()}_${cleanDateString(p.tanggal)}`
+                ));
+
+                const newProjects = [];
+                
+                data.forEach((row) => {
+                    const cleanDate = cleanDateString(row["Tanggal"]) || "";
+                    
+                    let rawProgress = cleanPercentage(row["Progress"]);
+                    
+                    if (rawProgress > 0 && rawProgress < 1) {
+                        rawProgress = rawProgress * 100; 
+                    }
+                    
+                    const project = {
+                        no: row["No"] || null, 
+                        tanggal: cleanDate, 
+                        lokasi: row["Lokasi"] || "",
+                        lat: formatCoordinate(row["Latitude"]) || "",
+                        lng: formatCoordinate(row["Longitude"]) || "",
+                        prospek: row["Prospek"] || "",
+                        sektor: row["Sektor"] || "",
+                        komoditas: row["Komoditas"] || "",
+                        tipe: row["Tipe"] || "",
+                        tahap: row["Tahap"] || "", 
+                        upload: row["Dokumen Update"] || "-",
+                        link: row["Dokumen Link"] || "-",
+                        status: row["Dokumen Status"] || "-",
+                        notes: row["Notes"] || "-",
+                        progress: Math.round(rawProgress),
+                        completion: row["Completion"] || "Open", 
+                        days: row["Days"] || null, 
+                        contact: {
+                            name: row["Nama"] || "",
+                            title: row["Jabatan"] || "",
+                            email: row["Email"] || "",
+                            phone: row["Phone"] || "",
+                        },
+                        tanggalNumeric: cleanDate ? Date.parse(cleanDate) : 0
+                    };
+                    
+                    // PERBAIKAN: Logika Days Calculation hanya di sini dan fetchProjects
+                    const completionStatus = project.completion || "Open";
+                    if (completionStatus === "Open") {
+                        const days = calculateDaysDifference(project.tanggal);
+                        project.daysInProject = `${days} hari`;
+                    } else {
+                        project.daysInProject = project.days || '-';
+                    }
+                    
+                    const currentKey = `${(project.lokasi || '').toLowerCase().trim()}_${project.tanggal}`;
+
+                    if (!existingKeys.has(currentKey) && project.lokasi && project.tanggal) {
+                        newProjects.push(project);
+                    }
+                });
+
+                let maxNo = existingProjects.length > 0 ? 
+                            Math.max(...existingProjects.map(p => p.no || 0)) : 
+                            0;
+
+                const finalNewProjects = newProjects.map(p => {
+                    const isNoConflict = p.no && existingProjects.some(ep => ep.no === p.no);
+                    
+                    if (!p.no || isNoConflict) {
+                        maxNo += 1;
+                        p.no = maxNo;
+                    }
+                    return p;
+                });
+
+                const mergedProjects = [...existingProjects, ...finalNewProjects];
+
+                return fetch(`${API_URL}/sync-projects`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ projects: mergedProjects })
+                })
+                .then(res => res.json())
+                .then(syncResult => {
+                    loadingOverlay.style.display = 'none';
+                    if (syncResult.success) {
+                        // PERBAIKAN: Gunakan mergedProjects tanpa menghitung ulang daysInProject
+                        currentData = mergedProjects;
+                        
+                        populateSectorFilter(currentData); 
+                        sortTable(currentSortColumn, true); 
+                        alert(`Import data selesai!\n${finalNewProjects.length} proyek baru ditambahkan.`);
+                    } else {
+                        throw new Error(`Gagal Sinkronisasi ke JSON: ${syncResult.error}`);
+                    }
+                })
+
+            })
+            .catch(err => {
+                loadingOverlay.style.display = 'none';
+                console.error("Gagal melakukan fetch/import data:", err);
+                alert(`Error: ${err.message}. Gagal mengambil data dari Spreadsheet. `);
+            });
+    }
+
+    /* ========================================= */
+    /* EXPORT DATA (XLSX) */
+    /* ========================================= */
+    function exportData() {
+        const filter = document.getElementById('projectSearch').value.toUpperCase();
+        const sectorFilterValue = document.getElementById('sectorFilter').value; 
+        
+        const dataToExport = currentData.filter(p => {
+            const sectorMatch = !sectorFilterValue || p.sektor === sectorFilterValue;
+            const textMatch = !filter || 
+                (p.tanggal || '').toUpperCase().includes(filter) ||
+                (p.lokasi || '').toUpperCase().includes(filter) ||
+                (p.prospek || '').toUpperCase().includes(filter) ||
+                (p.status || '').toUpperCase().includes(filter) ||
+                (p.notes || '').toUpperCase().includes(filter) ||
+                (p.sektor || '').toUpperCase().includes(filter) ||
+                (p.komoditas || '').toUpperCase().includes(filter) ||
+                (p.tipe || '').toUpperCase().includes(filter) ||
+                (p.tahap || '').toUpperCase().includes(filter) || 
+                (p.upload || '').toUpperCase().includes(filter) ||
+                (p.completion || '').toUpperCase().includes(filter);
+                
+            return sectorMatch && textMatch;
+        });
+
+
+        if (dataToExport.length === 0) {
+            alert("Tidak ada data yang tersedia untuk diekspor.");
+            return;
+        }
+
+        const headers = [
+            "No", "Tanggal", "Lokasi", "Latitude", "Longitude", "Prospek", "Sektor",
+            "Komoditas", "Tipe", "Tahap", 
+            "Dokumen Update", 
+            "Dokumen Link", 
+            "Dokumen Status", "Progress", "Completion", 
+            "Days", 
+            "Notes", 
+            "Nama", "Jabatan", "Email", "Phone", 
+            "Maps" 
+        ];
+        
+        const aoaData = [];
+        aoaData.push(headers); 
+
+        dataToExport.forEach((p, index) => {
+            
+            // Menggunakan fungsi createMapUrl yang benar
+            const mapUrl = createMapUrl(p.lat, p.lng) || '';
+            const completionStatus = p.completion || 'Open'; 
+            
+            const row = [
+                index + 1,
+                formatDate(p.tanggal), 
+                p.lokasi,
+                formatCoordinate(p.lat), 
+                formatCoordinate(p.lng), 
+                p.prospek,
+                p.sektor,
+                p.komoditas || '-',
+                p.tipe,
+                p.tahap || '-', 
+                p.upload,
+                p.link || '-',         
+                p.status,
+                p.progress || 0,        
+                completionStatus, 
+                p.days || '-', 
+                p.notes,
+                p.contact ? p.contact.name || '-' : '-',
+                p.contact ? p.contact.title || '-' : '-',
+                p.contact ? p.contact.email || '-' : '-',
+                p.contact ? p.contact.phone || '-' : '-',
+                mapUrl                  
+            ];
+            
+            aoaData.push(row);
+        });
+        
+        const workSheet = XLSX.utils.aoa_to_sheet(aoaData);
+        
+        for (let i = 1; i < aoaData.length; i++) {
+            // Kolom Dokumen Link (Index 11)
+            const docLinkValue = aoaData[i][11];
+            if (docLinkValue && docLinkValue !== '-') {
+                const cellRef = XLSX.utils.encode_cell({r: i, c: 11}); 
+                if (!workSheet[cellRef]) workSheet[cellRef] = {t: 's'}; 
+                
+                workSheet[cellRef].v = 'Lihat Dokumen'; 
+                workSheet[cellRef].l = { Target: docLinkValue }; 
+            }
+            
+            // Kolom Maps (Index 21)
+            const mapLinkValue = aoaData[i][21]; 
+            if (mapLinkValue) {
+                 const cellRef = XLSX.utils.encode_cell({r: i, c: 21});
+                if (!workSheet[cellRef]) workSheet[cellRef] = {t: 's'}; 
+                
+                workSheet[cellRef].v = 'Lihat di Maps'; 
+                workSheet[cellRef].l = { Target: mapLinkValue }; 
+            }
+        }
+        
+        const workBook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workBook, workSheet, "Projects");
+
+        const filename = "Export_Projects_" + new Date().toISOString().slice(0, 10) + ".xlsx";
+        XLSX.writeFile(workBook, filename);
+
+        alert(`Export ${dataToExport.length} data proyek ke ${filename} berhasil.`);
+    }
+
+    /* ======================= */
+    /* LOGIC SORTING */
+    /* ======================= */
+    function updateSortIcons() {
+        document.querySelectorAll('th.sortable').forEach(th => {
+            const icon = th.querySelector('.sort-icon i');
+            if (icon) {
+                icon.classList.remove('fa-sort-up', 'fa-sort-down');
+                icon.classList.add('fa-sort');
+            }
+        });
+
+        const activeHeader = document.getElementById(`sort-${currentSortColumn}`);
+        if (activeHeader) {
+            const activeIcon = activeHeader.querySelector('.sort-icon i');
+            if (activeIcon) {
+                activeIcon.classList.remove('fa-sort');
+                if (sortDirection === 'asc') {
+                    activeIcon.classList.add('fa-sort-up');
+                } else if (sortDirection === 'desc') {
+                    activeIcon.classList.add('fa-sort-down');
+                }
+            }
+        }
+    }
+
+    function sortTable(column, isInitial = false) {
+        
+        if (column !== currentSortColumn) {
+            sortDirection = 'none'; 
+            currentSortColumn = column;
+        }
+
+        if (!isInitial) {
+            if (sortDirection === 'none' || sortDirection === 'asc') {
+                sortDirection = 'desc'; 
+            } else {
+                sortDirection = 'asc'; 
+            }
+        } else {
+             if (sortDirection === 'none') {
+                if (column === 'tanggal') {
+                    sortDirection = 'desc'; 
+                } else {
+                    sortDirection = 'asc'; 
+                }
+            }
+        }
+        
+        currentData.sort((a, b) => {
+            let valA, valB;
+            let comparison = 0;
+            
+            if (column === 'tanggal') {
+                valA = a.tanggalNumeric;
+                valB = b.tanggalNumeric;
+                comparison = valA - valB; 
+            } else {
+                valA = (a[column] || '').toLowerCase();
+                valB = (b[column] || '').toLowerCase();
+                
+                if (valA < valB) comparison = -1;
+                if (valA > valB) comparison = 1;
+            }
+
+            return sortDirection === 'asc' ? comparison : comparison * -1;
+        });
+        
+        updateSortIcons();
+        searchTable(); 
+    }
+
+
+    /* ======================= */
+    /* SEARCH */
+    /* ======================= */
+    function searchTable() {
+        // PERBAIKAN: Sanitasi input filter untuk keamanan, meskipun tidak digunakan sebagai HTML
+        const filter = sanitizeText(document.getElementById('projectSearch').value.toUpperCase());
+        const sectorFilterValue = document.getElementById('sectorFilter').value; 
+        
+        if (!filter && !sectorFilterValue) {
+             renderProjects(currentData);
+             return;
+        }
+
+        const filtered = currentData.filter(p => {
+            
+            if (sectorFilterValue && p.sektor !== sectorFilterValue) {
+                return false; 
+            }
+            
+            if (!filter) {
+                return true; 
+            }
+            
+            return (
+                (p.tanggal || '').toUpperCase().includes(filter) ||
+                (p.lokasi || '').toUpperCase().includes(filter) ||
+                (p.prospek || '').toUpperCase().includes(filter) ||
+                (p.status || '').toUpperCase().includes(filter) ||
+                (p.notes || '').toUpperCase().includes(filter) ||
+                (p.sektor || '').toUpperCase().includes(filter) ||
+                (p.komoditas || '').toUpperCase().includes(filter) ||
+                (p.tipe || '').toUpperCase().includes(filter) ||
+                (p.tahap || '').toUpperCase().includes(filter) || 
+                (p.upload || '').toUpperCase().includes(filter) ||
+                (p.completion || '').toUpperCase().includes(filter) 
+            );
+        });
+        
+        renderProjects(filtered);
+    }
+
+    /* ======================= */
+    /* MODAL KONTAK & NOTES */
+    /* ======================= */
+    function openContactModal(no, event) { 
+        event.stopPropagation();
+        const project = currentData.find(p => p.no === no);
+
+        const modalEmailEl = document.getElementById("modalEmail");
+        const modalPhoneEl = document.getElementById("modalPhone");
+
+        if (!project || !project.contact) {
+            modalName.textContent = "Data Kontak Tidak Tersedia";
+            modalJabatan.textContent = "";
+            modalEmailEl.textContent = "-";
+            modalEmailEl.removeAttribute('href'); 
+            modalPhoneEl.textContent = "-";
+            modalPhoneEl.removeAttribute('href'); 
+        } else {
+            const email = project.contact.email || "";
+            const phone = project.contact.phone || "";
+            
+            modalName.textContent = project.contact.name || "Nama Tidak Tersedia";
+            modalJabatan.textContent = project.contact.title || "Jabatan Tidak Tersedia";
+            
+            // PERBAIKAN: Selalu menggunakan textContent untuk mengisi modal agar aman dari XSS
+            if (email) {
+                modalEmailEl.textContent = email;
+                modalEmailEl.href = `mailto:${email}`; 
+            } else {
+                modalEmailEl.textContent = "-";
+                modalEmailEl.removeAttribute('href');
+            }
+
+            if (phone) {
+                const cleanedPhone = phone.replace(/[^0-9+]/g, ''); 
+                
+                modalPhoneEl.textContent = phone;
+                // Menggunakan link wa.me yang aman
+                modalPhoneEl.href = `https://wa.me/${cleanedPhone}`; 
+            } else {
+                modalPhoneEl.textContent = "-";
+                modalPhoneEl.removeAttribute('href');
+            }
+        }
+
+        contactModal.style.display = "block"; 
+    }
+
+    function closeContactModal() { 
+        contactModal.style.display = "none"; 
+    }
+    
+    // PERBAIKAN: Mengambil data notes langsung dari currentData menggunakan 'no'
+    function openNotesModal(no, event) {
+        event.stopPropagation();
+        const project = currentData.find(p => p.no === no);
+        const content = (project && project.notes && project.notes.trim()) ? project.notes.trim() : "Tidak ada Catatan";
+        
+        // Menggunakan textContent agar aman dari XSS, dan akan mempertahankan newlines
+        modalNotesContent.textContent = content;
+        notesModal.style.display = "block";
+    }
+
+    function closeNotesModal() {
+        notesModal.style.display = "none";
+    }
+    
+    // PERBAIKAN: Listener window.onclick yang lebih ringkas
+    window.onclick = function(event) {
+        const modals = [contactModal, notesModal, importConfirmationModal];
+        modals.forEach(modal => {
+            if (event.target === modal) {
+                modal.style.display = "none";
+            }
+        });
+    }
+
+</script>
 </body>
 </html>

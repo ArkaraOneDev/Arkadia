@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arkara One Dev | Dashboard Layout</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 30px 50px; 
+            height: 100vh;
+            background: url('assets/img/003_background.png');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow: hidden;
+        }
+
+        /* --- STYLES MODIFIKASI: dashboard-box dibuat transparan penuh --- */
+        .dashboard-box {
+            padding: 10px;
+            background: none; /* Dihapus: rgba(0, 0, 0, 0.3) */
+            border: none; 
+            border-radius: 20px; 
+            display: flex;
+            flex-direction: column;
+            color: white; 
+            box-shadow: none; 
+            min-height: 60px; 
+        }
+
+        .top-container {
+            display: flex;
+            gap: 15px; 
+            height: 60px; 
+        }
+
+        .top-box {
+            flex: 1; 
+        }
+
+        .bot-container {
+            display: flex;
+            gap: 15px; 
+            flex: 1;
+            min-height: 0;
+        }
+
+        .bot-box {
+            flex: 1;
+            min-height: 0;
+        }
+
+        #box5-container {
+            display: flex; 
+            flex-direction: column; 
+            gap: 15px; 
+            padding: 0; 
+            background: none; 
+            box-shadow: none;
+        }
+
+        /* --- STYLES MODIFIKASI: box5-row dibuat transparan penuh --- */
+        .box5-row {
+            flex: 1; 
+            background: none; /* Dihapus: rgba(0, 0, 0, 0.3) */
+            border-radius: 20px; 
+            box-shadow: none; 
+            padding: 10px; 
+            display: flex;
+            flex-direction: column;
+            color: white; 
+        }
+        
+        /* Keyframe untuk animasi Fade In dan TransformX ke Kanan */
+        @keyframes slideInAndFade {
+            from {
+                opacity: 0;
+                transform: translateX(-50px); 
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0); 
+            }
+        }
+        
+        /* Keyframe untuk animasi Fade In dan TransformX dari Kanan ke Kiri */
+        @keyframes slideInAndFadeReverse {
+            from {
+                opacity: 0;
+                transform: translateX(50px); 
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0); 
+            }
+        }
+        
+        /* Keyframe BARU: Fade In dan Transform Y dari bawah ke atas */
+        @keyframes slideInFromBottom {
+            from {
+                opacity: 0;
+                transform: translateY(50px); /* Mulai 50px di bawah */
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0); /* Berakhir di posisi normal */
+            }
+        }
+        
+        /* --- STYLES KHUSUS UNTUK BOX5B (IMAGE DAN ANIMASI) DIMULAI --- */
+        #box5b {
+            align-items: center;
+            justify-content: center;
+        }
+
+        #box5b-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            animation: slideInAndFade 1s ease-out; 
+            transition: transform 0.3s ease; 
+        }
+
+        #box5b-image:hover {
+            transform: scale(1.05);
+        }
+        /* --- STYLES KHUSUS UNTUK BOX5B BERAKHIR --- */
+
+        /* --- STYLES KHUSUS UNTUK BOX5A (IMAGE DAN ANIMASI) DIMULAI --- */
+        #box5a {
+            align-items: center;
+            justify-content: center;
+        }
+
+        #box5a-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            animation: slideInAndFadeReverse 1s ease-out; 
+            transition: transform 0.3s ease; 
+        }
+
+        #box5a-image:hover {
+            transform: scale(1.05);
+        }
+        /* --- STYLES KHUSUS UNTUK BOX5A BERAKHIR --- */
+        
+        /* --- STYLES KHUSUS UNTUK BOX5C (IMAGE DAN ANIMASI) DIMULAI --- */
+        #box5c {
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #box5c-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            animation: slideInAndFadeReverse 2s ease-out; 
+            transition: transform 0.3s ease; 
+        }
+
+        #box5c-image:hover {
+            transform: scale(1.05);
+        }
+        /* --- STYLES KHUSUS UNTUK BOX5C BERAKHIR --- */
+
+        /* --- STYLES KHUSUS UNTUK BOX4 --- */
+        #box4 {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .content-placeholder {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            opacity: 0.7;
+            text-align: center;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        #box4-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            animation: fadeIn 0.6s ease-out;
+            transition: transform 0.3s ease;
+        }
+
+        #box4-image:hover {
+            transform: scale(1.05);
+        }
+        
+        /* --- STYLES KHUSUS BARU UNTUK BOX6 --- */
+        #box6 {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #box6 a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+        }
+
+        #box6-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            animation: slideInFromBottom 1s ease-out; 
+            transition: transform 0.3s ease; 
+        }
+
+        #box6-image:hover {
+            transform: scale(1.05);
+        }
+        /* --- STYLES KHUSUS BARU UNTUK BOX6 BERAKHIR --- */
+
+        /* Keyframe for continuous floating left/right (Dihapus karena tidak dipakai lagi di box1) */
+        /* @keyframes floatLeftRight {
+            0% {
+                transform: translateX(-5px);
+            }
+            50% {
+                transform: translateX(5px);
+            }
+            100% {
+                transform: translateX(-5px);
+            }
+        } */
+
+        /* --- STYLES KHUSUS BARU UNTUK BOX1 (Telah Direvisi) --- */
+        #box1 {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #box1-image {
+            /* REVISI: Ukuran gambar diperbesar menjadi 100% */
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            /* REVISI: Mengubah animasi menjadi slideInAndFade */
+            animation: slideInAndFade 1s ease-out; 
+            transition: transform 0.3s ease; 
+        }
+        
+        #box1-image:hover {
+            transform: scale(1.05);
+        }
+        /* --- STYLES KHUSUS BARU UNTUK BOX1 BERAKHIR --- */
+
+        @media (max-width: 768px) {
+            body {
+                padding: 20px; 
+            }
+            .top-container,
+            .bot-container {
+                flex-direction: column;
+            }
+            .bot-box, .box5-row {
+                min-height: 200px; 
+            }
+        }
+    </style>
+</head>
+<body>
+    
+    <div class="top-container">
+        <div class="top-box dashboard-box" id="box1">
+            <img id="box1-image" src="assets/img/how.png" alt="How Icon">
+        </div>
+        
+        <div class="top-box dashboard-box">
+        </div>
+        
+        <div class="top-box dashboard-box">
+        </div>
+    </div>
+
+    <div class="bot-container">
+        <div class="bot-box dashboard-box" id="box4">
+            <img id="box4-image" src="assets/img/phone1.png" alt="Phone">
+        </div>
+        
+        <div class="bot-box dashboard-box" id="box5-container"> 
+            
+            <div class="box5-row" id="box5a">
+                <img id="box5a-image" src="assets/img/info1.png" alt="Information Icon">
+            </div>
+            
+            <div class="box5-row" id="box5b">
+                <img id="box5b-image" src="assets/img/arrow.png" alt="Arrow">
+            </div>
+            
+            <div class="box5-row" id="box5c">
+                <img id="box5c-image" src="assets/img/contact.png" alt="Contact Icon">
+            </div>
+        </div>
+        
+        <div class="bot-box dashboard-box" id="box6">
+            <a href="https://arkaraonedev.glide.page" target="_blank">
+                <img id="box6-image" src="assets/img/barcode1.png" alt="Barcode Image">
+            </a>
+        </div>
+        
+    </div>
+
+
+</body>
+</html>

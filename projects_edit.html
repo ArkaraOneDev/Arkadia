@@ -1,0 +1,3325 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Edit Project - Arkara (Drive Integration)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+
+  <style>
+/* -------------------------
+   Base page styles
+   ------------------------- */
+body {
+  font-family: 'Poppins', sans-serif;
+  background: #f5f5f5;
+  margin: 0;
+  padding: 8px;
+  color: #333;
+}
+
+.container-wrapper {
+  display: flex;
+  gap: 8px;
+  height: calc(100vh - 16px);
+}
+
+.card {
+  flex: 1;
+  background: #fff;
+  border-radius: 8px; 
+  padding: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08); 
+  overflow-y: visible; 
+  position: relative; 
+}
+
+.container-wrapper .card:nth-child(2) {
+    padding-bottom: 70px; 
+}
+
+.card h1, .card h2 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-top: 3px;
+  font-size: 12px;
+  box-sizing: border-box;
+}
+
+/* STYLE TOMBOL DISABLED */
+input[disabled], select[disabled], button[disabled] {
+  background-color: #f0f0f0;
+  color: #666;
+  cursor: not-allowed;
+}
+
+/* START: NEW COMPLETION STYLES */
+/* Base style untuk select completion */
+#completion_status {
+  transition: background-color 0.3s ease;
+  font-weight: 600;
+  border: 1px solid #999;
+}
+
+/* Warna untuk setiap status Completion */
+#completion_status.status-Open {
+  background-color: #fffbe6; /* Kuning Lembut */
+  border-color: #ffc107;
+  color: #856404;
+}
+#completion_status.status-Finished {
+  background-color: #e6ffe6; /* Hijau Lembut */
+  border-color: #28a745;
+  color: #155724;
+}
+#completion_status.status-Terminated {
+  background-color: #f8d7da; /* Merah Lembut (Light Red) */
+  border-color: #dc3545;
+  color: #721c24;
+}
+#completion_status.status-Rejected {
+  background-color: #dc3545; /* Merah Pekat */
+  color: white;
+  border-color: #b02a37;
+}
+/* END: NEW COMPLETION STYLES */
+
+
+.form-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.form-row:nth-of-type(2) {
+    margin-top: 4px;
+}
+
+.form-row .input-group {
+  flex: 1;
+}
+
+.form-row input {
+  margin-top: 0;
+}
+
+button {
+  background: linear-gradient(90deg, #7ac142, #a5d86f);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.btn-delete {
+  background: #ff4d4d;
+  color: white;
+}
+
+.bottom-right-actions {
+    position: absolute; 
+    bottom: 0; 
+    left: 0;
+    right: 0;
+    padding: 10px 15px; 
+    background: #fff;
+    border-top: 1px solid #eee;
+    z-index: 10;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    border-radius: 0 0 8px 8px;
+}
+
+.upload-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.upload-group .add-button {
+  margin-left: auto;
+  font-weight: 600;
+  flex-shrink: 0; 
+}
+
+.add-button {
+  background: #69d899;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  border: none;
+  margin-top: 0; 
+  margin-bottom: 0;
+  font-size: 12px;
+}
+
+.card input:last-of-type + button { 
+    margin-top: 3px !important; 
+    padding: 0 10px !important;
+    height: 30px;
+}
+
+/* START: PROGRESS BAR MODIFICATION */
+.progress-container {
+    margin-top: 6px;
+    margin-bottom: 8px;
+    position: relative; 
+}
+
+.progress-bar-wrapper {
+    height: 28px; 
+    background: #e0e0e0;
+    border-radius: 5-px;
+    overflow: hidden;
+    width: 100%;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.progress-bar-fill {
+    height: 200%;
+    width: 0%;
+    background: linear-gradient(90deg, #3CB371, #69d899);
+    transition: width 0.5s ease-in-out;
+    border-radius: 5px 0 0 5px;
+    position: relative; 
+}
+
+.progress-bar-text {
+    position: absolute;
+    top: 0; 
+    left: 0;
+    width: 100%;
+    text-align: center;
+    line-height: 28px; 
+    color: #333; 
+    font-size: 11px;
+    font-weight: 600;
+    z-index: 1; 
+    text-shadow: 1px 1px 1px rgba(255, 255, 255, 0); 
+}
+
+/* END: PROGRESS BAR MODIFICATION */
+
+
+#uploadStatus {
+  flex-grow: 1;
+  display: none;
+  height: 6px; 
+  background: #e0e0e0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+#progressBar {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #7ac142, #a5d86f);
+  transform: translateX(-100%);
+  animation: progressPulse 1.5s infinite linear;
+}
+
+@keyframes progressPulse {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+#documentHistoryWrapper {
+    max-height: calc(100vh - 340px);
+    overflow-y: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  margin-bottom: 0;
+}
+
+table thead th {
+  background: #e0e0e0;
+  border: 1px solid #ccc;
+  padding: 4px;
+  font-size: 9px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+table tbody td {
+  padding: 4px;
+  border: 1px solid #eee;
+  font-size: 9px;
+  background: none !important;
+}
+
+table tbody tr:hover {
+  background-color: #f0f0f0 !important;
+  cursor: pointer;
+}
+
+table tbody td select.status-select {
+  width: 90%;
+  padding: 2px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  font-size: 9px;
+  box-sizing: border-box;
+}
+
+.delete-button {
+  background: none;
+  border: none;
+  color: #ff4d4d;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0 3px;
+  opacity: 0.7;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.delete-button:hover {
+  opacity: 1;
+  color: #ff0000;
+}
+
+/* Modifikasi Lebar Kolom untuk menampung "Tahap" dan "Hari" */
+table thead th:nth-child(1) { width: 4%; } /* No (Dikecilkan) */
+table thead th:nth-child(2) { width: 9%; } /* Tanggal (Dikecilkan) */
+table thead th:nth-child(3) { width: 14%; } /* Tahap */
+table thead th:nth-child(4) { width: 22%; } /* Judul */
+table thead th:nth-child(5) { width: 6%; } /* Format */
+table thead th:nth-child(6) { width: 7%; } /* Link */
+table thead th:nth-child(7) { width: 16%; } /* Status */
+table thead th:nth-child(8) { width: 8%; } /* Hari (BARU) */
+table thead th:nth-child(9) { width: 8%; } /* Aksi (Dikecilkan) */
+
+table tbody td:nth-child(1),
+table tbody td:nth-child(6),
+table tbody td:nth-child(8), /* BARU */
+table tbody td:nth-child(9) { /* BARU */
+    text-align: center;
+}
+
+.status-row.status-Proposed { background:#fff9e6; }
+.status-row.status-Approved { background:#e6ffe6; }
+.status-row.status-Pending  { background:#fff0e6; }
+.status-row.status-Cancelled   { background:#ffe6e6; }
+
+@media (max-width: 900px) {
+  .container-wrapper {
+    flex-direction: column;
+  }
+}
+
+.popup-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.05);
+  backdrop-filter: blur(2px);
+  z-index: 9998;
+  transition: opacity 0.5s ease;
+}
+
+.popup-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(1);
+  background: white;
+  padding: 22px;
+  width: 360px;
+  max-width: 92%;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+  z-index: 9999;
+  animation: popupFadeIn 0.22s ease;
+  font-family: Poppins, sans-serif;
+}
+
+.popup-content h3 {
+  margin-top: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.popup-content p {
+  margin: 8px 0 0 0;
+  color: #444;
+  line-height: 1.35;
+}
+
+.popup-buttons {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
+  gap: 10px;
+}
+
+.popup-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  min-width: 76px;
+}
+
+.popup-confirm {
+  background: #ff4d4d;
+  color: white;
+}
+
+.popup-cancel {
+  background: #e0e0e0;
+  color: #222;
+}
+
+.popup-ok {
+  background: linear-gradient(90deg, #7ac142, #a5d86f);
+  color: white;
+}
+
+@keyframes popupFadeIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@media (max-width: 420px) {
+  .popup-modal { width: 92%; padding: 16px; }
+  .popup-buttons { gap: 8px; }
+  .popup-btn { padding: 8px 12px; min-width: 64px; font-size: 14px; }
+}
+
+.sort-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    margin-bottom: 8px;
+}
+
+.sort-group label {
+    margin-top: 0;
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.sort-group select {
+    width: auto;
+    flex-grow: 1;
+    padding: 2px 4px;
+    font-size: 10px;
+    margin-top: 0;
+}
+
+.map-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 10px;
+  width: 80vw;
+  max-width: 800px;
+  height: 80vh;
+  max-height: 600px;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.35);
+  z-index: 9999;
+  animation: popupFadeIn 0.22s ease;
+  display: flex;
+  flex-direction: column;
+}
+.map-modal h3 {
+  margin: 5px 0 8px 0;
+  font-size: 16px;
+}
+#map {
+  flex-grow: 1;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+}
+.map-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding-top: 4px;
+}
+.map-controls p {
+  margin: 0;
+  font-size: 12px;
+}
+.map-controls button {
+  min-width: 80px;
+  flex-shrink: 0; 
+  padding: 4px 10px;
+}
+.map-controls input[type="text"] {
+    width: 100%;
+    margin-top: 0;
+}
+
+.map-controls .popup-cancel-map {
+    background: #ccc;
+    color: #333;
+    padding : 4px 10px;
+}
+
+/* STYLE KHUSUS UNTUK PRATINJAU LOGO DI POPUP (BARU) */
+.logo-preview-container {
+    width: 280px; 
+    height: 280px; 
+    border: 2px dashed #ccc;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 10px auto;
+    overflow: hidden; 
+    background: #f9f9f9;
+    border-radius: 8px;
+}
+
+.logo-preview-container img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain; 
+}
+  </style>
+</head>
+<body>
+
+  <div class="container-wrapper">
+
+    <div class="card">
+      <h1>Update Data</h1>
+
+      <form id="editForm" onsubmit="event.preventDefault(); saveData();">
+        <label>Tanggal</label>
+        <input type="date" id="tanggal" onchange="toggleSektorAvailability()"> 
+
+        <label>Lokasi</label>
+        <div style="display: flex; gap: 5px;">
+            <input type="text" id="lokasi" list="sugestiLokasi" oninput="fetchSuggestions(); toggleSektorAvailability()" style="flex-grow: 1;">
+            <button type="button" class="add-button" onclick="openMapModal()" style="padding: 0 10px; margin-top: 3px; flex-shrink: 0; height: 30px;">📍</button>
+        </div>
+        <datalist id="sugestiLokasi"></datalist>
+        
+        <input type="hidden" id="projectLat">
+        <input type="hidden" id="projectLng">
+
+        <label>Prospek</label>
+        <div id="prospek-group" style="display: flex; gap: 5px; align-items: flex-end;">
+            <input type="text" id="perusahaan" oninput="toggleSektorAvailability()" style="flex-grow: 1;">
+            <button type="button" class="add-button" onclick="showLogoUploadPopup()" style="padding: 0 10px; margin-top: 3px; flex-shrink: 0; height: 30px;">➕</button>
+        </div>
+
+        <label>Sektor</label>
+        <div id="sektor-group" style="display: flex; gap: 5px; align-items: flex-end;">
+            <select id="sektor" style="flex-grow: 1;" onchange="updateKomoditasFilter()" disabled>
+                <option value="" disabled selected>-- Pilih Sektor --</option>
+                </select>
+            <button type="button" class="add-button" onclick="showAddSectorPopup()" style="padding: 0 10px; margin-top: 3px; flex-shrink: 0; height: 28px;" disabled>➕</button>
+        </div>
+        
+        <label>Komoditas</label>
+        <div id="komoditas-group" style="display: flex; gap: 5px;">
+            <select id="komoditas" style="flex-grow: 1;" onchange="toggleTipeAvailability()">
+                <option value="" disabled selected>-- Pilih Komoditas --</option>
+            </select>
+            <button type="button" class="add-button" onclick="showAddKomoditasPopup()" style="padding: 0 10px; margin-top: 3px; flex-shrink: 0; height: 30px;" disabled>➕</button>
+        </div>
+
+        <label>Tipe</label>
+        <select id="tipe" disabled onchange="toggleStageInputAvailability()">
+          <option value="" disabled selected>-- Pilih Tipe --</option>
+          <option>Organic</option>
+          <option>Take Over</option>
+          <option>Joint Operation</option>
+          <option>Joint Venture</option>
+          <option>Partnership</option>
+          <option>Franchising</option>
+          <option>Licensing</option>
+          <option>Divestiture</option>
+        </select>
+        
+        <label>Tahap</label>
+        <input type="text" id="tahap" disabled>
+        <label>Dokumen Update</label>
+        <input type="text" id="dokumen_update" disabled>
+        
+        <label>Dokumen Link</label>
+        <input type="text" id="dokumen_link" disabled>
+        <label>Dokumen Status</label>
+        <input type="text" id="dokumen_status" disabled>
+
+        <label>Progress</label>
+        <div class="progress-container">
+            <div class="progress-bar-wrapper">
+                <div class="progress-bar-fill" id="progressBarFill">
+                    <div class="progress-bar-text" id="progressDisplay">0%</div>
+                </div>
+            </div>
+        </div>
+        
+        <label>Completion</label>
+        <select id="completion_status" onchange="updateCompletionStyle()">
+            <option>Open</option>
+            <option>Finished</option>
+            <option>Terminated</option>
+            <option>Rejected</option>
+        </select>
+
+        <label style="display: none;">Days</label>
+        <input type="text" id="days" disabled style="display: none;">
+        
+        <label>Notes</label>
+        <input type="text" id="notes"> 
+        
+        <label>Kontak</label>
+        
+        <div class="form-row">
+          <div class="input-group">
+            <input type="text" id="contact_name" placeholder="Masukan Nama">
+          </div>
+          <div class="input-group">
+            <input type="text" id="contact_position" placeholder="Masukan Jabatan">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="input-group">
+            <input type="email" id="contact_email" placeholder="Masukan Email">
+          </div>
+          <div class="input-group">
+            <input type="tel" id="contact_phone" placeholder="Masukan Nomor Handphone">
+          </div>
+        </div>
+        </form>
+    </div>
+
+    <div class="card">
+      <h1>Upload Dokumen</h1>
+
+      <label>Pilih File</label>
+      <input type="file" id="documentFileInput">
+      
+      <label>Tahap</label>
+      <select id="documentStageInput" disabled>
+        <option value="" disabled selected>-- Pilih Tahap --</option>
+        <option>Identification</option>
+        <option>Engagement</option>
+        <option>Term Sheet</option>
+        <option>Due Dilligence</option>
+        <option>Final Draft</option>
+        <option>Signing</option>
+      </select>
+      
+      <label>Judul</label>
+      <input type="text" id="documentTitleInput" placeholder="Judul dokumen yang akan tersimpan di Drive">
+      
+      <div class="upload-group">
+        <div id="uploadStatus">
+          <div id="progressBar"></div>
+        </div>
+        <button class="add-button" id="uploadButton" onclick="addNewDocument()">💾 Upload</button>
+      </div>
+      <h2>Historical</h2>
+      
+      <div class="sort-group">
+          <label for="sortOrder">Urutkan</label>
+          <select id="sortOrder" onchange="renderHistory()">
+              <option value="asc" selected>Terlama</option>
+              <option value="desc">Terbaru</option>
+          </select>
+      </div>
+      <div id="documentHistoryWrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Tanggal</th>
+              <th>Tahap</th>
+              <th>Judul</th>
+              <th>Format</th>
+              <th>Link</th>
+              <th>Status</th>
+              <th>Hari</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="documentHistoryTable"></tbody>
+        </table>
+      </div>
+      <div class="bottom-right-actions">
+        <button type="button" class="btn-delete" onclick="deleteProject()">🗑️ Hapus</button>
+        <button type="button" onclick="saveData()">💾 Simpan</button>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div id="popupBackdrop" class="popup-backdrop" style="display:none;"></div>
+
+  <div id="popupModal" class="popup-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="popupTitle" aria-describedby="popupMessage">
+    <div class="popup-content">
+      <h3 id="popupTitle"></h3>
+      <p id="popupMessage"></p>
+      <div id="popupButtons" class="popup-buttons"></div>
+    </div>
+  </div>
+
+  <div id="mapBackdrop" class="popup-backdrop" style="display:none;"></div>
+  <div id="mapModal" class="map-modal" style="display:none;">
+    <h3>Pilih Lokasi</h3>
+    
+    <div class="map-controls" style="padding: 0; margin-bottom: 0;">
+      <div style="width: 100%;">
+        <input type="text" id="mapSearchInput" placeholder="Cari lokasi..." onkeyup="mapSearch(this.value)" list="mapSuggestionsList" style="width: 100%;">
+        <datalist id="mapSuggestionsList"></datalist>
+      </div>
+    </div>
+    
+    <div id="map"></div>
+    
+    <div class="map-controls" style="padding-top: 4px; border-top: 1px solid #eee;">
+      <p>
+        Latitude: <span id="mapLat"></span> | 
+        Longitude: <span id="mapLng"></span>
+      </p>
+      <div>
+        <button class="popup-btn popup-cancel-map" onclick="closeMapModal()">❌ Batal</button>
+        <button class="popup-ok" onclick="confirmMapLocation()">✅ Selesai</button>
+      </div>
+    </div>
+  </div>
+  
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+  <script>
+// ==========================
+// CONFIG (MODIFIKASI: IMGBB API KEY DITAMBAHKAN)
+// ==========================
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwpzUSvmXvLuNrxzosjNOs-3VNugK-5l5GF5opMaIJlrmF1UaMVxKYMqoFwx9NG4aHG/exec";
+const API_URL = "http://localhost:3000/api"; 
+// BARU: Endpoint untuk Sektor & Komoditas Kustom
+const SECTOR_API_URL = `${API_URL}/sector-data`; 
+// ** BARU: Endpoint untuk Log Aktivitas
+const LOG_API_URL = `${API_URL}/logs`; 
+// ** IMGBB CONFIGURATION **
+const IMGBB_API_KEY = "21f90604d6de208720ee6830cf60a73a"; // <-- GANTI DENGAN KUNCI API ANDA!
+// ==========================
+
+// ** START NEW USER SESSION AND LOGGING CONFIG **
+// Ambil username dan Full Name dari localStorage
+const storedUser = localStorage.getItem('currentUser');
+const storedUserName = localStorage.getItem('userName'); // Asumsi userName/fullName disimpan saat login di index.html
+
+// Variabel Global User
+const CURRENT_USER_ID = storedUser || 'GUEST'; // busdev1, busdev2, etc.
+const CURRENT_USER_FULLNAME = storedUserName || CURRENT_USER_ID; // Full Name user
+
+if (CURRENT_USER_ID === 'GUEST') {
+    // Opsional: Anda dapat mengaktifkan ini jika ingin memaksa login
+    // window.location.href = "index.html"; 
+    // throw new Error("User not logged in."); 
+}
+
+/**
+ * REVISED FUNCTION: Mengirim data log aktivitas ke server backend.
+ * Tambahkan parameter projectId.
+ * @param {number|string} projectId - ID (no) proyek yang sedang diubah.
+ * @param {string} activity - Deskripsi aktivitas log (misalnya: "menambahkan proyek baru 'XYZ'").
+ * @param {string} type - Tipe aktivitas (misalnya: "Project_Add", "Document_Upload").
+ */
+async function sendLogActivity(projectId, activity, type) {
+    const logData = {
+        timestamp: new Date().toISOString(),
+        projectId: projectId, // <<< PROJECT ID DITAMBAHKAN DI SINI
+        user: CURRENT_USER_ID,
+        fullName: CURRENT_USER_FULLNAME,
+        type: type, 
+        activity: `${CURRENT_USER_FULLNAME} ${activity}`
+    };
+
+    try {
+        await fetch(LOG_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(logData)
+        });
+        // console.log("Log sent:", logData); // Untuk debug
+    } catch (error) {
+        console.error("Gagal mengirim log aktivitas:", error);
+    }
+}
+// ** END NEW USER SESSION AND LOGGING CONFIG **
+
+
+// ==========================
+// COMMODITY MAPPING DATA (DARI TABEL BARU)
+// ==========================
+// HANYA data sistem. Data kustom akan dimuat dari API
+const SYSTEM_SECTOR_COMMODITY_MAP = {
+    "Asuransi": ["Asuransi Jiwa", "Asuransi Kendaraan", "Asuransi Properti", "Asuransi Kesehatan", "Asuransi Umum"],
+    "E-commerce": ["Digital Service", "Marketplace", "Payment Gateway", "Online Retail", "Platform Digital"],
+    "Hospitality": ["Convention Hall", "Hotel", "Penginapan", "Resort", "Villa"],
+    "Human Resources": ["HR Technology", "Outsourcing", "Payroll", "Rekrutmen", "Training SDM"],
+    "Industri Manufaktur": ["Mesin & Peralatan", "Plastik & Kimia", "Produk Elektronik", "Produk Olahan Logam", "Tekstil & Garmen"],
+    "Security Services": ["Access Control", "Alarm", "CCTV & Sistem Keamanan", "Cyber Security", "Security Personnel"],
+    "Maritim": ["Galangan Kapal", "Pelabuhan", "Perikanan", "Rumput Laut", "Transportasi Laut"],
+    "Kesehatan & Farmasi": ["Alat Kesehatan", "Farmasi Industri", "Layanan Kesehatan", "Obat-obatan", "Suplemen"],
+    "Keuangan & Perbankan": ["Investasi", "Kredit", "Payment Service", "Pembiayaan", "Tabungan & Giro"],
+    "Konstruksi & Infrastruktur": ["EPC", "Infrastruktur Sipil", "Jasa Konstruksi", "Material Bangunan", "Peralatan Konstruksi"],
+    "Konsultan": ["SDM", "Hukum", "Keuangan", "Manajemen", "Teknologi"],
+    "Kuliner / F&B": ["Bahan Baku Makanan", "Makanan Siap Saji", "Minuman", "Produk Kemasan", "Ritel F&B"],
+    "Logistik & Transportasi": ["Cargo", "Jasa Pengiriman", "Transportasi Darat", "Transportasi Laut", "Transportasi Udara"],
+    "Media & Kreatif": ["Advertising", "Desain Grafis", "Event Organizer", "Konten Digital", "Produksi Video"],
+    "Otomotif": ["Aksesoris", "Kendaraan", "Motor & Mobil", "Servis Kendaraan", "Sparepart"],
+    "Pariwisata": ["Destinasi Wisata", "Jasa Pemandu", "Tour Package", "Transportasi Wisata", "Travel Service"],
+    "Pendidikan & Pelatihan": ["Edutech", "Kursus", "Pendidikan Formal", "Sertifikasi", "Training"],
+    "Pertambangan & Energi": ["Batubara", "Nikel", "Bauksit", "Emas", "Migas"],
+    "Pertanian & Perkebunan": ["Hortikultura", "Karet", "Kelapa Sawit", "Kakao", "Kopi"],
+    "Properti & Real Estate": ["Hunian", "Kawasan Industri", "Komersial", "Lahan", "Properti Sewa"],
+    "Retail & Wholesale": ["Bahan Pokok", "Elektronik", "Household Supplies", "Pakaian", "Produk Konsumen"],
+    "Teknologi & Informasi": ["Cloud Service", "Hardware", "IoT", "IT Solution", "Software"],
+    "Telekomunikasi": ["Data Center", "Fiber Optic", "Internet", "Layanan Komunikasi", "Seluler"]
+};
+// ==========================
+
+// ==========================
+// GLOBAL STATE UNTUK SEKTOR DAN KOMODITAS KUSTOM
+// ==========================
+// Daftar Sektor Sistem (tidak bisa dihapus)
+const SYSTEM_SECTORS = Object.keys(SYSTEM_SECTOR_COMMODITY_MAP); 
+// Daftar Sektor Kustom (dimuat dari sector_data.json)
+let CUSTOM_SECTORS = []; 
+// Map Komoditas Kustom { Sektor: [Komoditas] } (dimuat dari sector_data.json)
+let CUSTOM_COMMODITY_MAP = {}; 
+// ==========================
+
+// BARU: Variabel global untuk menyimpan status completion sebelumnya
+let previousCompletionStatus = null; 
+
+// BARU: Variabel global untuk menyimpan nilai form awal saat load (untuk logging)
+let initialSector = null;
+let initialCommodity = null;
+let initialType = null;
+
+// BARU: Variabel global untuk menyimpan data URL logo yang sudah disesuaikan
+let projectLogoDataURL = null; 
+
+// ==========================
+// STAGE HIERARCHY
+// ==========================
+const STAGE_HIERARCHY = {
+  "Identification": 1,
+  "Engagement": 2,
+  "Term Sheet": 3,
+  "Due Dilligence": 4,
+  "Final Draft": 5,
+  "Signing": 6
+};
+// ==========================
+
+// ==========================
+// STAGE PROGRESS PERCENTAGES
+// ==========================
+const STAGE_PROGRESS_PERCENTAGES = {
+  "Identification": 10,
+  "Engagement": 25,
+  "Term Sheet": 50,
+  "Due Dilligence": 75,
+  "Final Draft": 90,
+  "Signing": 100
+};
+// ==========================
+
+// ==========================
+// DATA UTILITY (localStorage)
+// ==========================
+function getProjects() {
+    const data = localStorage.getItem('projectData');
+    return data ? JSON.parse(data) : [];
+}
+
+function saveProjects(projects) {
+    localStorage.setItem('projectData', JSON.stringify(projects));
+}
+
+let PROJECTS = getProjects(); 
+
+const params = new URLSearchParams(window.location.search);
+let id = parseInt(params.get("id")) || null;
+let currentProjectData = null; 
+
+const EMPTY_PROJECT = {
+    prospek: "",
+    lokasi: "",
+    sektor: "",
+    komoditas: "",
+    tipe: "-- Pilih Tipe --", 
+    tanggal: "",
+    notes: "",
+    logo: null, // <<< BARU: LOGO FIELD
+    contact: { name: "", title: "", email: "", phone: "" },
+    upload: "-",
+    link: "-",
+    status: "-",
+    progress: 0,
+    completion: "Open", 
+    lat: null,
+    lng: null,
+    no: null,
+    documentHistory: [],
+};
+
+const uploadButton = document.getElementById("uploadButton");
+const uploadStatus = document.getElementById("uploadStatus");
+
+// ==========================
+// UTILITY FUNCTIONS
+// ==========================
+
+function formatDate(dateString) {
+  if (!dateString) return '';
+  
+  const cleanString = dateString.split('T')[0];
+  const parts = cleanString.split('-'); 
+  
+  if (parts.length !== 3) return cleanString;
+
+  const date = new Date(parts[0], parts[1] - 1, parts[2]); 
+  
+  const days = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+  const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+  
+  const dayName = days[date.getDay()];
+  const day = parts[2];
+  const monthName = months[date.getMonth()];
+  const year = parts[0];
+  
+  return `${dayName}, ${day} ${monthName} ${year}`;
+}
+
+/**
+ * NEW FUNCTION: Formats a date string (YYYY-MM-DD) to "dd Mmm yy" (e.g., "30 Nov 25).
+ * @param {string} dateString - Date in YYYY-MM-DD format.
+ * @returns {string} Formatted date string.
+ */
+function formatDateForDaysField(dateString) {
+  if (!dateString) return '';
+  
+  const [year, month, day] = dateString.split('-'); 
+  
+  // Use a map for Indonesian months (taken from formatDate function logic)
+  const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+  
+  // Create a Date object to get the correct month index
+  const date = new Date(year, month - 1, day); 
+  
+  const dayStr = day.padStart(2, '0');
+  const monthName = months[date.getMonth()];
+  const yearStr = year.slice(-2);
+  
+  return `${dayStr} ${monthName} ${yearStr}`;
+}
+
+// Helper: File -> DataURL
+function toBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = err => reject(err);
+  });
+}
+
+
+/**
+ * Calculates the duration of the project in days.
+ * @param {string} startDateString - Project start date (ISO string YYYY-MM-DD).
+ * @param {string} completionStatus - Project completion status (Used to determine return text).
+ * @returns {string} The duration in text format (e.g., "30 Hari").
+ */
+function calculateProjectDuration(startDateString, completionStatus) {
+    if (!startDateString) return '-';
+
+    const startDate = new Date(startDateString.split('T')[0]);
+    const endDate = new Date(); // Use today's date as the end date
+
+    // Reset time components to compare only dates
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(0, 0, 0, 0);
+
+    // If start date is in the future, project hasn't started
+    if (startDate > endDate) {
+        return "Belum Mulai";
+    }
+
+    const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+    // Calculate days and round up to include the current day
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) {
+        return "0 Hari (Hari Ini)";
+    }
+    
+    // Return "X Hari" format
+    return `${diffDays} hari`;
+}
+
+
+/**
+ * MODIFIED FUNCTION: Prompts the user for the completion date.
+ * HANYA mengisi field 'days' dan tidak memanggil saveData().
+ */
+function promptForCompletionDate(status) {
+    const today = new Date().toISOString().slice(0, 10);
+    
+    showPopup(
+        `Tanggal ${status}`,
+        `Proyek dinyatakan ${status} pada tanggal:<br><input type="date" id="completionDateInput" value="${today}" style="width: 100%; margin-top: 10px;">`,
+        [
+            { text: "Batal", class: "popup-cancel", onClick: () => {
+                // If cancelled, revert Completion status to 'Open' and update style/days
+                const completionSelect = document.getElementById("completion_status");
+                completionSelect.value = previousCompletionStatus; // Revert ke status sebelumnya
+                updateCompletionStyle(true); // Call with isRevert=true
+            } },
+            { text: "Simpan", class: "popup-ok", onClick: () => {
+                const dateInput = document.getElementById("completionDateInput");
+                const selectedDate = dateInput.value;
+                if (selectedDate) {
+                    const formattedDate = formatDateForDaysField(selectedDate); // "dd Mmm yy"
+                    document.getElementById("days").value = formattedDate;
+                    // HAPUS PANGGILAN saveData(true);
+                }
+            } }
+        ]
+    );
+}
+
+function escapeHtml(unsafe) {
+  if (!unsafe && unsafe !== 0) return '';
+  return String(unsafe)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function sanitizeFileName(name) {
+  return name.replace(/[\\/:\*\?"<>\|]+/g, '').trim();
+}
+
+// ==========================
+// FORM UTILITY FUNCTIONS
+// ==========================
+
+function toggleTipeAvailability() {
+    const komoditasSelect = document.getElementById("komoditas");
+    const tipeSelect = document.getElementById("tipe");
+    
+    // Tombol Tambah Komoditas aktif jika Sektor sudah dipilih
+    const addCommodityButton = document.querySelector("#komoditas-group button");
+    const sektorSelect = document.getElementById("sektor");
+    
+    const isSektorSelected = sektorSelect.value !== "" && sektorSelect.value !== null && sektorSelect.value !== '-- Pilih Sektor --';
+    addCommodityButton.disabled = !isSektorSelected;
+
+    // Tipe akan aktif jika Komoditas memiliki nilai yang valid
+    const isKomoditasSelected = komoditasSelect.value !== "" && komoditasSelect.value !== null && komoditasSelect.value !== '-- Pilih Komoditas --';
+
+    tipeSelect.disabled = !isKomoditasSelected;
+    
+    if (!isKomoditasSelected) {
+        tipeSelect.value = "";
+    }
+    
+    toggleStageInputAvailability();
+}
+
+function toggleSektorAvailability() {
+    const tanggal = document.getElementById("tanggal").value.trim();
+    const lokasi = document.getElementById("lokasi").value.trim();
+    const prospek = document.getElementById("perusahaan").value.trim();
+    
+    const sektorSelect = document.getElementById("sektor");
+    const addSectorButton = document.querySelector("#sektor-group button");
+
+    const isReady = tanggal !== "" && lokasi !== "" && prospek !== "";
+
+    sektorSelect.disabled = !isReady;
+    addSectorButton.disabled = !isReady;
+
+    if (!isReady) {
+        sektorSelect.value = "";
+        updateKomoditasFilter(); 
+    }
+}
+
+function toggleStageInputAvailability() {
+    const tipeSelect = document.getElementById("tipe");
+    const stageSelect = document.getElementById("documentStageInput");
+
+    const isTipeSelected = tipeSelect.value !== "" && tipeSelect.value !== null && tipeSelect.value !== '-- Pilih Tipe --';
+
+    stageSelect.disabled = !isTipeSelected;
+    
+    if (!isTipeSelected) {
+        stageSelect.value = ""; 
+    }
+}
+
+
+// ==========================
+// POPUP SYSTEM
+// ==========================
+
+function showPopup(title, message, buttons = [], isLoading = false) {
+  document.getElementById("popupTitle").innerText = title;
+  document.getElementById("popupMessage").innerHTML = message;
+
+  const btnContainer = document.getElementById("popupButtons");
+  btnContainer.innerHTML = "";
+  btnContainer.style.display = "flex"; 
+
+  const loadingBar = document.createElement('div');
+  loadingBar.innerHTML = `<div style="display:flex; height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden; margin-top: 15px;">
+                            <div style="height: 100%; width: 100%; background: linear-gradient(90deg, #7ac142, #a5d86f); transform: translateX(-100%); animation: progressPulse 1.5s infinite linear;"></div>
+                          </div>`;
+  
+  Array.from(document.getElementById("popupModal").querySelector('.popup-content').children).forEach(child => {
+      if (child.id !== "popupTitle" && child.id !== "popupMessage" && child.id !== "popupButtons") {
+          child.remove();
+      }
+  });
+
+
+  if (isLoading) {
+    btnContainer.style.display = "none";
+    document.getElementById("popupModal").querySelector('.popup-content').appendChild(loadingBar);
+  } else {
+    if (!buttons || buttons.length === 0) {
+      buttons = [{ text: "OK", class: "popup-ok", onClick: null }];
+    }
+      
+    buttons.forEach(btn => {
+      const el = document.createElement("button");
+      el.className = `popup-btn ${btn.class || ""}`;
+      el.innerText = btn.text;
+      el.onclick = (e) => {
+        Array.from(btnContainer.children).forEach(b => b.disabled = false);
+        hidePopup();
+        if (btn.onClick) {
+          try {
+            btn.onClick();
+          } catch (err) {
+            console.error("Error in popup button onClick:", err);
+          }
+        }
+      };
+      btnContainer.appendChild(el);
+    });
+  }
+
+  const backdrop = document.getElementById("popupBackdrop");
+  const modal = document.getElementById("popupModal");
+  backdrop.style.display = "block";
+  modal.style.display = "block";
+
+  function escHandler(e) {
+    if (e.key === "Escape") {
+      hidePopup();
+      document.removeEventListener('keydown', escHandler);
+    }
+  }
+  document.addEventListener('keydown', escHandler);
+}
+
+function hidePopup() {
+  const backdrop = document.getElementById("popupBackdrop");
+  const modal = document.getElementById("popupModal");
+  backdrop.style.display = "none";
+  modal.style.display = "none";
+  
+  const content = document.getElementById("popupModal").querySelector('.popup-content');
+  Array.from(content.children).forEach(child => {
+      if (child.id !== "popupTitle" && child.id !== "popupMessage" && child.id !== "popupButtons") {
+          child.remove();
+      }
+  });
+}
+
+document.getElementById("popupBackdrop").addEventListener("click", hidePopup);
+
+// ==========================
+// DOCUMENT HISTORY / PROGRESS 
+// ==========================
+
+function getProjectHistory() {
+    return currentProjectData ? currentProjectData.documentHistory || [] : [];
+}
+
+function getLatestDocumentInfo() {
+  const history = getProjectHistory();
+  if (history.length === 0) {
+    return { title: '-', status: '-', link: '-', stage: null };
+  }
+
+  const sortedHistory = [...history].sort((a, b) => {
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      if (dateA > dateB) return 1;
+      if (dateA < dateB) return -1;
+      if (a.id > b.id) return 1;
+      if (a.id < b.id) return -1;
+      return 0;
+  });
+
+  const latestDoc = sortedHistory[sortedHistory.length - 1];
+
+  return {
+    title: latestDoc.title,
+    status: latestDoc.status,
+    link: latestDoc.link || '-', 
+    stage: latestDoc.stage || null 
+  };
+}
+
+function updateProjectProgress() {
+    const latestInfo = getLatestDocumentInfo(); 
+    const latestStageByDate = latestInfo.stage;
+    
+    let progressPercent = 0;
+    let displayText = "0% (New Project/No Stage)";
+    
+    if (latestStageByDate && STAGE_PROGRESS_PERCENTAGES[latestStageByDate] !== undefined) {
+        progressPercent = STAGE_PROGRESS_PERCENTAGES[latestStageByDate];
+        displayText = `${progressPercent}%`; 
+    }
+
+    document.getElementById("progressDisplay").innerText = displayText;
+    document.getElementById("progressBarFill").style.width = `${progressPercent}%`;
+
+    if (currentProjectData) {
+        currentProjectData.progress = progressPercent;
+    }
+}
+
+
+function updateFormStatusFromHistory() {
+  const latestInfo = getLatestDocumentInfo();
+  
+  if (latestInfo.stage) {
+    document.getElementById("tahap").value = latestInfo.stage; 
+    document.getElementById("dokumen_update").value = latestInfo.title;
+    
+    document.getElementById("dokumen_link").value = latestInfo.link === '-' || latestInfo.link === '#'
+      ? '-' 
+      : latestInfo.link;
+
+    document.getElementById("dokumen_status").value = latestInfo.status;
+  } else {
+    document.getElementById("tahap").value = '-'; 
+    document.getElementById("dokumen_update").value = EMPTY_PROJECT.upload;
+    document.getElementById("dokumen_link").value = EMPTY_PROJECT.link;
+    document.getElementById("dokumen_status").value = EMPTY_PROJECT.status;
+  }
+
+  updateProjectProgress();
+}
+
+/**
+ * UPDATED FUNCTION: Calculates the duration a document has been in its current state.
+ * Memperhitungkan statusDate untuk Approved/Cancelled.
+ * @param {string} documentDateString - The date the document was uploaded (YYYY-MM-DD).
+ * @param {string} documentStatus - The current status (Proposed, Approved, Pending, Cancelled).
+ * @param {string} statusDateString - The date the status was last changed (YYYY-MM-DD).
+ * @returns {string} The duration in text format (e.g., "30 hari").
+ */
+function calculateDocumentDuration(documentDateString, documentStatus, statusDateString) {
+    if (!documentDateString) return '-';
+    
+    // Pastikan tanggal dokumen diubah menjadi objek Date tanpa komponen waktu.
+    const docDate = new Date(documentDateString.split('T')[0]);
+    docDate.setHours(0, 0, 0, 0);
+
+    const isOngoing = documentStatus === "Proposed" || documentStatus === "Pending";
+    
+    let endDate;
+    
+    if (isOngoing) {
+        // Status Ongoing: Hitung sampai hari ini
+        endDate = new Date();
+    } else if (documentStatus === "Approved" || documentStatus === "Cancelled") {
+        // Status Final: Gunakan statusDateString sebagai tanggal akhir perhitungan
+        if (statusDateString) {
+            endDate = new Date(statusDateString.split('T')[0]);
+        } else {
+            // Fallback: Jika statusDate belum ada (misal data lama), gunakan hari ini
+            endDate = new Date(); 
+        }
+    } else {
+        return "-";
+    }
+
+    // Reset waktu akhir
+    endDate.setHours(0, 0, 0, 0);
+    
+    if (docDate > endDate) {
+        return "0 hari"; 
+    }
+
+    const diffTime = Math.abs(endDate.getTime() - docDate.getTime());
+    
+    // Hitung hari: Tambah 1 hari untuk mencakup hari pertama (Tanggal Dokumen)
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    
+    return `${diffDays} hari`;
+}
+
+
+function renderHistory() {
+  const tbody = document.getElementById("documentHistoryTable");
+  tbody.innerHTML = "";
+  const statusOptions = ["Proposed", "Approved", "Pending", "Cancelled"];
+
+  const rawHistory = getProjectHistory(); 
+  
+  if (rawHistory.length === 0) {
+      // Disesuaikan colspan menjadi 9
+      const message = id === null 
+          ? `<tr><td colspan="9" style="text-align:center;">Proyek belum disimpan. Isi data utama di kiri atau unggah dokumen wajib untuk memulai proyek.</td></tr>`
+          : `<tr><td colspan="9" style="text-align:center;">Belum ada dokumen yang diunggah.</td></tr>`;
+      tbody.innerHTML = message;
+      return;
+  }
+  
+  const baseSortedHistory = [...rawHistory].sort((a, b) => {
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      if (dateA > dateB) return 1;
+      if (dateA < dateB) return -1;
+      if (a.id > b.id) return 1;
+      if (a.id < b.id) return -1;
+      return 0;
+  });
+
+  baseSortedHistory.forEach((doc, index) => {
+      doc.indexNo = index + 1;
+  });
+  
+  const sortOrder = document.getElementById("sortOrder") 
+    ? document.getElementById("sortOrder").value 
+    : "desc";
+
+  const pageItems = [...baseSortedHistory].sort((a, b) => {
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      let comparison = 0;
+      
+      if (dateA > dateB) comparison = 1;
+      else if (dateA < dateB) comparison = -1;
+      
+      if (comparison === 0) {
+          comparison = a.id > b.id ? 1 : a.id < b.id ? -1 : 0;
+      }
+      
+      return sortOrder === "asc" ? comparison : comparison * -1;
+  });
+  
+  pageItems.forEach(doc => {
+    const selectHtml = `
+      <select 
+        class="status-select" 
+        data-doc-id="${doc.id}" 
+        onchange="updateDocumentStatus(this.value, ${doc.id})"
+      >
+        ${statusOptions.map(option => `
+          <option 
+            value="${option}" 
+            ${doc.status === option ? 'selected' : ''}
+          >
+            ${option}
+          </option>
+        `).join('')}
+      </select>
+    `;
+
+    // BARU: Hitung Durasi (Menggunakan statusDate)
+    const durationText = calculateDocumentDuration(doc.date, doc.status, doc.statusDate); 
+    
+    const linkHtml = doc.link && doc.link !== "#" && doc.link !== "-"
+      ? `<a href="${doc.link}" target="_blank" rel="noopener">Lihat</a>`
+      : '-';
+
+    tbody.innerHTML += `
+      <tr class="status-row status-${doc.status}">
+        <td>${doc.indexNo}</td> <td>${formatDate(doc.date)}</td>
+        <td>${escapeHtml(doc.stage || '-')}</td> <td>${escapeHtml(doc.title)}</td>
+        <td>${escapeHtml(doc.type || '')}</td>
+        <td>${linkHtml}</td>
+        <td>${selectHtml}</td>
+        <td>${durationText}</td> <td>
+          <button class="delete-button" onclick="deleteDocument(${doc.id})">🗑️</button>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+/**
+ * MODIFIED FUNCTION: Simpan tanggal perubahan status (statusDate) dan tambahkan LOG.
+ */
+function updateDocumentStatus(newStatus, docId) {
+    const history = getProjectHistory(); 
+    const doc = history.find(d => d.id === docId);
+
+    if (doc) {
+        const projectId = currentProjectData.no; // Ambil Project ID
+        // TANGGAL BARU: Simpan tanggal perubahan status
+        const today = new Date().toISOString().slice(0,10);
+        const oldStatus = doc.status; // Simpan status lama
+        
+        doc.status = newStatus;
+        // Hanya simpan statusDate jika status diubah ke final atau status sedang diubah
+        doc.statusDate = today; 
+
+        renderHistory();
+        updateFormStatusFromHistory();
+        
+        saveData(true); 
+        
+        // ** START LOGGING **
+        const projectName = currentProjectData.prospek || `Proyek No. ${projectId}`;
+        // Panggil dengan projectId
+        sendLogActivity(projectId, `mengubah status dokumen '${doc.title}' dari '${oldStatus}' menjadi '${newStatus}' pada proyek '${projectName}'`, 'Document_Status_Update');
+        // ** END LOGGING **
+    }
+}
+
+function deleteDocument(docId) {
+  showPopup(
+    "Hapus Dokumen?",
+    "Anda yakin ingin menghapus dokumen ini?",
+    [
+      {
+        text: "Batal",
+        class: "popup-cancel",
+        onClick: null
+      },
+      {
+        text: "Hapus",
+        class: "popup-confirm",
+        onClick: () => {
+          proceedDelete(docId);
+        }
+      }
+    ]
+  );
+}
+
+async function proceedDelete(docId) {
+  let history = getProjectHistory(); 
+  const doc = history.find(d => d.id === docId);
+  const projectId = currentProjectData.no; // Ambil Project ID
+
+  if (!doc) {
+    showPopup("Error", "Dokumen tidak ditemukan.", [
+      { text: "OK", class: "popup-ok" }
+    ]);
+    return;
+  }
+  
+  const docTitle = doc.title; // Ambil judul sebelum dihapus
+
+  // 1. Delete from Google Drive (if fileId exists)
+  if (doc.fileId) {
+    const payload = new URLSearchParams({
+      action: "delete",
+      fileId: doc.fileId
+    });
+
+    try {
+      await fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        body: payload
+      });
+    } catch (err) {
+      console.error("Error during Drive delete (non-critical):", err);
+    }
+  }
+
+  // 2. Delete from Document History (filter array di memory)
+  currentProjectData.documentHistory = history.filter(d => d.id !== docId);
+  
+  // 3. Simpan data proyek lengkap ke server
+  await saveData(true); 
+
+  renderHistory();
+  updateFormStatusFromHistory();
+  
+  // ** START LOGGING **
+  const projectName = currentProjectData.prospek || `Proyek No. ${projectId}`;
+  // Panggil dengan projectId
+  sendLogActivity(projectId, `menghapus dokumen '${docTitle}' dari proyek '${projectName}'`, 'Document_Delete');
+  // ** END LOGGING **
+
+  showPopup("Berhasil", "Dokumen berhasil dihapus dari sistem dan server.", [
+    { text: "OK", class: "popup-ok" }
+  ]);
+}
+
+// ==========================
+// FORM SUBMISSION / PROJECT CRUD
+// ==========================
+
+function collectFormData(projectNo) {
+    const latestInfo = getLatestDocumentInfo();
+    const progressText = document.getElementById("progressDisplay").innerText;
+    const progressMatch = progressText.match(/^(\d+)%/);
+    const progressPercent = progressMatch ? parseInt(progressMatch[1]) : 0; 
+    
+    // Hapus field customSectors dan customCommodityMap dari data proyek
+    return {
+        lokasi: document.getElementById("lokasi").value.trim(),
+        prospek: document.getElementById("perusahaan").value.trim(), 
+        sektor: document.getElementById("sektor").value, 
+        komoditas: document.getElementById("komoditas").value.trim(), 
+        tahap: document.getElementById("tahap").value.trim(),
+        tipe: document.getElementById("tipe").value,
+        tanggal: document.getElementById("tanggal").value.trim(),
+        notes: document.getElementById("notes").value,
+        
+        logo: projectLogoDataURL, // <<< BARU: TAMBAHKAN LOGO (bisa Data URL atau URL ImgBB)
+
+        lat: document.getElementById("projectLat").value || null, 
+        lng: document.getElementById("projectLng").value || null,
+
+        contact: {
+            name: document.getElementById("contact_name").value,
+            title: document.getElementById("contact_position").value,
+            email: document.getElementById("contact_email").value,
+            phone: document.getElementById("contact_phone").value,
+        },
+        
+        upload: latestInfo.title, 
+        link: latestInfo.link === '-' ? '-' : latestInfo.link,
+        status: latestInfo.status,
+        progress: progressPercent, 
+        completion: document.getElementById("completion_status").value, 
+        days: document.getElementById("days").value.trim(), // Pastikan nilai Days (X Hari atau dd Mmm yy) ikut tersimpan
+        
+        no: projectNo,
+    };
+}
+
+async function sendProjectToServer(data, isNew) {
+    const endpoint = isNew ? `${API_URL}/projects` : `${API_URL}/project/${data.no}`;
+    const method = isNew ? "POST" : "PUT";
+    
+    try {
+        const response = await fetch(endpoint, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            throw new Error(`Server error: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        if (result.success) {
+            return result.project || { no: data.no }; 
+        } else {
+            throw new Error(result.error || "Unknown server error.");
+        }
+    } catch (error) {
+        console.error("Error saving data to server:", error);
+        throw new Error("Gagal menyimpan ke server backend. Pastikan server Node.js berjalan. " + error.message);
+    }
+}
+
+
+/**
+ * NEW FUNCTION: Mengunggah DataURL (Base64) ke ImgBB.
+ * @param {string} base64DataUrl - Data URL format 'data:image/png;base64,iVBORw0KGgo...'.
+ * @returns {Promise<string|null>} URL gambar yang berhasil diupload atau null jika gagal.
+ */
+async function uploadToImgBB(base64DataUrl) {
+    if (!IMGBB_API_KEY || !base64DataUrl || !base64DataUrl.startsWith('data:')) return null;
+
+    // Hapus header Data URL untuk mendapatkan string Base64 murni
+    const base64Content = base64DataUrl.split(',')[1];
+    
+    const formData = new FormData();
+    formData.append("key", IMGBB_API_KEY);
+    formData.append("image", base64Content); // Base64 murni
+
+    try {
+        const response = await fetch("https://api.imgbb.com/1/upload", {
+            method: "POST",
+            body: formData 
+        });
+
+        const result = await response.json();
+
+        if (result.success && result.data && result.data.url) {
+            let finalUrl = result.data.url;
+            
+            // ** MODIFIKASI: Mengganti domain ImgBB dari i.ibb.co menjadi i.ibb.co.com **
+            finalUrl = finalUrl.replace("i.ibb.co", "i.ibb.co.com");
+            // ** AKHIR MODIFIKASI **
+            
+            return finalUrl;
+        } else {
+            console.error("Gagal mengunggah ke ImgBB:", result.error.message || "Unknown error");
+            return null;
+        }
+    } catch (error) {
+        console.error("Kesalahan koneksi saat upload ke ImgBB:", error);
+        return null;
+    }
+}
+
+
+/**
+ * MODIFIED: Menambahkan logika logging aktivitas proyek (termasuk Sektor, Komoditas, Tipe) 
+ * dan LOGIKA UPLOAD IMGBB.
+ */
+async function saveData(suppressPopup = false) {
+    
+    const isNewProject = id === null;
+    let projectNo = isNewProject 
+        ? (PROJECTS.length > 0 ? Math.max(...PROJECTS.map(p => p.no || 0)) + 1 : 1) 
+        : id; 
+
+    if (isNewProject) {
+        try {
+            const allProjectsRes = await fetch(`${API_URL}/projects`);
+            const allProjects = await allProjectsRes.json();
+            if (allProjects.success && allProjects.projects.length > 0) {
+                 projectNo = Math.max(...allProjects.projects.map(p => p.no || 0)) + 1;
+            }
+        } catch (e) {
+            console.warn("Gagal mendapatkan daftar proyek dari server, menggunakan ID lokal.", e);
+        }
+    }
+
+    const updatedData = collectFormData(projectNo);
+    updatedData.documentHistory = getProjectHistory();
+  
+    const requiredFields = [
+        updatedData.lokasi,
+        updatedData.prospek,
+        updatedData.sektor,
+        updatedData.komoditas,
+        updatedData.tanggal,
+        updatedData.tipe
+    ];
+    
+    const isSektorEmpty = updatedData.sektor === "" || updatedData.sektor === null || updatedData.sektor === '-- Pilih Sektor --';
+    const isKomoditasEmpty = updatedData.komoditas === "" || updatedData.komoditas === null || updatedData.komoditas === '-- Pilih Komoditas --';
+    const isTipeEmpty = updatedData.tipe === "" || updatedData.tipe === null || updatedData.tipe === '-- Pilih Tipe --';
+
+    const isTotallyEmpty = requiredFields.every(field => field === "" || field === "-") && isSektorEmpty && isKomoditasEmpty && isTipeEmpty;
+
+    if (isTotallyEmpty && isNewProject) {
+        if (!suppressPopup) {
+            showPopup("Perhatian", "Anda tidak dapat menyimpan proyek kosong. Harap lengkapi data terlebih dahulu.", [
+                { text: "OK", class: "popup-ok" }
+            ]);
+        }
+        return false; 
+    }
+
+    // ------------------------------------------------------------------
+    // ** START NEW IMGBB UPLOAD LOGIC **
+    // ------------------------------------------------------------------
+
+    let finalLogoUrl = updatedData.logo; // Ambil nilai saat ini (bisa Data URL atau URL lama)
+
+    // Cek apakah logo adalah Data URL Base64 (yaitu baru diunggah di sesi ini)
+    if (finalLogoUrl && finalLogoUrl.startsWith('data:')) {
+        if (!suppressPopup) {
+            // Tampilkan pop-up loading hanya jika bukan silent save
+            showPopup("Mengunggah Logo...", "Logo sedang diunggah. Harap tunggu.", [], true);
+        }
+        
+        const imgbbUrl = await uploadToImgBB(finalLogoUrl);
+
+        if (imgbbUrl) {
+            finalLogoUrl = imgbbUrl; // Simpan URL ImgBB
+            projectLogoDataURL = imgbbUrl; // Update variabel global
+        } else {
+            // Jika gagal upload, gunakan logo yang sudah ada sebelumnya (jika ada)
+            finalLogoUrl = currentProjectData ? currentProjectData.logo : null; 
+            projectLogoDataURL = finalLogoUrl;
+            
+            if (!suppressPopup) {
+                // Sembunyikan pop-up 'Mengunggah Logo...' dan tampilkan pop-up error
+                hidePopup();
+                showPopup("Perhatian", "Gagal mengunggah logo ke ImgBB. Akan menggunakan logo yang tersimpan sebelumnya (jika ada).", [
+                    { text: "OK", class: "popup-ok" }
+                ]);
+            }
+        }
+    }
+
+    updatedData.logo = finalLogoUrl; // Update data proyek dengan URL final
+    
+    // ------------------------------------------------------------------
+    // ** END NEW IMGBB UPLOAD LOGIC **
+    // ------------------------------------------------------------------
+
+
+    let success = false;
+    let finalProjectNo = projectNo;
+    
+    // BARU: Ambil status completion lama sebelum diupdate
+    const oldCompletionStatus = previousCompletionStatus; 
+    const newCompletionStatus = updatedData.completion; 
+    let projectNameBeforeUpdate = currentProjectData ? currentProjectData.prospek : updatedData.prospek;
+
+    try {
+        const result = await sendProjectToServer(updatedData, isNewProject);
+        if (result.no) {
+            finalProjectNo = result.no; 
+            const serverProjectData = { ...updatedData, ...result.project, no: finalProjectNo };
+            
+            updatedData.no = finalProjectNo;
+            currentProjectData = serverProjectData; 
+            success = true;
+        } else {
+             throw new Error("Server tidak mengembalikan ID proyek setelah penyimpanan.");
+        }
+    } catch(e) {
+        showPopup("Gagal", e.message, [
+            { text: "OK", class: "popup-ok" }
+        ]);
+        return false;
+    }
+
+    if (success) {
+        if (isNewProject) {
+            PROJECTS.push(currentProjectData);
+            id = finalProjectNo; 
+        } else {
+            const index = PROJECTS.findIndex(p => p.no === id);
+            if (index !== -1) {
+                PROJECTS[index] = currentProjectData;
+            } else {
+                PROJECTS.push(currentProjectData); 
+            }
+        }
+        saveProjects(PROJECTS);
+
+        // ** START LOGGING: SEKTOR, KOMODITAS, TIPE **
+        const newSector = updatedData.sektor;
+        const newCommodity = updatedData.komoditas;
+        const newType = updatedData.tipe;
+        const currentIdForLog = finalProjectNo; // ID yang sudah pasti
+        
+        const projectName = updatedData.prospek || `Proyek No. ${currentIdForLog}`;
+        
+        // Log perubahan Sektor
+        if (newSector !== initialSector) {
+            // Panggil dengan currentIdForLog
+            await sendLogActivity(
+                currentIdForLog,
+                `mengubah sektor proyek '${projectName}' dari '${initialSector || '-'}' menjadi '${newSector}'`, 
+                'Project_Sector_Update'
+            );
+            initialSector = newSector; // Update nilai awal
+        }
+
+        // Log perubahan Komoditas
+        if (newCommodity !== initialCommodity) {
+            // Panggil dengan currentIdForLog
+            await sendLogActivity(
+                currentIdForLog,
+                `mengubah komoditas proyek '${projectName}' dari '${initialCommodity || '-'}' menjadi '${newCommodity}'`, 
+                'Project_Commodity_Update'
+            );
+            initialCommodity = newCommodity; // Update nilai awal
+        }
+        
+        // Log perubahan Tipe
+        if (newType !== initialType) {
+            // Panggil dengan currentIdForLog
+            await sendLogActivity(
+                currentIdForLog,
+                `mengubah tipe proyek '${projectName}' dari '${initialType || '-'}' menjadi '${newType}'`, 
+                'Project_Type_Update'
+            );
+            initialType = newType; // Update nilai awal
+        }
+        // ** END LOGGING: SEKTOR, KOMODITAS, TIPE **
+
+
+        // ** START LOGGING LAMA (Nama Proyek & Completion Status) **
+        if (isNewProject) {
+            // Log Proyek Baru
+            // Panggil dengan currentIdForLog
+            await sendLogActivity(currentIdForLog, `menambahkan proyek baru '${updatedData.prospek}'`, 'Project_Add');
+        } else {
+            // Log Update Nama Proyek
+            if (projectNameBeforeUpdate !== updatedData.prospek) {
+                // Panggil dengan currentIdForLog
+                await sendLogActivity(currentIdForLog, `mengubah nama proyek '${projectNameBeforeUpdate}' menjadi '${updatedData.prospek}'`, 'Project_Name_Update');
+            }
+            
+            // Log Completion Status Change
+            if (newCompletionStatus !== oldCompletionStatus) {
+                // Panggil dengan currentIdForLog
+                await sendLogActivity(currentIdForLog, `mengubah completion proyek '${updatedData.prospek}' menjadi '${newCompletionStatus}'`, 'Project_Completion_Update');
+            }
+        }
+        // ** END LOGGING LAMA **
+
+        if (!suppressPopup && !window.isCalledFromUpload) {
+            let popupMessage = "Perubahan proyek berhasil disimpan!";
+            let popupTitle = "Berhasil";
+            
+            // Cek apakah status completion berubah DAN bukan proyek baru
+            if (newCompletionStatus !== oldCompletionStatus && id !== null) {
+                
+                // Ambil Tahap dan Days untuk pesan dinamis
+                const tahapDisplay = document.getElementById("tahap").value || 'Tahap Awal';
+                const daysDisplay = document.getElementById("days").value.trim(); 
+
+                if (newCompletionStatus === "Open") {
+                    popupTitle = "Proyek Dilanjutkan 🔵";
+                    popupMessage = "Proyek dilanjutkan! Mari kita kawal perkembangannya. Semangat!!! 🔥";
+                } else if (newCompletionStatus === "Finished") {
+                    popupTitle = "Proyek Selesai ⭐";
+                    popupMessage = `Selamat! Proyek selesai di tahap "${tahapDisplay}" pada tanggal ${daysDisplay}. Semoga operasionalnya berjalan dengan baik! 🎉`;
+                } else if (newCompletionStatus === "Terminated") {
+                    popupTitle = "Proyek Dihentikan ⛔";
+                    popupMessage = `Proyek tidak dilanjutkan di tahap "${tahapDisplay}" pada tanggal ${daysDisplay}. Semoga mendapatkan yang lebih baik ya! 😊`;
+                } else if (newCompletionStatus === "Rejected") {
+                    popupTitle = "Proyek Ditolak ❌";
+                    popupMessage = `Wah, Proyek dihentikan di tahap "${tahapDisplay}" pada tanggal ${daysDisplay}. Sepertinya klien menolak untuk bersepakat dengan kita 😢`;
+                }
+            } else if (isNewProject) {
+                // Pesan default untuk proyek baru
+                popupMessage = "Proyek baru berhasil ditambahkan!";
+            }
+            
+            // Setelah popup ditampilkan, update previousCompletionStatus
+            previousCompletionStatus = newCompletionStatus;
+
+            showPopup(popupTitle, popupMessage, [
+                { text: "OK", class: "popup-ok", onClick: () => window.location.href = 'projects.html' } 
+            ]);
+        }
+        return true;
+    }
+  
+    return false;
+}
+
+// ==========================
+// DOCUMENT UPLOAD LOGIC
+// ==========================
+async function addNewDocument() {
+  
+  let currentId = id;
+  const stageInput = document.getElementById("documentStageInput");
+  const newStage = stageInput.value.trim(); 
+  
+  const title = document.getElementById("documentTitleInput").value.trim();
+  const fileInput = document.getElementById("documentFileInput");
+  const file = fileInput.files[0];
+  const sektorValue = document.getElementById("sektor").value;
+  const komoditasValue = document.getElementById("komoditas").value; 
+  const tipeValue = document.getElementById("tipe").value;
+
+  if (!newStage || newStage === "" || newStage === "-- Pilih Tahap --" || !title || !file) {
+    let message = "";
+    if (!newStage || newStage === "" || newStage === "-- Pilih Tahap --") message = "Tahap wajib diisi.";
+    else if (!title) message = "Judul wajib diisi.";
+    else if (!file) message = "Pilih File terlebih dahulu";
+
+    showPopup("Perhatian", message, [
+      { text: "OK", class: "popup-ok" }
+    ]);
+    return;
+  }
+  
+  if (currentId === null) {
+      const lokasi = document.getElementById("lokasi").value.trim();
+      const prospek = document.getElementById("perusahaan").value.trim();
+      const tanggal = document.getElementById("tanggal").value.trim();
+      
+      if (!lokasi || !prospek || !tanggal || !sektorValue || sektorValue === "" || sektorValue === "-- Pilih Sektor --" || !komoditasValue || komoditasValue === "" || komoditasValue === "-- Pilih Komoditas --" || !tipeValue || tipeValue === "" || tipeValue === "-- Pilih Tipe --") {
+          showPopup("Tidak Memenuhi Syarat Upload", "Harap lengkapi kolom Tanggal, Lokasi, Prospek, Sektor, Komoditas, dan Tipe terlebih dahulu.", [
+            { text: "OK", class: "popup-ok" }
+          ]);
+          return;
+      }
+      
+      window.isCalledFromUpload = true;
+      const saveSuccess = await saveData(true); 
+      window.isCalledFromUpload = false;
+      
+      if (!saveSuccess || !id) {
+         showPopup("Gagal Upload", "Gagal menyimpan data proyek baru sebelum upload.", [
+           { text: "OK", class: "popup-ok" }
+         ]);
+         return;
+      }
+      
+      currentId = id; 
+      
+      showPopup("Proyek Dibuat", "Data Proyek Utama berhasil disimpan. Melanjutkan proses upload dokumen.", [
+        { text: "OK", class: "popup-ok", onClick: () => checkStageHierarchy(newStage, title, file) }
+      ]);
+      return;
+  }
+  
+  checkStageHierarchy(newStage, title, file);
+}
+
+
+async function checkStageHierarchy(newStage, title, file) {
+    const latestStage = (() => {
+      const history = getProjectHistory();
+      if (history.length === 0) return null;
+      
+      const validStages = history
+          .filter(doc => STAGE_HIERARCHY[doc.stage] !== undefined)
+          .map(doc => ({ 
+              stage: doc.stage, 
+              value: STAGE_HIERARCHY[doc.stage] 
+          }));
+          
+      if (validStages.length === 0) return null;
+      
+      const highestStage = validStages.reduce((prev, current) => 
+          (prev.value > current.value) ? prev : current
+      );
+
+      return highestStage.stage;
+    })();
+    
+    const newStageValue = STAGE_HIERARCHY[newStage];
+    let proceedUpload = false;
+
+    if (latestStage === null) {
+        proceedUpload = true;
+    } else {
+        const latestStageValue = STAGE_HIERARCHY[latestStage];
+
+        if (newStageValue === latestStageValue) {
+            proceedUpload = true;
+        } else if (newStageValue < latestStageValue) {
+            showPopup(
+                "Peringatan!",
+                `Anda mengubah tahapan ke tingkat lebih rendah (dari ${latestStage} ke ${newStage}). Persentase progress akan berkurang! Tetap lanjutkan?`,
+                [
+                    { text: "Batalkan", class: "popup-cancel", onClick: null },
+                    { text: "Lanjutkan", class: "popup-confirm", onClick: () => proceedDocumentUpload(newStage, title, file) }
+                ]
+            );
+            return;
+        } else if (newStageValue > latestStageValue) {
+            showPopup(
+                "Good Job! 🎉",
+                `Anda mengubah tahapan ke tingkat lebih tinggi (dari ${latestStage} ke ${newStage}). Persentasi progress akan meningkat. Lanjutkan?`,
+                [
+                    { text: "Batalkan", class: "popup-cancel", onClick: null },
+                    { text: "Lanjutkan", class: "popup-ok", onClick: () => proceedDocumentUpload(newStage, title, file) }
+                ]
+            );
+            return;
+        }
+    }
+    
+    if (proceedUpload) {
+        proceedDocumentUpload(newStage, title, file);
+    }
+}
+
+
+/**
+ * MODIFIED: Menambahkan logika logging untuk upload dokumen.
+ */
+async function proceedDocumentUpload(stage, title, file) {
+    
+    uploadButton.disabled = true;
+    uploadStatus.style.display = "flex";
+    const stageInput = document.getElementById("documentStageInput");
+    const projectId = currentProjectData.no; // Ambil Project ID
+
+    let base64;
+    let driveLink = "";
+    let driveFileId = null;
+
+    try {
+      try {
+        base64 = await toBase64(file); // <<< Fungsi toBase64 ada di sini
+      } catch (err) {
+        showPopup("Gagal", "Gagal membaca file: " + err, [
+          { text: "OK", class: "popup-ok" }
+        ]);
+        return;
+      }
+
+      const originalExt = (file.name.includes('.') ? file.name.split('.').pop() : '');
+      const safeTitle = sanitizeFileName(title);
+      const newFileName = originalExt ? `${safeTitle}.${originalExt}` : safeTitle;
+
+      // 1. Upload to Google Drive via Apps Script
+      const payload = new URLSearchParams({
+        action: "upload",
+        filename: newFileName,
+        mimeType: file.type || "application/octet-stream",
+        file: base64.split(',')[1]
+      });
+
+      try {
+        const response = await fetch(APPS_SCRIPT_URL, {
+          method: "POST",
+          body: payload
+        });
+
+        const result = await response.json();
+
+        if (result.error) {
+          showPopup("Gagal Upload", "Gagal upload ke Google Drive: " + result.error, [
+            { text: "OK", class: "popup-ok" }
+          ]);
+          return;
+        }
+
+        driveLink = result.link || "-";
+        driveFileId = result.fileId || null;
+
+      } catch (err) {
+        showPopup("Gagal Upload", "Gagal upload: " + err, [
+          { text: "OK", class: "popup-ok" }
+        ]);
+        return;
+      }
+
+      // 2. Save document history ke memory (currentProjectData)
+      const ext = originalExt.toUpperCase();
+      const today = new Date().toISOString().slice(0,10);
+
+      const newDoc = {
+        id: Date.now(),
+        date: today,
+        stage: stage, 
+        title,
+        type: ext,
+        link: driveLink,
+        fileId: driveFileId,
+        status: "Proposed",
+        statusDate: today // Inisialisasi statusDate
+      };
+
+      if (!currentProjectData.documentHistory) {
+        currentProjectData.documentHistory = [];
+      }
+
+      currentProjectData.documentHistory.push(newDoc);
+      
+      // 3. Update UI and Project Data
+      renderHistory();
+      updateFormStatusFromHistory();
+      
+      await saveData(true); 
+      
+      // ** START LOGGING **
+      const projectName = currentProjectData.prospek || `Proyek No. ${projectId}`;
+      // Panggil dengan projectId
+      sendLogActivity(projectId, `Upload Dokumen ${stage} untuk proyek '${projectName}' dengan judul '${title}'`, 'Document_Upload');
+      // ** END LOGGING **
+
+      document.getElementById("documentTitleInput").value = '';
+      document.getElementById("documentFileInput").value = '';
+      stageInput.value = ''; 
+      stageInput.selectedIndex = 0; 
+
+      showPopup("Berhasil", "Dokumen berhasil diupload ke Google Drive. Dokumen Update dan Dokumen Status telah diupdate!", [
+        { text: "OK", class: "popup-ok" }
+      ]);
+    } finally {
+      uploadButton.disabled = false;
+      uploadStatus.style.display = "none";
+    }
+}
+
+
+function deleteProject() {
+    if (id === null) {
+        showPopup("Perhatian", "Proyek ini belum disimpan. Tidak ada data yang perlu dihapus.", [
+          { text: "OK", class: "popup-ok" }
+        ]);
+        return;
+    }
+    
+    const projectName = currentProjectData ? currentProjectData.prospek : 'Proyek ini';
+    
+    showPopup(
+        "Konfirmasi Hapus Proyek",
+        `Anda yakin menghapus permanen prospek "${projectName}"? Semua data dan riwayat dokumen akan dihapus.`,
+        [
+            {
+                text: "Batal",
+                class: "popup-cancel",
+                onClick: null
+            },
+            {
+                text: "Hapus Permanen",
+                class: "popup-confirm",
+                onClick: () => {
+                    proceedDeleteProject();
+                }
+            }
+        ]
+    );
+}
+
+// ==========================
+// DELETE PROJECT
+// ==========================
+/**
+ * MODIFIED: Menambahkan logging untuk penghapusan proyek.
+ */
+async function proceedDeleteProject() {
+    if (id === null) return;
+
+    const history = currentProjectData.documentHistory || [];
+    let driveDeleteSuccess = true;
+    const projectId = id; // Ambil Project ID
+    const projectName = currentProjectData.prospek || `Proyek No. ${projectId}`; // Ambil nama proyek sebelum dihapus
+
+    if (history.length > 0) {
+        showPopup("Menghapus Dokumen...", `Sedang menghapus ${history.length} dokumen dari Google Drive. Harap tunggu sebentar.`, [], true); 
+        
+        for (const doc of history) {
+            if (doc.fileId) {
+                const payload = new URLSearchParams({
+                    action: "delete",
+                    fileId: doc.fileId
+                });
+
+                try {
+                    await fetch(APPS_SCRIPT_URL, {
+                        method: "POST",
+                        body: payload
+                    });
+                } catch (err) {
+                    console.error(`Error saat mencoba menghapus file Drive ID ${doc.fileId}:`, err);
+                    driveDeleteSuccess = false; 
+                }
+            }
+        }
+        hidePopup(); 
+    }
+
+    // 2. Delete project from Server
+    try {
+        const response = await fetch(`${API_URL}/project/${id}`, {
+            method: 'DELETE'
+        });
+        
+        if (!response.ok) {
+            throw new Error("Gagal menghapus di server backend.");
+        }
+        
+        // ** START LOGGING **
+        // Panggil dengan projectId
+        await sendLogActivity(projectId, `menghapus permanen proyek '${projectName}'`, 'Project_Delete');
+        // ** END LOGGING **
+
+    } catch(e) {
+        showPopup("Gagal Hapus", e.message, [
+             { text: "OK", class: "popup-ok" }
+        ]);
+        return;
+    }
+
+    // 3. Delete from Local Storage (Cache)
+    const projectIndex = PROJECTS.findIndex(p => p.no === id);
+    if (projectIndex !== -1) {
+        PROJECTS.splice(projectIndex, 1);
+        saveProjects(PROJECTS);
+    }
+    
+    const finalMessage = driveDeleteSuccess 
+        ? "Proyek dan semua dokumen terkait berhasil dihapus."
+        : "Proyek berhasil dihapus, namun terjadi kegagalan saat menghapus beberapa file di Google Drive. Silakan Cek Google Drive Anda.";
+
+    showPopup("Berhasil", finalMessage, [
+        { text: "OK", class: "popup-ok", onClick: () => {
+            window.location.href = 'projects.html'; 
+        }}
+    ]);
+}
+
+// ==========================
+// FORM INITIALIZATION
+// ==========================
+
+// Variabel global untuk menandai bahwa halaman sudah selesai dimuat.
+// Digunakan untuk mencegah Pop Up muncul saat loading data dari server.
+let isPageLoaded = false;
+
+/**
+ * MODIFIED: Handles Completion status change and updates Days field accordingly.
+ * HANYA memanggil saveData(true) saat status Open atau saat revert (agar Days terisi ulang).
+ * TIDAK memanggil saveData() saat memicu promptForCompletionDate.
+ * @param {boolean} isRevert - Optional flag to prevent re-prompting when reverting status.
+ */
+function updateCompletionStyle(isRevert = false) {
+    const select = document.getElementById("completion_status");
+    const status = select.value;
+    select.className = ''; 
+    select.classList.add(`status-${status.replace(/\s/g, '')}`);
+    
+    const startDate = document.getElementById("tanggal").value;
+    const daysInput = document.getElementById("days");
+    
+    const FINAL_STATUSES = ["Finished", "Terminated", "Rejected"];
+
+    if (FINAL_STATUSES.includes(status)) {
+        const daysValue = daysInput.value.trim();
+        const isDatePattern = daysValue.match(/^\d{2} [A-Z][a-z]{2} \d{2}$/); 
+        
+        if (isDatePattern && !isRevert && !isPageLoaded) {
+            // SCENARIO 1: Initial Page Load untuk proyek yang sudah selesai.
+            // Panggil saveData(true) hanya saat load untuk sinkronisasi data Days.
+            saveData(true); 
+        } else if (!isRevert && isPageLoaded) {
+            // SCENARIO 2: User Change (Status diubah setelah halaman selesai dimuat).
+            // Kosongkan days dan panggil prompt. TIDAK ADA PANGGILAN saveData() di sini.
+            daysInput.value = calculateProjectDuration(startDate, status);
+            promptForCompletionDate(status);
+        } else if (isRevert) { 
+            // SCENARIO 3: Revert dari tombol Batal di pop-up.
+             daysInput.value = calculateProjectDuration(startDate, status);
+             saveData(true); // Panggil saveData untuk menyimpan status Open kembali
+        }
+    } else { // Status is "Open" 
+        daysInput.value = calculateProjectDuration(startDate, status);
+        saveData(true); // Panggil saveData() jika status kembali ke Open
+    }
+    
+    // Simpan status completion yang baru *sebelum* memanggil prompt, 
+    // agar previousCompletionStatus dapat digunakan untuk revert
+    if (!FINAL_STATUSES.includes(status) || isRevert) {
+        previousCompletionStatus = status;
+    }
+}
+
+// BARU: Fungsi untuk mengambil data Sektor/Komoditas kustom dari API
+async function fetchSectorData() {
+    try {
+        const response = await fetch(SECTOR_API_URL);
+        if (!response.ok) {
+             // Jika API belum siap/error, gunakan data kosong sebagai fallback.
+             console.warn("Gagal mengambil data sektor/komoditas kustom dari server. Menggunakan data kosong.");
+             CUSTOM_SECTORS = [];
+             CUSTOM_COMMODITY_MAP = {};
+             return;
+        }
+        const result = await response.json();
+        if (result.success && result.data) {
+            CUSTOM_SECTORS = result.data.customSectors || [];
+            CUSTOM_COMMODITY_MAP = result.data.customCommodityMap || {};
+        }
+    } catch (error) {
+        console.error("Error fetching sector data:", error);
+        CUSTOM_SECTORS = [];
+        CUSTOM_COMMODITY_MAP = {};
+    }
+}
+
+// BARU: Fungsi untuk mengirim data Sektor/Komoditas kustom ke API
+async function sendSectorData(data) {
+    try {
+        const response = await fetch(SECTOR_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+             throw new Error(`Server error: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        if (!result.success) {
+            throw new Error(result.error || "Gagal menyimpan data sektor ke file.");
+        }
+        return true;
+    } catch (error) {
+        console.error("Error sending sector data:", error);
+        showPopup("Error Sinkronisasi Data Sektor", "Gagal menyimpan perubahan Sektor/Komoditas ke server: " + error.message, [{ text: "OK", class: "popup-ok" }]);
+        return false;
+    }
+}
+
+async function fetchProjectData(projectId) {
+    if (!projectId) return EMPTY_PROJECT;
+
+    try {
+        const response = await fetch(`${API_URL}/project/${projectId}`); 
+        if (!response.ok) {
+            const localProject = PROJECTS.find(p => p.no === projectId);
+            return localProject || EMPTY_PROJECT;
+        }
+
+        const result = await response.json();
+        if (result.success && result.project) {
+            const projectFromServer = { ...EMPTY_PROJECT, ...result.project }; 
+            const index = PROJECTS.findIndex(p => p.no === projectId);
+            
+            if (index !== -1) {
+                 PROJECTS[index] = projectFromServer; 
+            } else {
+                 PROJECTS.push(projectFromServer);
+            }
+            saveProjects(PROJECTS);
+            
+            return projectFromServer;
+        } else {
+            const localProject = PROJECTS.find(p => p.no === projectId);
+            return localProject || EMPTY_PROJECT;
+        }
+        
+    } catch (error) {
+        console.error("Error saat fetch proyek dari server lokal:", error);
+        const localProject = PROJECTS.find(p => p.no === projectId);
+        return localProject || EMPTY_PROJECT;
+    }
+}
+
+// BARU: Memuat URL logo saat ini (jika ada) ke dalam state lokal.
+function loadProjectLogo(project) {
+    projectLogoDataURL = project.logo || null; 
+}
+
+
+// FUNGSI loadProject DIPERBARUI
+async function loadProject() {
+  
+  // 1. Ambil data Sektor & Komoditas Kustom global terlebih dahulu
+  await fetchSectorData();
+
+  // 2. Ambil data Proyek
+  const project = await fetchProjectData(id);
+  
+  currentProjectData = project; 
+  
+  // MUAT LOGO SAAT INI (BARU)
+  loadProjectLogo(project);
+  
+  if (id !== null && project.no === null) {
+      showPopup("Error", "ID Proyek tidak valid atau tidak ditemukan.", [
+        { text: "OK", class: "popup-ok", onClick: () => window.location.href = 'projects.html' }
+      ]);
+      return;
+  }
+  
+  // Mengisi input dasar (Tanggal, Lokasi, Prospek)
+  document.getElementById("perusahaan").value = project.prospek || '';
+  document.getElementById("lokasi").value = project.lokasi || '';
+  document.getElementById("tanggal").value = project.tanggal ? project.tanggal.split('T')[0] : '';
+  
+  document.getElementById("notes").value = project.notes || '';
+  
+  document.getElementById("projectLat").value = project.lat || '';
+  document.getElementById("projectLng").value = project.lng || '';
+  
+  // 1. Aktifkan Sektor/Tombol Sektor (berdasarkan input dasar)
+  toggleSektorAvailability(); 
+
+  // 2. Render dan Pilih Sektor
+  renderSektorDropdown(project.sektor);
+  
+  // 3. Render dan Pilih Komoditas (tergantung Sektor yang baru terpilih)
+  renderKomoditasDropdown(project.komoditas);
+  
+  // 4. Pilih Tipe
+  document.getElementById("tipe").value = project.tipe || ''; 
+  
+  // 5. Aktifkan Tipe/Tombol Tahap Upload (tergantung Komoditas dan Tipe)
+  toggleTipeAvailability();
+  toggleStageInputAvailability();
+
+  // Mengisi data completion
+  const completionSelect = document.getElementById("completion_status");
+  completionSelect.value = project.completion || 'Open';
+  
+  // BARU: Simpan status completion awal saat loading
+  previousCompletionStatus = completionSelect.value;
+  
+  // MODIFIKASI: Set Days dari loaded project data (X Hari atau dd Mmm yy)
+  const isFinalStatus = ["Finished", "Terminated", "Rejected"].includes(project.completion);
+  document.getElementById("days").value = (isFinalStatus && project.days)
+    ? project.days 
+    : calculateProjectDuration(project.tanggal, project.completion);
+
+  
+  // Mengisi data kontak
+  document.getElementById("contact_name").value = project.contact ? (project.contact.name || '') : '';
+  document.getElementById("contact_position").value = project.contact ? (project.contact.title || '') : '';
+  document.getElementById("contact_email").value = project.contact ? (project.contact.email || '') : '';
+  document.getElementById("contact_phone").value = project.contact ? (project.contact.phone || '') : '';
+
+  if (id !== null) {
+    renderHistory();
+    updateFormStatusFromHistory(); 
+  } else {
+    document.getElementById("tahap").value = '-';
+    document.getElementById("dokumen_update").value = EMPTY_PROJECT.upload;
+    document.getElementById("dokumen_link").value = EMPTY_PROJECT.link;
+    document.getElementById("dokumen_status").value = EMPTY_PROJECT.status;
+    document.getElementById("progressDisplay").innerText = "0% (New Project)";
+    document.getElementById("progressBarFill").style.width = "0%";
+    
+    // Disesuaikan colspan menjadi 9
+    document.getElementById("documentHistoryTable").innerHTML = `<tr><td colspan="9" style="text-align:center;">Proyek belum disimpan. Isi data utama di kiri atau unggah dokumen wajib untuk memulai proyek.</td></tr>`;
+  }
+  
+  updateCompletionStyle(); 
+  
+  // BARU: Simpan nilai awal untuk keperluan logging
+  initialSector = project.sektor || '';
+  initialCommodity = project.komoditas || '';
+  initialType = project.tipe || '';
+  
+  // Setelah semua data dimuat, set flag ini menjadi true
+  isPageLoaded = true;
+}
+
+// ==========================
+// MAP FUNCTIONALITY
+// ==========================
+
+let mapInstance = null;
+let mapMarker = null;
+let latestSearchData = [];
+
+function fetchSuggestions() {
+  const inputElement = document.getElementById("lokasi");
+  const dataListElement = document.getElementById("sugestiLokasi");
+  const query = inputElement.value.trim();
+
+  dataListElement.innerHTML = '';
+
+  if (query.length < 3) return;
+
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=5`;
+
+  fetch(url)
+    .then(response => {
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      return response.json();
+    })
+    .then(data => {
+      data.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item.display_name;
+        dataListElement.appendChild(option);
+      });
+    })
+    .catch(error => {
+      console.error("Error fetching location suggestions from Nominatim:", error);
+    });
+}
+
+function openMapModal() {
+  const mapModal = document.getElementById("mapModal");
+  const mapBackdrop = document.getElementById("mapBackdrop"); 
+  
+  mapBackdrop.style.display = "block";
+  mapModal.style.display = "flex";
+
+  let initialLat = parseFloat(document.getElementById("projectLat").value) || -6.200;
+  let initialLng = parseFloat(document.getElementById("projectLng").value) || 106.816;
+  
+  document.getElementById("mapLat").innerText = initialLat.toFixed(6);
+  document.getElementById("mapLng").innerText = initialLng.toFixed(6);
+  
+  document.getElementById("mapSearchInput").value = '';
+  document.getElementById("mapSuggestionsList").innerHTML = '';
+
+  if (mapMarker) {
+      mapMarker.remove();
+      mapMarker = null;
+  }
+
+  if (mapInstance === null) {
+    mapInstance = L.map('map').setView([initialLat, initialLng], 12);
+    
+    L.tileLayer(
+      'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+      {
+        maxZoom: 20,
+        subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+      }
+    ).addTo(mapInstance);
+    
+    if (document.getElementById("projectLat").value) {
+        mapMarker = L.marker([initialLat, initialLng]).addTo(mapInstance);
+    }
+
+    mapInstance.on('click', function(e) {
+      let lat = e.latlng.lat.toFixed(6);
+      let lng = e.latlng.lng.toFixed(6);
+
+      if (mapMarker) {
+        mapMarker.setLatLng(e.latlng);
+      } else {
+        mapMarker = L.marker(e.latlng).addTo(mapInstance);
+      }
+
+      document.getElementById("mapLat").innerText = lat;
+      document.getElementById("mapLng").innerText = lng;
+    });
+
+  } else {
+      mapInstance.setView([initialLat, initialLng], 12);
+      setTimeout(() => { 
+        mapInstance.invalidateSize(); 
+        if (document.getElementById("projectLat").value) {
+            mapMarker = L.marker([initialLat, initialLng]).addTo(mapInstance);
+        }
+      }, 10);
+  }
+}
+
+async function reverseGeocode(lat, lng) {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`;
+    try {
+        const response = await fetch(url, {
+            headers: { 'User-Agent': 'ArkaraProjectEditor/1.0' } 
+        });
+        if (!response.ok) throw new Error('Reverse geocoding failed');
+        const data = await response.json();
+        return data.display_name || `Koordinat: ${lat}, ${lng}`; 
+    } catch (error) {
+        console.error("Error reverse geocoding:", error);
+        return `Koordinat: ${lat}, ${lng}`;
+    }
+}
+
+function mapSearch(query) {
+  const dataListElement = document.getElementById("mapSuggestionsList");
+  
+  dataListElement.innerHTML = '';
+  if (query.length < 3) {
+    latestSearchData = [];
+    return;
+  }
+
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=5`;
+
+  fetch(url)
+    .then(response => {
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      return response.json();
+    })
+    .then(data => {
+      latestSearchData = data;
+      data.forEach(item => {
+        const option = document.createElement('option');
+        option.value = item.display_name;
+        dataListElement.appendChild(option);
+      });
+    })
+    .catch(error => {
+      console.error("Error fetching map suggestions from Nominatim:", error);
+      latestSearchData = [];
+    });
+}
+
+document.getElementById("mapSearchInput").addEventListener('change', (e) => {
+    const selectedAddress = e.target.value;
+    
+    const selectedItem = latestSearchData.find(item => item.display_name === selectedAddress);
+
+    if (selectedItem && mapInstance) {
+        const lat = parseFloat(selectedItem.lat);
+        const lng = parseFloat(selectedItem.lon);
+        
+        if (mapMarker) {
+            mapMarker.setLatLng([lat, lng]);
+        } else {
+            mapMarker = L.marker([lat, lng]).addTo(mapInstance);
+        }
+        
+        mapInstance.setView([lat, lng], 16); 
+
+        document.getElementById("mapLat").innerText = lat.toFixed(6);
+        document.getElementById("mapLng").innerText = lng.toFixed(6);
+    }
+});
+
+async function confirmMapLocation() {
+    const latSpan = document.getElementById("mapLat").innerText;
+    const lngSpan = document.getElementById("mapLng").innerText;
+
+    if (!latSpan || !lngSpan || latSpan === '' || latSpan.includes('span')) {
+        showPopup("Perhatian", "Harap klik peta untuk memilih lokasi.", [
+            { text: "OK", class: "popup-ok" }
+        ]);
+        return;
+    }
+    
+    const lat = parseFloat(latSpan);
+    const lng = parseFloat(lngSpan);
+
+    document.getElementById("projectLat").value = lat;
+    document.getElementById("projectLng").value = lng;
+
+    const address = await reverseGeocode(lat, lng);
+    
+    document.getElementById("lokasi").value = address;
+    
+    closeMapModal();
+    toggleSektorAvailability(); 
+
+    showPopup("Berhasil", "Lokasi dan Koordinat berhasil disimpan. Alamat : " + address, [
+        { text: "OK", class: "popup-ok" }
+    ]);
+}
+
+function closeMapModal() {
+    const mapModal = document.getElementById("mapModal");
+    const mapBackdrop = document.getElementById("mapBackdrop");
+    mapModal.style.display = "none";
+    mapBackdrop.style.display = "none";
+}
+
+// ==========================
+// LOGO UPLOAD FUNCTIONALITY (NEW)
+// ==========================
+
+/**
+ * Menampilkan Pop-up untuk Upload Logo.
+ */
+function showLogoUploadPopup() {
+    
+    // HTML untuk pratinjau logo dan input file
+    const logoPreviewHtml = `
+      <div class="logo-preview-container">
+        <img id="logoPreview" src="${projectLogoDataURL || ''}" alt="Logo Preview" style="${projectLogoDataURL ? 'display: block;' : 'display: none;'}" />
+        <span id="logoPlaceholder" style="color: #999; font-size: 14px; ${projectLogoDataURL ? 'display: none;' : 'display: block;'}">Pratinjau Logo (280x280)</span>
+      </div>
+      <label style="margin-top: 15px;">Pilih File Logo (JPG, PNG)</label>
+      <input type="file" id="logoFileInput" accept="image/jpeg, image/png" onchange="handleLogoPreview(this.files[0])">
+      <button type="button" class="btn-delete" onclick="removeLogo()" style="margin-top: 10px; width: 100%; padding: 6px;">❌ Hapus Logo</button>
+    `;
+
+    showPopup(
+        "Upload Logo Prospek",
+        logoPreviewHtml,
+        [
+            {
+                text: "Batal",
+                class: "popup-cancel",
+                onClick: null
+            },
+            {
+                text: "Simpan Logo",
+                class: "popup-ok",
+                onClick: () => {
+                    // Logika simpan hanya menyimpan Data URL ke variabel global
+                    // Penyimpanan ke server akan dilakukan saat saveData() dipanggil.
+                    if (projectLogoDataURL) {
+                        showPopup("Berhasil", "Logo prospek berhasil disiapkan untuk disimpan.", [{ text: "OK", class: "popup-ok" }]);
+                    } else {
+                        showPopup("Perhatian", "Tidak ada logo baru yang diunggah.", [{ text: "OK", class: "popup-ok" }]);
+                    }
+                }
+            }
+        ]
+    );
+    // Pastikan fungsi handleLogoPreview ada di scope global
+    window.handleLogoPreview = handleLogoPreview; 
+    window.removeLogo = removeLogo;
+}
+
+
+/**
+ * Menangani pemilihan file dan menampilkan pratinjau di pop-up.
+ * DIUBAH: Menggunakan logika 'contain' (fit) dengan background putih.
+ */
+function handleLogoPreview(file) {
+    if (!file) {
+        // Revert ke logo lama jika ada, saat file batal dipilih.
+        projectLogoDataURL = currentProjectData ? currentProjectData.logo : null; 
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const targetSize = 280;
+            canvas.width = targetSize;
+            canvas.height = targetSize;
+            const ctx = canvas.getContext('2d');
+            
+            // 1. Isi Kanvas dengan Warna Putih (Background)
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, targetSize, targetSize); 
+
+            // 2. Logika 'Contain' (object-fit: contain)
+            // Hitung skala agar gambar masuk sepenuhnya
+            const hRatio = targetSize / img.width;
+            const vRatio = targetSize / img.height;
+            // Ambil skala terkecil agar gambar TIDAK terpotong
+            const scale = Math.min(hRatio, vRatio);
+            
+            const newWidth = img.width * scale;
+            const newHeight = img.height * scale;
+
+            // Hitung posisi (x, y) agar gambar berada di tengah
+            const x = (targetSize - newWidth) / 2;
+            const y = (targetSize - newHeight) / 2;
+            
+            // 3. Gambar (Draw) Logo di Posisi Tengah
+            ctx.drawImage(img, x, y, newWidth, newHeight); 
+
+            // Simpan Data URL ke variabel global (INI YANG AKAN DIUPLOAD KE IMGBB)
+            projectLogoDataURL = canvas.toDataURL('image/png'); 
+            
+            // Update pratinjau di pop-up
+            const previewImg = document.getElementById("logoPreview");
+            const placeholder = document.getElementById("logoPlaceholder");
+            
+            if (previewImg) {
+                previewImg.src = projectLogoDataURL;
+                previewImg.style.display = 'block';
+            }
+            if (placeholder) {
+                placeholder.style.display = 'none';
+            }
+        };
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+/**
+ * Menghapus logo yang saat ini terpilih/tersimpan.
+ */
+function removeLogo() {
+    projectLogoDataURL = null; // Set ke null, yang berarti logo akan dihapus di saveData
+    
+    const previewImg = document.getElementById("logoPreview");
+    const placeholder = document.getElementById("logoPlaceholder");
+    const fileInput = document.getElementById("logoFileInput");
+    
+    if (previewImg) {
+        previewImg.src = '';
+        previewImg.style.display = 'none';
+    }
+    if (placeholder) {
+        placeholder.style.display = 'block';
+    }
+    if (fileInput) {
+        fileInput.value = '';
+    }
+    
+    showPopup("Berhasil", "Logo prospek telah dihapus. Jangan lupa Simpan data proyek.", [{ text: "OK", class: "popup-ok" }]);
+}
+// ==========================
+
+
+// ==========================
+// SEKTOR MANAGEMENT LOGIC (TERHUBUNG KE API SECTOR_DATA.JSON)
+// ==========================
+
+function getAllSectors() {
+    // Gabungkan Sektor Sistem dan Sektor Kustom (dari API)
+    return Array.from(new Set([...SYSTEM_SECTORS, ...CUSTOM_SECTORS]));
+}
+
+function renderSektorDropdown(currentValue = '') {
+    const select = document.getElementById("sektor");
+    select.innerHTML = '<option value="" disabled selected>-- Pilih Sektor --</option>';
+
+    const allSectors = getAllSectors();
+    const sortedSectors = [...allSectors].sort(); 
+
+    let foundSelected = false;
+
+    sortedSectors.forEach(sector => {
+        const option = document.createElement('option');
+        option.value = sector;
+        option.textContent = sector;
+        if (sector === currentValue) {
+            option.selected = true;
+            foundSelected = true;
+        }
+        select.appendChild(option);
+    });
+    
+    if (foundSelected) {
+        select.value = currentValue;
+    } else if (currentValue) {
+        select.value = "";
+    }
+    
+    updateKomoditasFilter();
+}
+
+// FUNGSI INI KINI MENGIRIM PERUBAHAN KE API
+async function deleteSector(sectorName) {
+    if (SYSTEM_SECTORS.includes(sectorName)) {
+        showPopup("Gagal Hapus", "Sektor sistem tidak dapat dihapus.", [{ text: "OK", class: "popup-cancel" }]);
+        return;
+    }
+
+    const currentValue = document.getElementById("sektor").value;
+    
+    // 1. Hapus dari list di memory
+    CUSTOM_SECTORS = CUSTOM_SECTORS.filter(s => s !== sectorName);
+    
+    // 2. Hapus juga semua komoditas yang terkait di map kustom
+    delete CUSTOM_COMMODITY_MAP[sectorName]; 
+    
+    // 3. Kirim perubahan ke API
+    const dataToSave = {
+        customSectors: CUSTOM_SECTORS,
+        customCommodityMap: CUSTOM_COMMODITY_MAP
+    };
+    
+    const saveSuccess = await sendSectorData(dataToSave);
+
+    if (saveSuccess) {
+        // 4. Update UI
+        if (currentValue === sectorName) {
+            renderSektorDropdown('');
+        } else {
+            renderSektorDropdown(currentValue);
+        }
+        // Perbarui tampilan bubbles di pop-up (jika pop-up masih terbuka)
+        const bubblesContainer = document.getElementById("existingSectorBubbles");
+        if (bubblesContainer) {
+            renderSectorBubbles("existingSectorBubbles");
+        }
+    }
+}
+
+function renderSectorBubbles(containerId) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    
+    const allSectors = getAllSectors();
+    const sortedSectors = [...allSectors].sort(); 
+
+    sortedSectors.forEach(sector => {
+        const isSystemSector = SYSTEM_SECTORS.includes(sector);
+        
+        const sectorDiv = document.createElement('div');
+        sectorDiv.style.cssText = `
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            background: ${isSystemSector ? '#f0f4c3' : '#e0f2f1'};
+            color: ${isSystemSector ? '#689f38' : '#00796b'};
+            padding: 6px 10px;
+            margin: 4px 0; 
+            border-radius: 6px; 
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%; 
+            box-sizing: border-box;
+            transition: background 0.2s;
+        `;
+        
+        sectorDiv.onclick = () => {
+            renderSektorDropdown(sector);
+            hidePopup();
+            updateKomoditasFilter();
+        };
+        
+        sectorDiv.onmouseover = () => { sectorDiv.style.background = isSystemSector ? '#c8e6c9' : '#b2dfdb'; }
+        sectorDiv.onmouseout = () => { sectorDiv.style.background = isSystemSector ? '#f0f4c3' : '#e0f2f1'; }
+
+
+        const spanName = document.createElement('span');
+        spanName.textContent = sector + (isSystemSector ? ' (Sistem)' : ''); 
+        spanName.style.flexGrow = '1';
+        
+        sectorDiv.appendChild(spanName);
+
+        if (!isSystemSector) {
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = 'x';
+            deleteBtn.style.cssText = `
+                background: #00796b;
+                border: none;
+                color: white;
+                font-size: 10px;
+                margin-left: 8px;
+                padding: 1px 5px;
+                cursor: pointer;
+                opacity: 0.9;
+                font-weight: 700;
+                border-radius: 50%;
+                line-height: 1;
+                height: 16px;
+                width: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            `;
+            deleteBtn.onclick = (e) => {
+                e.stopPropagation(); 
+                showPopup("Konfirmasi Hapus", `Apakah anda yakin untuk menghapus sektor "${sector}"?`, [
+                    { text: "Batal", class: "popup-cancel", onClick: () => { /* no op */ } },
+                    { text: "Hapus", class: "popup-confirm", onClick: () => { 
+                        deleteSector(sector); 
+                        showPopup("Berhasil", `Sektor "${sector}" telah dihapus dan disinkronkan ke server.`, [{ text: "OK", class: "popup-ok" }]);
+                    } }
+                ]);
+            };
+            sectorDiv.appendChild(deleteBtn);
+        }
+        
+        container.appendChild(sectorDiv);
+    });
+}
+
+
+// FUNGSI INI KINI MENGIRIM PERUBAHAN KE API
+async function saveNewSector(newSectorName) {
+    const name = newSectorName.trim();
+
+    if (!name || name === "") {
+        showPopup("Gagal", "Nama sektor tidak boleh kosong.", [{ text: "OK", class: "popup-ok" }]);
+        return;
+    }
+    
+    const allSectors = getAllSectors();
+
+    if (allSectors.map(s => s.toLowerCase()).includes(name.toLowerCase())) {
+         showPopup("Perhatian", `Sektor "${name}" sudah terdaftar (baik oleh Anda maupun data sistem).`, [{ text: "OK", class: "popup-cancel" }]);
+        return;
+    }
+
+    // 1. Simpan ke list kustom di memory
+    CUSTOM_SECTORS.push(name);
+    
+    // 2. Kirim perubahan ke API
+    const dataToSave = {
+        customSectors: CUSTOM_SECTORS,
+        customCommodityMap: CUSTOM_COMMODITY_MAP
+    };
+
+    const saveSuccess = await sendSectorData(dataToSave);
+    
+    if (saveSuccess) {
+        // 3. Perbarui dropdown sektor dan UI
+        renderSektorDropdown(name);
+        updateKomoditasFilter(); 
+        
+        showPopup("Berhasil", `Sektor "${name}" berhasil ditambahkan dan disinkronkan ke server!`, [
+            { text: "Tutup", class: "popup-ok" }
+        ]);
+        
+        const bubblesContainer = document.getElementById("existingSectorBubbles");
+        if (bubblesContainer) {
+            renderSectorBubbles("existingSectorBubbles");
+        }
+    } else {
+         // Jika gagal simpan ke server, kembalikan state lokal (meskipun ini tidak ideal)
+         CUSTOM_SECTORS = CUSTOM_SECTORS.filter(s => s !== name);
+    }
+}
+
+
+function showAddSectorPopup() {
+    
+    const sektorSelect = document.getElementById("sektor");
+    if (sektorSelect.disabled) {
+        showPopup(
+            "Perhatian", 
+            "Tombol Kelola Sektor belum aktif. Harap lengkapi Tanggal, Lokasi, dan Prospek terlebih dahulu.", 
+            [{ text: "OK", class: "popup-ok" }]
+        );
+        return;
+    }
+    
+    const contentHtml = `
+      <p style="margin: 0 0 10px 0; font-weight: 600; font-size: 14px;">Sektor Terdaftar:</p>
+      <div id="existingSectorBubbles" style="max-height: 150px; overflow-y: auto; border: 1px solid #eee; padding: 5px; margin-bottom: 15px; border-radius: 6px;">
+        </div>
+      <p style="margin: 15px 0 8px 0; font-weight: 600; font-size: 14px;">Sektor Baru:</p>
+      <input type="text" id="newSectorInput" placeholder="Contoh: Energi Terbarukan" style="width: 100%;">
+    `;
+
+    showPopup(
+        "Kelola Sektor",
+        contentHtml,
+        [
+            {
+                text: "Tutup",
+                class: "popup-cancel",
+                onClick: null
+            },
+            {
+                text: "Simpan Sektor Baru",
+                class: "popup-ok",
+                onClick: () => {
+                    const newSector = document.getElementById("newSectorInput").value;
+                    saveNewSector(newSector);
+                }
+            }
+        ]
+    );
+    
+    renderSectorBubbles("existingSectorBubbles");
+    
+    setTimeout(() => {
+        const input = document.getElementById("newSectorInput");
+        if (input) input.focus();
+    }, 100);
+}
+
+// ==========================
+
+
+// ==========================
+// KOMODITAS MANAGEMENT LOGIC (TERHUBUNG KE API SECTOR_DATA.JSON)
+// ==========================
+
+function renderKomoditasDropdown(currentValue = '') {
+    const select = document.getElementById("komoditas");
+    const selectedSector = document.getElementById("sektor").value;
+    const addCommodityButton = document.querySelector("#komoditas-group button");
+    
+    select.innerHTML = '<option value="" disabled selected>-- Pilih Komoditas --</option>';
+
+    if (!selectedSector || selectedSector === "" || selectedSector === "-- Pilih Sektor --" || document.getElementById("sektor").disabled) {
+        select.disabled = true;
+        addCommodityButton.disabled = true; 
+        toggleTipeAvailability();
+        return;
+    }
+    
+    select.disabled = false;
+    addCommodityButton.disabled = false;
+    
+    // 1. Dapatkan daftar komoditas dari data sistem
+    let systemCommodities = SYSTEM_SECTOR_COMMODITY_MAP[selectedSector] || [];
+    // 2. Ambil komoditas dari map kustom (dari API)
+    const userCommodities = CUSTOM_COMMODITY_MAP[selectedSector] || []; 
+
+    // 3. Gabungkan dan urutkan
+    let uniqueCommodities = new Set([...userCommodities, ...systemCommodities]);
+    let finalCommodities = Array.from(uniqueCommodities).filter(c => c.trim() !== "").sort(); 
+
+    let foundSelected = false;
+
+    // 4. Render options
+    finalCommodities.forEach(commodity => {
+        const option = document.createElement('option');
+        option.value = commodity;
+        option.textContent = commodity;
+        if (commodity === currentValue) {
+            option.selected = true;
+            foundSelected = true;
+        }
+        select.appendChild(option);
+    });
+    
+    // 5. Set nilai yang terpilih
+    if (foundSelected) {
+        select.value = currentValue;
+    } else {
+        select.value = "";
+    }
+    
+    toggleTipeAvailability();
+}
+
+
+function updateKomoditasFilter() {
+    renderKomoditasDropdown('');
+}
+
+
+// FUNGSI INI KINI MENGIRIM PERUBAHAN KE API
+async function deleteCommodity(commodityName, selectedSector) { 
+    if (SYSTEM_SECTOR_COMMODITY_MAP[selectedSector] && SYSTEM_SECTOR_COMMODITY_MAP[selectedSector].includes(commodityName)) {
+        showPopup("Gagal Hapus", "Komoditas sistem tidak dapat dihapus.", [{ text: "OK", class: "popup-cancel" }]);
+        return;
+    }
+
+    if (CUSTOM_COMMODITY_MAP[selectedSector]) {
+        // 1. Hapus dari map kustom di memory
+        CUSTOM_COMMODITY_MAP[selectedSector] = CUSTOM_COMMODITY_MAP[selectedSector].filter(c => c !== commodityName);
+    }
+    
+    // 2. Kirim perubahan ke API
+    const dataToSave = {
+        customSectors: CUSTOM_SECTORS,
+        customCommodityMap: CUSTOM_COMMODITY_MAP
+    };
+    
+    const saveSuccess = await sendSectorData(dataToSave);
+    
+    if (saveSuccess) {
+        // 3. Perbarui tampilan dropdown utama
+        renderKomoditasDropdown('');
+        
+        // Perbarui tampilan bubbles di pop-up (jika pop-up masih terbuka)
+        const bubblesContainer = document.getElementById("existingCommodityBubbles");
+        if (bubblesContainer) {
+            renderCommodityBubbles("existingCommodityBubbles");
+        }
+    }
+}
+
+function renderCommodityBubbles(containerId) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+    
+    const selectedSector = document.getElementById("sektor").value;
+    
+    let systemCommodities = SYSTEM_SECTOR_COMMODITY_MAP[selectedSector] || [];
+    const userCommodities = CUSTOM_COMMODITY_MAP[selectedSector] || []; 
+
+    let uniqueCommodities = new Set([...userCommodities, ...systemCommodities]);
+    let finalCommodities = Array.from(uniqueCommodities).filter(c => c.trim() !== "").sort(); 
+    
+    if (finalCommodities.length === 0) {
+        container.innerHTML = `<p style="font-size: 11px; color: #999; text-align: center; margin: 10px 0;">Tidak ada komoditas. Coba tambah komoditas baru di bawah.</p>`;
+        return;
+    }
+
+    finalCommodities.forEach(commodity => {
+        const isSystemCommodity = systemCommodities.includes(commodity);
+        
+        const commodityDiv = document.createElement('div');
+        commodityDiv.style.cssText = `
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            background: ${isSystemCommodity ? '#f0f4c3' : '#e0f2f1'}; 
+            color: ${isSystemCommodity ? '#689f38' : '#00796b'}; 
+            padding: 6px 10px;
+            margin: 4px 0; 
+            border-radius: 6px; 
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            width: 100%; 
+            box-sizing: border-box;
+            transition: background 0.2s;
+        `;
+        
+        commodityDiv.onclick = () => {
+            document.getElementById("komoditas").value = commodity; 
+            toggleTipeAvailability(); 
+            hidePopup();
+        };
+        
+        const spanName = document.createElement('span');
+        spanName.textContent = commodity + (isSystemCommodity ? ' (Sistem)' : '');
+        spanName.style.flexGrow = '1';
+        spanName.style.marginRight = isSystemCommodity ? '0' : '8px';
+        
+        commodityDiv.appendChild(spanName);
+
+        if (!isSystemCommodity) {
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = 'x';
+            deleteBtn.style.cssText = `
+                background: #00796b; 
+                border: none;
+                color: white;
+                font-size: 10px;
+                margin-left: 8px; 
+                padding: 1px 5px;
+                cursor: pointer;
+                opacity: 0.9; 
+                font-weight: 700;
+                border-radius: 50%;
+                line-height: 1;
+                height: 16px;
+                width: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            `;
+            deleteBtn.onclick = (e) => {
+                e.stopPropagation(); 
+                showPopup("Konfirmasi Hapus", `Apakah anda yakin untuk menghapus komoditas "${commodity}" dari sektor ${selectedSector}?`, [
+                    { text: "Batal", class: "popup-cancel", onClick: () => { /* no op */ } },
+                    { text: "Hapus", class: "popup-confirm", onClick: () => { 
+                        deleteCommodity(commodity, selectedSector); 
+                        showPopup("Berhasil", `Komoditas "${commodity}" telah dihapus dan disinkronkan ke server.`, [{ text: "OK", class: "popup-ok" }]);
+                    } }
+                ]);
+            };
+            
+            commodityDiv.appendChild(deleteBtn);
+        }
+        
+        container.appendChild(commodityDiv);
+    });
+}
+
+
+// FUNGSI INI KINI MENGIRIM PERUBAHAN KE API
+async function saveNewCommodity(newCommodityName, selectedSector) { 
+    const name = newCommodityName.trim();
+
+    if (!name || name === "") {
+        showPopup("Gagal", "Nama komoditas tidak boleh kosong.", [{ text: "OK", class: "popup-ok" }]);
+        return;
+    }
+    
+    const allSystemCommodities = SYSTEM_SECTOR_COMMODITY_MAP[selectedSector] || [];
+    const allUserCommoditiesForSelectedSector = CUSTOM_COMMODITY_MAP[selectedSector] || [];
+    
+    const allRegisteredCommodities = new Set([...allSystemCommodities, ...allUserCommoditiesForSelectedSector]);
+
+    if (Array.from(allRegisteredCommodities).map(c => c.toLowerCase()).includes(name.toLowerCase())) {
+         showPopup("Perhatian", `Komoditas "${name}" sudah terdaftar pada sektor ini atau data sistem.`, [{ text: "OK", class: "popup-cancel" }]);
+        return;
+    }
+
+    // 1. Simpan ke map kustom di memory
+    if (!CUSTOM_COMMODITY_MAP[selectedSector]) {
+        CUSTOM_COMMODITY_MAP[selectedSector] = [];
+    }
+    CUSTOM_COMMODITY_MAP[selectedSector].push(name);
+    
+    // 2. Kirim perubahan ke API
+    const dataToSave = {
+        customSectors: CUSTOM_SECTORS,
+        customCommodityMap: CUSTOM_COMMODITY_MAP
+    };
+
+    const saveSuccess = await sendSectorData(dataToSave);
+
+    if (saveSuccess) {
+        // 3. Set komoditas baru sebagai nilai yang terpilih dan render ulang
+        renderKomoditasDropdown(name); 
+        
+        showPopup("Berhasil", `Komoditas "${name}" berhasil ditambahkan ke sektor "${selectedSector}" dan disinkronkan ke server!`, [
+            { text: "Tutup", class: "popup-ok" }
+        ]);
+        
+        const bubblesContainer = document.getElementById("existingCommodityBubbles");
+        if (bubblesContainer) {
+            renderCommodityBubbles("existingCommodityBubbles");
+        }
+    } else {
+        // Jika gagal simpan ke server, kembalikan state lokal
+        CUSTOM_COMMODITY_MAP[selectedSector] = CUSTOM_COMMODITY_MAP[selectedSector].filter(c => c !== name);
+    }
+}
+
+
+function showAddKomoditasPopup() {
+    const selectedSector = document.getElementById("sektor").value;
+    
+    if (!selectedSector || selectedSector === "" || selectedSector === "-- Pilih Sektor --" || document.getElementById("sektor").disabled) {
+        showPopup(
+            "Perhatian", 
+            "Anda harus memilih Sektor terlebih dahulu agar dapat menambahkan Komoditas.", 
+            [{ text: "OK", class: "popup-ok" }]
+        );
+        return; 
+    }
+    
+    const sectorDisplay = selectedSector || "Belum dipilih";
+    
+    const instructionMessage = selectedSector 
+        ? `<p style="margin: 0 0 5px 0; font-size: 11px; color: #4CAF50;">Menampilkan rekomendasi komoditas berdasarkan sektor: <strong>${sectorDisplay}</strong>.</p>`
+        : `<p style="margin: 0 0 5px 0; font-size: 11px; color: #FF9800;">Silakan pilih Sektor terlebih dahulu untuk melihat rekomendasi komoditas sistem.</p>`;
+
+    const contentHtml = `
+      ${instructionMessage}
+      <p style="margin: 10px 0 10px 0; font-weight: 600; font-size: 14px;">Komoditas Terdaftar:</p>
+      <div id="existingCommodityBubbles" style="max-height: 150px; overflow-y: auto; border: 1px solid #eee; padding: 5px; margin-bottom: 15px; border-radius: 6px;">
+        </div>
+      <p style="margin: 15px 0 8px 0; font-weight: 600; font-size: 14px;">Komoditas Baru:</p>
+      <input type="text" id="newCommodityInput" placeholder="Contoh: Batu Bara" style="width: 100%;">
+    `;
+
+    showPopup(
+        "Kelola Komoditas untuk Sektor: " + selectedSector, 
+        contentHtml,
+        [
+            {
+                text: "Tutup",
+                class: "popup-cancel",
+                onClick: null
+            },
+            {
+                text: "Simpan Komoditas Baru",
+                class: "popup-ok",
+                onClick: () => {
+                    const newCommodity = document.getElementById("newCommodityInput").value;
+                    saveNewCommodity(newCommodity, selectedSector);
+                }
+            }
+        ]
+    );
+    
+    renderCommodityBubbles("existingCommodityBubbles");
+    
+    setTimeout(() => {
+        const input = document.getElementById("newCommodityInput");
+        if (input) input.focus();
+    }, 100);
+}
+
+// ==========================
+
+
+// ==========================
+// RUNTIME
+// ==========================
+
+loadProject();
+  </script>
+
+</body>
+</html>

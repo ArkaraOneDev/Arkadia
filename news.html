@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News - Arkara Business Development</title>
+    <style>
+        /* === SKEMA WARNA BARU ===
+           - Biru Navy (Aksen Primer): #192a56
+           - Biru Slate (Aksen Sekunder): #4682b4
+           - Kuning/Emas (Aksen Hangat): #efb23c
+        ======================== */
+        
+        /* CSS Umum */
+        body {
+            font-family: 'Poppins', sans-serif;
+            padding: 20px;
+            margin: 0; 
+            height: 100vh; 
+            box-sizing: border-box; 
+            
+            /* Gambar Latar Belakang */
+            background-image: url('assets/img/002_background.png');
+            background-size: cover; 
+            background-position: center; 
+            background-repeat: no-repeat; 
+            background-attachment: fixed; 
+        }
+
+        /* Container */
+        .container {
+            height: 100%; 
+            width: 100%;
+            /* Latar belakang semi-transparan untuk keseluruhan container (Dibiarkan transparan untuk melihat background) */
+            background-color: rgba(0, 0, 0, 0); 
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
+            
+            display: flex;
+            flex-direction: row;
+            overflow: hidden; 
+        }
+
+        /* Styling untuk Panel Kiri (Left Panel) */
+        /* REVISI: Mengubah background panel kiri menjadi Biru Slate Transparan */
+        .left-panel {
+            max-width: 180px; 
+            background-color: rgba(70, 130, 180, 0.2); 
+            backdrop-filter: blur(8px);
+	        flex-shrink: 0; 
+            padding: 10px;
+            overflow-y: auto; 
+            height: 100%; 
+
+            /* REVISI: Pemisah menggunakan Gold */
+            border-right: 4px solid #a28e2a; 
+        }
+
+        /* --- CSS BARU UNTUK DROPDOWN SEKTOR --- */
+        /* REVISI: Mengganti warna header dan teks dropdown menjadi Biru Navy */
+        .left-panel .section-header {
+            margin-bottom: 10px;
+            color: #192a56;
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .sector-dropdown {
+            width: 100%;
+	        margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #192a56;
+            border-radius: 5px;
+            font-size: 12px;
+            background-color: #f7f7f7;
+            cursor: pointer;
+        }
+        
+        /* --- CSS UNTUK TOMBOL BARU (Add News) --- */
+        /* REVISI: Tombol menggunakan Gold */
+        .add-news-button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #a28e2a;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .add-news-button:hover {
+            background-color: #d9c756;
+        }
+        /* --------------------------------------- */
+        
+        .left-panel h2 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        /* MODIFIKASI UNTUK LIST ITEM: Penambahan .active */
+        .news-item {
+            padding: 10px 0;
+            border-bottom: 1px dashed #ccc;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        /* REVISI: Hover dan aktif menggunakan warna hangat (Emas Muda) */
+        .news-item:hover, .news-item.active {
+            background-color: #fff0d6; 
+            font-weight: 600;
+        }
+        /* AKHIR MODIFIKASI */
+        
+        .news-item:last-child {
+            border-bottom: none;
+        }
+
+        .news-item h3 {
+            font-size: 12px;
+            margin: 0 0 5px 0;
+            color: #333;
+        }
+
+        .news-item p {
+            font-size: 12px;
+            color: #666;
+            margin: 0;
+        }
+
+        /* Styling untuk Area Konten Berita Utama (Right Panel) */
+        /* REVISI: Mengubah background konten utama menjadi Biru Slate Transparan */
+        .main-content {
+            background-color: rgba(70, 130, 180, 0.3);
+            backdrop-filter: blur(8px); 
+            flex-grow: 1; 
+            padding: 25px;
+            overflow-y: auto; 
+            display: flex; 
+            flex-direction: column; 
+        }
+
+        /* REVISI: Judul menggunakan Biru Navy */
+        .main-content h1 {
+            color: #192a56; 
+            margin-top: 0;
+            font-size: 24px;
+        }
+        
+        /* CSS Tambahan untuk Konten Kosong */
+        .empty-state {
+            color: #666;
+            font-style: italic;
+            margin-top: 15px;
+        }
+        
+        /* --- MODIFIKASI CSS BUBBLE LIST VERTICAL --- */
+        .bubble-list {
+            list-style-type: none !important; 
+            padding-left: 0 !important;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        /* REVISI: Item list menggunakan background putih netral */
+        .bubble-list li {
+            padding: 8px 10px 8px 10px; 
+            margin-bottom: 8px; 
+            background-color: rgba(255, 255, 255, 0.9); 
+            border: 1px solid #ccc;
+            border-radius: 8px; 
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); 
+            transition: background-color 0.2s, font-weight 0.2s, border-color 0.2s;
+            
+            position: relative; 
+            padding-right: 30px; 
+        }
+        
+        /* CSS untuk item yang sedang aktif */
+        /* REVISI: Warna aktif menggunakan Biru Slate muda */
+        .bubble-list li.active {
+            background-color: #eaf3ff; /* Biru sangat muda */
+            border-color: #4682b4; 
+            font-weight: 600;
+        }
+
+
+        /* REVISI: Hover menggunakan warna netral/biru muda */
+        .bubble-list li:hover {
+            background-color: #f0f4f7;
+        }
+
+        /* --- CSS MULTILINE ELIPSIS PADA LINK --- */
+        .bubble-list a {
+            word-break: break-all;
+            display: block;
+            white-space: normal;
+            cursor: pointer; 
+            
+            /* Properti Multiline Ellipsis (Hanya didukung di WebKit) */
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2; 
+            -webkit-box-orient: vertical;
+        }
+        /* ----------------------------------------- */
+
+
+        /* --- CSS BARU UNTUK TOMBOL HAPUS --- */
+        /* REVISI: Tombol Hapus menggunakan Biru Navy */
+        .delete-link {
+            position: absolute;
+            top: 50%;
+            right: 10px; 
+            transform: translateY(-50%);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 700;
+            color: #192a56;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .delete-link:hover {
+            color: #dc3545; /* Merah untuk indikasi hapus */
+            opacity: 1;
+        }
+        /* ------------------------------------ */
+        
+        /* === CSS BARU UNTUK MODAL (POP UP) === */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); 
+            display: none; 
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        /* REVISI: Judul Modal menggunakan Biru Navy */
+        .modal-content h2 {
+            margin-top: 0;
+            color: #192a56;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+        .modal-content input[type="url"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .modal-buttons button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        /* REVISI: Tombol Simpan menggunakan Biru Navy */
+        .modal-buttons .save-button {
+            background-color: #192a56;
+            color: white;
+        }
+
+        .modal-buttons .cancel-button {
+            background-color: #ccc;
+            color: #333;
+        }
+        /* ===================================== */
+
+        /* CSS BARU UNTUK VIDEO PLACEHOLDER DAN IFRAME AGAR FIT KE MAIN-CONTENT */
+        #websitePreviewFrame, #videoPlaceholder {
+            width: 100%; 
+            height: 100%; 
+            flex-grow: 1; 
+        }
+
+        #videoPlaceholder {
+            object-fit: cover; 
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="left-panel">
+            
+            <div class="section-header">Pilih Sektor</div>
+            <select id="sectorFilter" class="sector-dropdown" onchange="filterBySector(this.value)">
+                <option value="">Memuat...</option>
+            </select>
+            
+            <button class="add-news-button" id="addNewsButton" onclick="addWebsite()" style="display: none;">
+                (+) Add News
+            </button>
+
+            <div id="sectorLinksContainer">
+            </div>
+        </div>
+
+        <div class="main-content">
+            <h1 id="newsTitle">Live Preview Website</h1>
+            
+            <video id="videoPlaceholder" 
+                   loop 
+                   autoplay 
+                   muted 
+                   style="width: 100%; height: 90%; object-fit: cover; display: none;">
+                <source src="assets/video/blank.mp4" type="video/mp4">
+                Browser Anda tidak mendukung tag video.
+            </video>
+
+            <iframe id="websitePreviewFrame" 
+                    style="width: 100%; height: 100%; border: 1px solid #ccc; background-color: #fff; display: none;">
+            </iframe>
+        </div>
+    </div>
+    
+    <div id="addWebsiteModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2 id="modalTitle">Tambah Website untuk Sektor : [Nama Sektor]</h2>
+            <input type="url" id="newWebsiteUrl" placeholder="Masukkan URL Website baru (e.g., https://example.com)" required>
+            <div class="modal-buttons">
+                <button class="cancel-button" onclick="document.getElementById('addWebsiteModal').style.display = 'none'">Batal</button>
+                <button class="save-button" onclick="saveNewWebsite()">Simpan</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        const API_URL = "http://localhost:3000/api"; 
+        
+        // Variabel global untuk menampung data links yang diambil dari server
+        let newsLinksData = {};
+        
+        // Variabel elemen untuk akses mudah
+        const videoPlaceholder = document.getElementById('videoPlaceholder');
+        const iframe = document.getElementById('websitePreviewFrame');
+        const newsTitle = document.getElementById('newsTitle');
+
+
+        // Data website default (Digunakan untuk inisialisasi news_data.json di server jika kosong)
+        const DEFAULT_SECTOR_LINKS = {
+            "Asuransi": [
+                "https://www.cnnindonesia.com/tag/asuransi",
+                "https://www.indonesiaare.co.id/knowledge-news/news",
+                "https://www.insurancejournal.com/"
+            ],
+            "E-commerce": [
+                "https://www.cnbcindonesia.com/tag/e_commerce",
+                "https://www.cnnindonesia.com/tag/e_commerce",
+                "http://www.retaildive.com/topic/e-commerce/"
+            ],
+            "Hospitality": [
+                "https://magazine.hoteller-indonesia.com/",
+                "https://www.cnbcindonesia.com/tag/perhotelan",
+                "https://theworldofhospitality.com/"
+            ],
+            "Human Resources": [
+                "https://hrpods.co.id/",
+                "https://www.detik.com/tag/human-resource",
+                "https://www.shrm.org/topics-tools/topics/global-hr"
+            ],
+            "Industri Manufaktur": [
+                "https://www.cnbcindonesia.com/tag/industri_manufaktur",
+                "https://www.cnnindonesia.com/tag/industri-manufaktur",
+                "https://www.industryweek.com/"
+            ],
+            "Security Services": [
+                "https://securityguardindonesia.com/category/berita/",
+                "https://apgiasi.or.id/",
+                "https://www.international-security-ligue.org/news"
+            ],
+            "Maritim": [
+                "https://www.indomaritim.com/",
+                "https://maritimnews.com/",
+                "http://splash247.com/"
+            ],
+            "Kesehatan & Farmasi": [
+                "https://farmalkes.kemkes.go.id/berita/",
+                "https://kemkes.go.id/",
+                "https://pharmatimes.com/"
+            ],
+            "Keuangan & Perbankan": [
+                "https://www.cnbcindonesia.com/market",
+                "http://www.bi.go.id/id/publikasi/berita/default.aspx",
+                "https://www.imf.org/"
+            ],
+            "Konstruksi & Infrastruktur": [
+                "http://www.constructionindo.com/news-media/industry-news/",
+                "https://binakonstruksipub.go.id/",
+                "https://www.constructiondive.com/"
+            ],
+            "Konsultan": [
+                "https://industri.kontan.co.id/rubrik/16/Manajemen",
+                "https://ikkeesindo.org/",
+                "http://www.consultancy.org/news"
+            ],
+            "Kuliner / F&B": [
+                "https://www.sindonews.com/topic/6189/bisnis-kuliner",
+                "http://www.kompas.com/tag/food-and-beverage",
+                "http://www.foodbev.com/"
+            ],
+            "Logistik & Transportasi": [
+                "http://asosiasilogistikindonesia.or.id/berita-logistik",
+                "https://www.cnnindonesia.com/tag/logistik",
+                "https://www.freightworld.com/news/"
+            ],
+            "Media & Kreatif": [
+                "https://nyaringindonesia.com/",
+                "http://www.kompas.com/tag/industri-kreatif",
+                "https://mediapost.com/"
+            ],
+            "Otomotif": [
+                "http://otomotifnews.com/",
+                "https://www.kompas.com/tag/otomotif",
+                "https://www.caranddriver.com/news/"
+            ],
+            "Pariwisata": [
+                "https://indonesiamagz.com/",
+                "http://kemenparekraf.go.id/berita",
+                "https://wttc.org/news"
+            ],
+            "Pendidikan & Pelatihan": [
+                "https://www.detik.com/edu/",
+                "https://www.kemdikbud.go.id/main/blog",
+                "https://thepienews.com/"
+            ],
+            "Pertambangan & Energi": [
+                "http://www.wartatambang.com/",
+                "https://nikel.co.id/",
+                "https://www.iea.org/"
+            ],
+            "Pertanian & Perkebunan": [
+                "http://www.pertanian.go.id/",
+                "https://www.antaranews.com/tag/pertanian",
+                "http://www.agweb.com/"
+            ],
+            "Properti & Real Estate": [
+                "https://propertiindonesia.id/",
+                "https://www.detik.com/tag/properti",
+                "https://www.worldpropertyjournal.com/"
+            ],
+            "Retail & Wholesale": [
+                "https://www.detik.com/tag/retail",
+                "https://www.cnbcindonesia.com/tag/ritel",
+                "http://retaildive.com/"
+            ],
+            "Teknologi & Informasi": [
+                "https://technologyindonesia.id/",
+                "https://www.detik.com/tag/teknologi",
+                "http://technewsworld.com/"
+            ],
+            "Telekomunikasi": [
+                "http://www.kominfo.go.id/content/all/berita",
+                "https://www.telnet.in/",
+                "http://totaltele.com/"
+            ]
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeData();
+        });
+
+        // ===========================================
+        // FUNGSI API 
+        // ===========================================
+        
+        /** Mengambil data links dari server */
+        async function fetchNewsLinks() {
+            try {
+                const response = await fetch(`${API_URL}/news-links`);
+                if (!response.ok) throw new Error(`Status: ${response.status}`);
+                
+                const result = await response.json();
+                if (result.success && result.newsLinks) {
+                    return result.newsLinks;
+                }
+                return {};
+            } catch (error) {
+                console.error("Gagal mengambil data links berita:", error);
+                return null; 
+            }
+        }
+        
+        /** Menyinkronkan (POST) seluruh data links ke server */
+        async function syncNewsLinks(data) {
+            try {
+                const response = await fetch(`${API_URL}/news-links`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                if (!response.ok) throw new Error(`Gagal menyimpan data ke server. Status: ${response.status}`);
+                
+                const result = await response.json();
+                return result.success;
+            } catch (error) {
+                console.error("Gagal sinkronisasi data links berita:", error);
+                return false;
+            }
+        }
+
+        // ===========================================
+        // FUNGSI INISIALISASI DATA
+        // ===========================================
+        
+        async function initializeData() {
+            // 1. Ambil data links dari server
+            let links = await fetchNewsLinks();
+
+            if (links === null) {
+                alert("Gagal terhubung ke server backend atau terjadi error saat memuat data link.");
+                return;
+            }
+
+            if (Object.keys(links).length === 0) {
+                console.warn("news_data.json kosong. Melakukan inisialisasi dengan data default.");
+                const syncSuccess = await syncNewsLinks(DEFAULT_SECTOR_LINKS);
+                if (syncSuccess) {
+                    newsLinksData = DEFAULT_SECTOR_LINKS;
+                } else {
+                    alert("Gagal menginisialisasi news_data.json. Menggunakan data default lokal.");
+                    newsLinksData = DEFAULT_SECTOR_LINKS;
+                }
+            } else {
+                newsLinksData = links;
+            }
+            
+            // 2. Lanjutkan untuk mengisi dropdown sektor
+            fetchAndPopulateSectors();
+            
+            // 3. Tampilkan video placeholder di awal
+            videoPlaceholder.style.display = 'block'; 
+        }
+
+        // ===========================================
+        // FUNGSI: Mengambil dan Mengisi Sektor 
+        // ===========================================
+        async function fetchAndPopulateSectors() {
+            const sectorFilter = document.getElementById('sectorFilter');
+            sectorFilter.innerHTML = '<option value="" disabled selected>-- Pilih Sektor --</option>'; 
+            
+            const sectors = new Set();
+            
+            // 1. Ambil sektor dari endpoint projects
+            try {
+                const response = await fetch(`${API_URL}/projects`);
+                if (response.ok) {
+                    const result = await response.json();
+                    (result.projects || []).forEach(p => {
+                        if (p.sektor && p.sektor.trim() !== '') {
+                            sectors.add(p.sektor.trim());
+                        }
+                    });
+                }
+            } catch (error) {
+                console.warn("Gagal mengambil data proyek untuk mengisi sektor:", error);
+            }
+            
+            // 2. Gabungkan dengan sektor dari data link
+            Object.keys(newsLinksData).forEach(sector => sectors.add(sector));
+            
+            const sortedSectors = Array.from(sectors).sort();
+
+            sortedSectors.forEach(sector => {
+                const option = document.createElement('option');
+                option.value = sector;
+                option.textContent = sector;
+                sectorFilter.appendChild(option);
+            });
+        }
+        
+        // ===========================================
+        // FUNGSI: Menampilkan Link Berita Terkait Sektor yang Dipilih 
+        // ===========================================
+        function filterBySector(sector) {
+            console.log(`Dropdown Sektor dipilih: ${sector}`);
+            const linksContainer = document.getElementById('sectorLinksContainer');
+            const addButton = document.getElementById('addNewsButton');
+            const sectorFilter = document.getElementById('sectorFilter');
+            
+            linksContainer.innerHTML = ''; 
+            
+            // Reset Preview
+            iframe.style.display = 'none';
+            iframe.src = '';
+            newsTitle.textContent = 'Live Preview Website';
+            
+            // TAMPILKAN VIDEO KARENA BELUM ADA PREVIEW YANG DIMUAT
+            videoPlaceholder.style.display = 'block';
+
+
+            // 1. KONTROL TAMPILAN TOMBOL
+            if (sector && sectorFilter.value !== "") {
+                addButton.style.display = 'block'; 
+                addButton.setAttribute('data-current-sector', sector);
+            } else {
+                addButton.style.display = 'none'; 
+                return;
+            }
+
+            // Gunakan data dari variabel global yang sudah diambil dari server
+            const links = newsLinksData[sector] || []; 
+
+            if (links.length > 0) {
+                // Tambahkan Judul
+                const header = document.createElement('div');
+                header.className = 'section-header';
+                header.style.marginTop = '10px';
+                header.textContent = `Daftar Websites`;
+                linksContainer.appendChild(header);
+
+                // Buat daftar (List) - Menggunakan class bubble-list
+                const ul = document.createElement('ul');
+                ul.className = 'bubble-list'; 
+                
+                links.forEach((link) => {
+                    const li = document.createElement('li');
+                    
+                    // 1. Tambahkan Elemen Link (A)
+                    const a = document.createElement('a');
+                    a.href = '#'; 
+                    a.onclick = (e) => {
+                        e.preventDefault(); 
+                        loadPreview(link, li); 
+                    };
+                    a.textContent = link;
+                    a.style.color = '#000000'; 
+                    a.style.fontWeight = '500';
+
+                    // 2. Tambahkan Tombol Hapus (X)
+                    const deleteSpan = document.createElement('span');
+                    deleteSpan.className = 'delete-link';
+                    deleteSpan.textContent = '×'; 
+                    deleteSpan.onclick = (e) => {
+                        e.stopPropagation(); 
+                        deleteWebsite(sector, link); 
+                    };
+
+                    li.appendChild(a);
+                    li.appendChild(deleteSpan); 
+                    
+                    ul.appendChild(li);
+                });
+                
+                linksContainer.appendChild(ul);
+            } else { 
+                linksContainer.innerHTML = `<p class="empty-state">Tidak ada link berita yang terdaftar untuk sektor "${sector}".</p>`;
+            }
+        }
+        
+        // ===========================================
+        // FUNGSI: Memuat Preview Website
+        // ===========================================
+        function loadPreview(url, element) {
+            const allItems = document.querySelectorAll('.bubble-list li');
+
+            // 1. Set Status Aktif pada List Item
+            allItems.forEach(item => item.classList.remove('active'));
+            element.classList.add('active');
+
+            // 2. Tampilkan Iframe dan Ubah Judul
+            videoPlaceholder.style.display = 'none'; // Sembunyikan video
+            iframe.style.display = 'block'; // Tampilkan iframe
+            newsTitle.textContent = `Live Preview: ${url}`;
+            
+            // 3. Muat URL ke Iframe
+            iframe.src = url;
+        }
+
+        // ===========================================
+        // FUNGSI: Menampilkan Modal (Pop Up)
+        // ===========================================
+        function addWebsite() {
+            const addButton = document.getElementById('addNewsButton');
+            const sector = addButton.getAttribute('data-current-sector');
+            
+            document.getElementById('modalTitle').textContent = `Tambah Website untuk Sektor : ${sector}`;
+            document.getElementById('newWebsiteUrl').value = ''; 
+            document.getElementById('addWebsiteModal').style.display = 'flex';
+        }
+        
+        // ===========================================
+        // FUNGSI: Menyimpan Website Baru (MENGGUNAKAN API)
+        // ===========================================
+        async function saveNewWebsite() {
+            const urlInput = document.getElementById('newWebsiteUrl');
+            let newUrl = urlInput.value.trim();
+            const addButton = document.getElementById('addNewsButton');
+            const sector = addButton.getAttribute('data-current-sector');
+
+            if (!newUrl) {
+                alert('URL tidak boleh kosong.');
+                return;
+            }
+
+            // Tambahkan protokol default jika tidak ada
+            if (!newUrl.match(/^https?:\/\//i)) {
+                newUrl = 'https://' + newUrl;
+            }
+            
+            // Periksa apakah URL sudah ada di data lokal (dari server)
+            if (newsLinksData[sector] && newsLinksData[sector].includes(newUrl)) {
+                alert('URL ini sudah terdaftar di sektor ini.');
+                return;
+            }
+
+            // PERBARUI DATA LOKAL
+            if (!newsLinksData[sector]) {
+                newsLinksData[sector] = [];
+            }
+            newsLinksData[sector].push(newUrl);
+            
+            // KIRIM DATA LENGKAP KE SERVER
+            const success = await syncNewsLinks(newsLinksData);
+
+            if (success) {
+                alert(`URL baru: ${newUrl} berhasil ditambahkan ke sektor ${sector}! (Disimpan di news_data.json)`);
+                document.getElementById('addWebsiteModal').style.display = 'none';
+                
+                // Muat ulang daftar link di panel kiri
+                filterBySector(sector);
+            } else {
+                alert('Gagal menyimpan URL baru ke server. Silakan coba lagi.');
+            }
+        }
+
+        // ===========================================
+        // FUNGSI: Menghapus Website (MENGGUNAKAN API)
+        // ===========================================
+        async function deleteWebsite(sector, urlToDelete) {
+            if (!confirm(`Anda yakin ingin menghapus tautan ${urlToDelete} dari sektor ${sector}?`)) {
+                return;
+            }
+
+            if (newsLinksData[sector]) {
+                const index = newsLinksData[sector].indexOf(urlToDelete);
+                
+                if (index > -1) {
+                    // PERBARUI DATA LOKAL
+                    newsLinksData[sector].splice(index, 1);
+                    
+                    // KIRIM DATA LENGKAP YANG SUDAH TERHAPUS KE SERVER
+                    const success = await syncNewsLinks(newsLinksData);
+
+                    if (success) {
+                        alert(`Tautan ${urlToDelete} berhasil dihapus dari server.`);
+                        // Muat ulang daftar link di panel kiri
+                        filterBySector(sector);
+                        return;
+                    } else {
+                        alert("Gagal menghapus tautan dari server. Silakan coba lagi.");
+                    }
+                }
+            }
+        }
+        
+    </script>
+
+</body>
+</html>

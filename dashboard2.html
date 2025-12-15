@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Prospek - Halaman Utama (2 Kontainer - Vertical Bar Chart)</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script> 
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script> 
+
+<style>
+    /* ----------------------------------
+       GLOBAL STYLES 
+    ----------------------------------- */
+    html, body {
+        height: 100%;
+        margin: 0;
+    }
+    body {
+        padding: 20px;
+        font-family: 'Poppins', sans-serif;
+        overflow: hidden;
+        /* Asumsi background image sudah tersedia */
+        background-image: url('assets/img/002_background.png'); 
+        background-size: cover;
+        background-attachment: fixed;
+        background-position: center;
+        color: #fff; 
+    }
+
+    /* Efek Glassmorphism */
+    .glass {
+        background: rgba(70, 130, 180, 0.2); 
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 14px;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* ----------------------------------
+       LAYOUT & ANIMATION STYLES
+    ----------------------------------- */
+    .grid-new-layout {
+        display: grid;
+        grid-template-columns: 1fr; 
+        height: calc(100vh - 40px); 
+        
+        position: relative; 
+        transition: transform 0.5s ease-out, opacity 0.5s ease-out; 
+        
+        transform: translateX(0);
+        animation: slideInRight 0.5s ease-out forwards;
+        
+        /* 1 Baris Kontrol (auto) + 2 Baris Konten (1fr 1fr) */
+        grid-template-rows: auto 1fr 1fr; 
+        gap: 15px; /* Tambahkan gap di sini agar tidak hilang */
+    }
+    
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOutRight {
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+    
+    .slide-out-right {
+        animation: slideOutRight 0.5s ease-out forwards;
+    }
+
+    /* ----------------------------------
+       BUTTON & CONTROL STYLES
+    ----------------------------------- */
+    #export-container {
+        display: flex;
+        justify-content: space-between; 
+        align-items: center; 
+        width: 100%;
+        grid-row: 1; 
+    }
+
+    /* Grup untuk menampung Tombol dan Loading Bar */
+    .button-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .control-button {
+        height: 38px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        padding: 0 15px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        color: #fff;
+    }
+    
+    /* Warna Export (Hijau) */
+    .export-button {
+        background: #3cb371; 
+    }
+    .export-button:hover {
+        background: #46ce83;
+    }
+
+    /* Warna Next Page (Biru Navy) */
+    .back-button { 
+        background: #192a56; 
+    }
+    .back-button:hover {
+        background: #2a3c6e;
+    }
+
+    /* Loading Indicator */
+    #loading-indicator {
+        width: 150px; 
+        height: 38px; 
+        border-radius: 8px;
+        background: rgba(70, 130, 180, 0.4); 
+        overflow: hidden; 
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    #loading-bar {
+        width: 100%; 
+        height: 100%;
+        background: #192a56; 
+        transition: transform 0.3s ease-out; 
+        transform: translateX(-100%); 
+    }
+
+    /* ----------------------------------
+       FILTER STYLES (Diubah menjadi kontainer fleksibel)
+    ----------------------------------- */
+    .filter-group {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap; /* Izinkan wrap jika layar kecil */
+    }
+
+    .filter-group select {
+        padding: 10px 15px;
+        font-size: 14px; /* Sedikit lebih kecil agar lebih banyak filter yang muat */
+        font-weight: 550;
+        border-radius: 8px;
+        border: none;
+        flex-grow: 0; 
+        background: rgba(70, 130, 180, 0.4); 
+        transition: all 0.3s ease;
+        outline: none;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        color: #333; 
+        min-width: 120px; /* Minimal width untuk setiap filter */
+    }
+    
+    .filter-group select option {
+        color: #333; 
+        background-color: #fff; 
+    }
+
+    /* Gaya untuk filter aktif */
+    .filter-active {
+        background: linear-gradient(90deg, #192a56, #4682b4) !important;
+        color: #fff !important; 
+    }
+
+    /* ----------------------------------
+       CONTENT BOX STYLES 
+    ----------------------------------- */
+    .content-container {
+        display: flex;
+        flex-direction: column;
+        grid-column: 1 / -1; 
+    }
+
+    .content-container h2 {
+        margin: 0 0 10px 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: #192A56; 
+    }
+
+    .box1, .box2 { 
+        /* Menerapkan Glassmorphism */
+        background: rgba(70, 130, 180, 0.6); 
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 14px;
+        box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        
+        padding: 20px;
+        text-align: left;
+        flex-grow: 1; 
+        overflow: auto; 
+    }
+    
+    /* KONTEN CHART.JS STYLES */
+    #overall-progress-container .box1,
+    #status-dokumen-container .box2 { 
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%; 
+        cursor: pointer;
+    }
+    #sectorBarChart,
+    #projectCountBarChart { 
+        max-height: 100%;
+        max-width: 100%;
+    }
+    
+    /* Kontainer Spesifik */
+    #overall-progress-container {
+        grid-row: 2; 
+    }
+
+    #status-dokumen-container {
+        grid-row: 3; 
+    }
+
+    /* ----------------------------------
+       MODAL/POPUP STYLES (DIPERKECIL)
+    ----------------------------------- */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(5px);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    .modal-overlay.active {
+        display: flex;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .modal-content {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 14px;
+        /* Padding sedikit dikurangi */
+        padding: 20px; 
+        /* Maksimal lebar dan tinggi dikurangi agar lebih ringkas */
+        max-width: 85%;
+        max-height: 75%; 
+        overflow: auto;
+        box-shadow: 0 8px 50px rgba(0, 0, 0, 0.3);
+        animation: slideUp 0.3s ease-out;
+        position: relative;
+        /* Ukuran font default dikurangi */
+        font-size: 13px; 
+    }
+
+    @keyframes slideUp {
+        from { 
+            transform: translateY(50px);
+            opacity: 0;
+        }
+        to { 
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        /* Margin dan padding header dikurangi */
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #192a56;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        color: #192a56;
+        /* Ukuran font judul dikurangi */
+        font-size: 18px; 
+        font-weight: 600;
+    }
+
+    .modal-close {
+        background: #e74c3c;
+        border: none;
+        color: white;
+        /* Ukuran tombol close dikurangi */
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        cursor: pointer;
+        /* Ukuran ikon close dikurangi */
+        font-size: 18px; 
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+
+    .modal-close:hover {
+        background: #c0392b;
+        transform: rotate(90deg);
+    }
+
+    .modal-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px; /* Margin atas dikurangi */
+        /* BARU: Menambahkan border-radius dan overflow untuk tabel */
+        border-radius: 4px;
+        overflow: hidden; 
+    }
+
+    .modal-table thead {
+        background: #192a56;
+        color: white;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .modal-table th,
+    .modal-table td {
+        /* Padding dikurangi agar baris lebih ringkas */
+        padding: 8px 10px; 
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .modal-table th {
+        font-weight: 600;
+        /* Ukuran font header tabel dikurangi */
+        font-size: 12px; 
+    }
+
+    .modal-table td {
+        color: #333;
+        /* Ukuran font data tabel dikurangi */
+        font-size: 12px; 
+    }
+
+    .modal-table tbody tr {
+        transition: background 0.2s ease;
+        /* PERUBAHAN BARU: Baris tabel bisa diklik */
+        cursor: pointer;
+    }
+
+    /* GAYA BARU UNTUK BARIS MODAL BERDASARKAN COMPLETION STATUS */
+    .completion-open {
+        background-color: #FFFBE6 !important;
+    }
+    .modal-table tbody tr.completion-open,
+    .modal-table tbody tr.completion-open td {
+        color: #856404 !important; /* Text color */
+    }
+    .modal-table tbody tr.completion-open:hover {
+        background: #fcf8e3 !important; 
+    }
+
+    .completion-finished {
+        background-color: #e6ffe6 !important;
+    }
+    .modal-table tbody tr.completion-finished,
+    .modal-table tbody tr.completion-finished td {
+        color: #155724 !important; /* Text color */
+    }
+    .modal-table tbody tr.completion-finished:hover {
+        background: #d4edda !important; 
+    }
+
+    .completion-terminated {
+        background-color: #f8d7da !important;
+    }
+    .modal-table tbody tr.completion-terminated,
+    .modal-table tbody tr.completion-terminated td {
+        color: #721c24 !important; /* Text color */
+    }
+    .modal-table tbody tr.completion-terminated:hover {
+        background: #f5c6cb !important; 
+    }
+
+    .completion-rejected {
+        background-color: #dc3545 !important;
+    }
+    /* SPESIFISITAS TINGGI UNTUK MEMASTIKAN TEKS PUTIH */
+    .modal-table tbody tr.completion-rejected,
+    .modal-table tbody tr.completion-rejected td {
+        color: white !important; /* Text color: PUTIH (Diverifikasi) */
+    }
+    .modal-table tbody tr.completion-rejected:hover {
+        background: #c82333 !important; 
+    }
+    /* Akhir Gaya Completion Status */
+    
+    /* Default hover for non-classed rows */
+    .modal-table tbody tr:hover {
+        background: rgba(25, 42, 86, 0.1);
+    }
+
+    .progress-badge {
+        display: inline-block;
+        /* Padding dan font badge dikurangi */
+        padding: 3px 8px; 
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 11px; 
+    }
+
+    .progress-low {
+        background: #e74c3c;
+        color: white;
+    }
+
+    .progress-medium {
+        background: #f39c12;
+        color: white;
+    }
+
+    .progress-high {
+        background: #3cb371;
+        color: white;
+    }
+
+    /* GAYA KOLOM DOKUMEN DENGAN ELLIPSIS */
+    .document-cell {
+        display: block; /* Penting agar max-width berfungsi di dalam td */
+        max-width: 120px; /* Batasi lebar maksimum kolom */
+        white-space: nowrap; /* Jangan biarkan teks pindah baris */
+        overflow: hidden; /* Sembunyikan konten yang meluap */
+        text-overflow: ellipsis; /* Tampilkan elipsis (...) jika terpotong */
+    }
+</style>
+</head>
+
+<body>
+<div class="grid-new-layout">
+    
+    <div id="export-container">
+        
+        <div class="filter-group">
+            <select id="tipe-select">
+                <option value="all">Semua Tipe</option>
+            </select>
+            <select id="tahap-select">
+                <option value="all">Semua Tahap</option>
+            </select>
+            <select id="status-select">
+                <option value="all">Semua Status</option>
+            </select>
+            <select id="completion-select">
+                <option value="all">Semua Completion</option>
+                <option value="Open">Open</option>
+                <option value="Finished">Finished</option>
+                <option value="Terminated">Terminated</option>
+                <option value="Rejected">Rejected</option>
+            </select>
+        </div>
+        <div class="button-group">
+            <div id="loading-indicator" style="display: none;">
+                <div id="loading-bar"></div>
+            </div>
+            
+            <button id="exportButton" class="control-button export-button">
+                <i class="fas fa-download"></i> Export
+            </button>
+            
+            <button id="backButton" class="control-button back-button">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+        </div>
+    </div>
+    <div id="overall-progress-container" class="content-container">
+        <h2>Overall Progress</h2>
+        <div class="box1">
+            <canvas id="sectorBarChart"></canvas>
+        </div>
+    </div>
+    
+    <div id="status-dokumen-container" class="content-container">
+        <h2>Jumlah Prospek</h2>
+        <div class="box2" id="project-count-box"> 
+             <canvas id="projectCountBarChart"></canvas> 
+        </div>
+    </div>
+
+</div>
+
+<div id="projectModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Detail Prospek</h3>
+            <button class="modal-close" id="modalClose">×</button>
+        </div>
+        <div id="modalBody">
+            </div>
+    </div>
+</div>
+
+<script>
+    // ===================================================
+    // KONFIGURASI GLOBAL
+    // ===================================================
+    const API_URL = 'http://localhost:3000/api/projects'; 
+    
+    let chartInstance = null; 
+    let chartInstanceCount = null; 
+    let allProjectsData = []; 
+    
+    const FIXED_ORDER = {
+        tipe: ['Organic', 'Take Over', 'Joint Operation', 'Joint Venture', 'Partnership', 'Franchising', 'Licensing', 'Divestiture'],
+        tahap: ['Identification', 'Engagement', 'Term Sheet', 'Due Diligence', 'Final Draft', 'Signing'],
+        status: ['Proposed', 'Approved', 'Pending', 'Cancelled'], 
+        completion: ['Open', 'Finished', 'Terminated', 'Rejected']
+    };
+
+    // Helper untuk menentukan status completion
+    function getCompletionStatus(progress, projectCompletion) {
+        if (projectCompletion && projectCompletion !== '-') return projectCompletion;
+        const p = parseInt(progress) || 0;
+        if (p >= 100) return 'Finished'; 
+        return 'Open';
+    }
+
+    // Helper untuk normalisasi nilai data dan filter
+    function normalize(value) {
+        return (value || '').toLowerCase().trim().replace(/-/g, ' ');
+    }
+
+    // Fungsi untuk menampilkan modal dengan daftar prospek
+    function showProjectModal(sectorName, chartType) {
+        const modal = document.getElementById('projectModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalBody = document.getElementById('modalBody');
+        
+        // Filter prospek berdasarkan sektor dan filter yang aktif
+        const tipeFilter = document.getElementById('tipe-select').value;
+        const tahapFilter = document.getElementById('tahap-select').value;
+        const statusFilter = document.getElementById('status-select').value;
+        const completionFilter = document.getElementById('completion-select').value;
+        
+        const filteredProjects = allProjectsData.filter(project => {
+            const projectProgress = parseFloat(project.progress) || 0;
+            const projectCompletionStatus = getCompletionStatus(projectProgress, project.completion);
+            
+            const matchesSector = (project.sektor || 'Uncategorized') === sectorName;
+            const matchesTipe = tipeFilter === 'all' || normalize(project.tipe) === normalize(tipeFilter);
+            const matchesTahap = tahapFilter === 'all' || normalize(project.tahap) === normalize(tahapFilter);
+            const matchesStatus = statusFilter === 'all' || normalize(project.status) === normalize(statusFilter);
+            const matchesCompletion = completionFilter === 'all' || normalize(projectCompletionStatus) === normalize(completionFilter);
+
+            return matchesSector && matchesTipe && matchesTahap && matchesStatus && matchesCompletion;
+        });
+        
+        // Set judul modal
+        const chartTitle = chartType === 'progress' ? 'Progress' : 'Jumlah Prospek';
+        modalTitle.textContent = `Detail ${chartTitle} - Sektor: ${sectorName}`;
+        
+        // Generate tabel
+        if (filteredProjects.length === 0) {
+            modalBody.innerHTML = '<p style="color: #888; text-align: center; padding: 20px;">Tidak ada prospek ditemukan</p>';
+        } else {
+            let tableHTML = `
+                <table class="modal-table">
+                    <thead>
+                        <tr>
+                            <th>No</th>
+                            
+                            <th>Prospek</th>
+			    <th>Tipe</th>
+                            <th>Tahap</th>
+                            <th>Dokumen</th>
+			    <th>Status</th>
+                            <th>Progress</th>
+                            <th>Completion</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            filteredProjects.forEach((project, index) => {
+                const progress = parseFloat(project.progress) || 0;
+                let progressClass = 'progress-low';
+                if (progress >= 70) progressClass = 'progress-high';
+                else if (progress >= 40) progressClass = 'progress-medium';
+                
+                // Dapatkan nilai completion status
+                const completionStatus = getCompletionStatus(progress, project.completion);
+                
+                // Tentukan class CSS berdasarkan Completion Status
+                let rowClass = '';
+                switch (completionStatus.toLowerCase()) {
+                    case 'open':
+                        rowClass = 'completion-open';
+                        break;
+                    case 'finished':
+                        rowClass = 'completion-finished';
+                        break;
+                    case 'terminated':
+                        rowClass = 'completion-terminated';
+                        break;
+                    case 'rejected':
+                        rowClass = 'completion-rejected';
+                        break;
+                }
+                
+                const projectID = project.no; 
+                const onClickHandler = `window.location.href='projects_edit.html?id=${projectID}'`;
+
+                tableHTML += `
+                    <tr class="${rowClass}" onclick="${onClickHandler}">
+                        <td>${index + 1}</td>
+                         
+                        <td><strong>${project.prospek || '-'}</strong></td> <td>${project.tipe || '-'}</td>
+                        <td>${project.tahap || '-'}</td>
+                        <td><span class="document-cell">${project.upload || '-'}</span></td>
+                        <td>${project.status || '-'}</td>
+                        <td><span class="progress-badge ${progressClass}">${progress.toFixed(1)}%</span></td>
+                        <td>${completionStatus || '-'}</td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+            
+            modalBody.innerHTML = tableHTML;
+        }
+        
+        // Tampilkan modal
+        modal.classList.add('active');
+    }
+    
+    // Fungsi untuk menutup modal
+    function closeModal() {
+        const modal = document.getElementById('projectModal');
+        modal.classList.remove('active');
+    }
+
+    // Fungsi untuk mendapatkan padding yang dibutuhkan untuk membuat kolom rapi
+    function getPadding(label, maxLabelLength) {
+        // Tambahkan 1 spasi ekstra sebagai pemisah setelah deskripsi
+        const padding = ' '.repeat(maxLabelLength - label.length + 1); 
+        return padding;
+    }
+    
+    // Fungsi untuk mendapatkan pemisah horizontal penuh lebar
+    function getSeparator(maxLabelLength) {
+        // Menggunakan ~30 karakter sebagai pemisah
+        const separatorLength = maxLabelLength + 10; 
+        return '\u2500'.repeat(separatorLength); // Karakter Horizontal Line (box drawing)
+    }
+
+
+    // Helper untuk style filter
+    function updateFilterStyles() {
+        const filters = ['tipe-select', 'tahap-select', 'status-select', 'completion-select'];
+        const activeBackground = 'linear-gradient(90deg, #192a56, #4682b4)'; 
+        const defaultBackground = 'rgba(70, 130, 180, 0.4)';
+
+        filters.forEach(id => {
+            const select = document.getElementById(id);
+            if (select.value === 'all') {
+                select.style.background = activeBackground;
+                select.style.color = '#fff';
+            } else {
+                select.style.background = defaultBackground;
+                select.style.color = '#333';
+            }
+        });
+    }
+
+    // Fungsi untuk mengisi Dropdown Tipe, Tahap, Status
+    function getUniqueOptions(data, key) {
+        if (key === 'completion') {
+            return FIXED_ORDER.completion; 
+        }
+        
+        const uniqueValues = [...new Set(data
+            .map(p => (p[key] || '').trim())
+            .filter(s => s && s !== '-')
+        )];
+
+        if (FIXED_ORDER[key]) {
+            return FIXED_ORDER[key].filter(item => uniqueValues.includes(item));
+        }
+        return uniqueValues.sort();
+    }
+
+    function populateDropdown(id, options, allText) {
+        const select = document.getElementById(id);
+        const currentValue = select.value;
+        
+        if (id !== 'completion-select') {
+             select.innerHTML = `<option value="all">${allText}</option>`;
+        }
+
+        options.forEach(option => {
+            if (!select.querySelector(`option[value="${normalize(option)}"]`)) {
+                const opt = document.createElement('option');
+                opt.value = normalize(option); 
+                opt.textContent = option;
+                select.appendChild(opt);
+            }
+        });
+        
+        if (currentValue && select.querySelector(`option[value="${currentValue}"]`)) {
+            select.value = currentValue;
+        }
+    }
+
+    function populateAllDropdowns(projects) {
+        if (document.getElementById('tipe-select').options.length === 1) { 
+            
+            const types = getUniqueOptions(projects, 'tipe');
+            populateDropdown('tipe-select', types, 'Semua Tipe');
+            
+            const stages = getUniqueOptions(projects, 'tahap');
+            populateDropdown('tahap-select', stages, 'Semua Tahap');
+            
+            const statuses = getUniqueOptions(projects, 'status'); 
+            populateDropdown('status-select', statuses, 'Semua Status');
+        }
+    }
+
+
+document.addEventListener("DOMContentLoaded", () => {
+    
+    const chartContainer = document.getElementById('overall-progress-container');
+    const countChartContainer = document.getElementById('status-dokumen-container');
+
+
+    // ---------------------------------------------------
+    // FUNGSI RENDER VERTICAL BAR CHART (box1 - Progress)
+    // ---------------------------------------------------
+    function renderSectorBarChart(sectors) {
+        const ctx = document.getElementById('sectorBarChart').getContext('2d');
+        
+        // Urutkan data berdasarkan progres (nilai) secara menurun (tertinggi di kiri)
+        sectors.sort((a, b) => b.progress - a.progress); 
+        
+        const labels = sectors.map(s => s.name);
+        const data = sectors.map(s => s.progress);
+        
+        // Ambil detail prospek (count dan stageCounts)
+        const sectorDetails = sectors.map(s => ({
+            count: s.count,
+            stageCounts: s.stageCounts
+        }));
+
+        // Tentukan panjang maksimum label untuk Progres Rata-rata, Jumlah Prospek, dan Tahap
+        const progressLabel = 'Rata-rata Progres';
+        const countLabel = 'Jumlah Prospek'; 
+        const newStageLabel = 'New/No Stage'; 
+        const maxStageLabelLength = FIXED_ORDER.tahap.reduce((max, stage) => Math.max(max, stage.length), 0);
+        
+        // Panjang maksimum label yang harus diakomodir oleh padding
+        const maxLabelLength = Math.max(progressLabel.length, countLabel.length, newStageLabel.length, maxStageLabelLength);
+
+
+        const barColor = 'rgba(255, 255, 255, 0.7)'; 
+        
+        if (chartInstance) {
+            chartInstance.destroy();
+        }
+        
+        Chart.register(ChartDataLabels); 
+
+        chartInstance = new Chart(ctx, {
+            type: 'bar', 
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Rata-rata Progres (%)',
+                    data: data,
+                    backgroundColor: barColor, 
+                    borderColor: 'rgba(25, 42, 86, 1)', 
+                    borderWidth: 1,
+                    borderRadius: 5,
+                    barPercentage: 0.8,
+                    categoryPercentage: 0.8,
+                    // Tambahkan data detail ke dataset
+                    sectorDetails: sectorDetails 
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false, 
+                indexAxis: 'x',
+                
+                // Tambahkan onClick handler
+                onClick: (event, activeElements) => {
+                    if (activeElements.length > 0) {
+                        const index = activeElements[0].index;
+                        const sectorName = labels[index];
+                        showProjectModal(sectorName, 'progress');
+                    }
+                },
+                
+                layout: {
+                    padding: {
+                        top: 40 
+                    }
+                },
+                
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                         // Gunakan family monospace untuk merapikan kolom
+                         bodyFont: {
+                            family: 'monospace, sans-serif' 
+                         },
+                         callbacks: {
+                            // Custom title untuk menampilkan Sektor
+                            title: function(context) {
+                                // Kembalikan ke font default (non-monospace) untuk judul
+                                return context[0].label; 
+                            },
+                            // Custom label untuk menampilkan Progres Rata-rata dan Jumlah Prospek (Dalam Format Kolom)
+                            label: function(context) {
+                                const details = context.dataset.sectorDetails[context.dataIndex];
+                                let lines = [];
+
+                                // 1. Rata-rata Progres
+                                if (context.parsed.y !== null) {
+                                    const progressValue = context.parsed.y.toFixed(1) + '%';
+                                    const padding = getPadding(progressLabel, maxLabelLength);
+                                    // Menggunakan font monospace, Deskripsi + Padding + : + Value
+                                    lines.push(`${progressLabel}${padding}: ${progressValue}`);
+                                }
+                                
+                                // 2. Jumlah Prospek
+                                const countValue = details.count.toFixed(0) + ' Prospek';
+                                const padding = getPadding(countLabel, maxLabelLength);
+                                lines.push(`${countLabel}${padding}: ${countValue}`);
+                                
+                                // 3. Separator Horizontal
+                                lines.push(getSeparator(maxLabelLength)); 
+
+                                return lines; 
+                            },
+                            // After label untuk menampilkan New/No Stage dan Tahapan lainnya
+                            afterLabel: function(context) {
+                                const details = context.dataset.sectorDetails[context.dataIndex];
+                                const stageCounts = details.stageCounts; 
+                                const sectorTotalCount = details.count; 
+                                
+                                let detailLines = [];
+                                
+                                // LOGIKA BARU: HITUNG NEW/NO STAGE
+                                const stagesToExclude = ['Identification', 'Engagement', 'Term Sheet', 'Final Draft', 'Signing'];
+                                let sumKnownStageCounts = 0;
+                                
+                                stagesToExclude.forEach(stage => {
+                                    sumKnownStageCounts += stageCounts[stage] || 0;
+                                });
+
+                                const newNoStageCount = sectorTotalCount - sumKnownStageCounts;
+                                const newNoStageLabel = 'New/No Stage';
+                                const newNoStagePadding = getPadding(newStageLabel, maxLabelLength);
+                                const newNoStageValue = newNoStageCount > 0 ? `${newNoStageCount} Prospek` : '-';
+                                
+                                // Tambahkan New/No Stage di baris paling atas
+                                detailLines.push(`${newNoStageLabel}${newNoStagePadding}: ${newNoStageValue}`); 
+                                
+                                // Iterasi melalui SEMUA tahap yang didefinisikan (FIXED_ORDER.tahap)
+                                FIXED_ORDER.tahap.forEach(stage => {
+                                    const count = stageCounts[stage] || 0;
+                                    
+                                    // Format menjadi: [Deskripsi][Padding][:][Value]
+                                    const padding = getPadding(stage, maxLabelLength);
+                                    
+                                    let value;
+                                    if (count > 0) {
+                                        value = `${count} Prospek`;
+                                    } else {
+                                        // Jika count 0, tampilkan "-" (Sesuai Permintaan)
+                                        value = '-'; 
+                                    }
+                                    
+                                    detailLines.push(`${stage}${padding}: ${value}`);
+                                });
+                                
+                                return detailLines;
+                            }
+                        }
+                    },
+                    datalabels: { 
+                        color: '#192a56', 
+                        backgroundColor: '#fff', 
+                        borderRadius: 50, 
+                        padding: 6,
+                        font: {
+                            weight: 'bold',
+                            size: 10
+                        },
+                        anchor: 'end', 
+                        align: 'end', 
+                        offset: 4, 
+                        formatter: function(value, context) {
+                            return value.toFixed(1) + '%';
+                        },
+                        clip: false
+                    }
+                },
+                scales: {
+                    x: { 
+                        title: {
+                            display: false,
+                            text: 'Sektor',
+                            color: '#fff'
+                        },
+                        ticks: {
+                            color: '#fff',
+                            font: { 
+                                size: 10 
+                            }
+                        },
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: { 
+                        beginAtZero: true,
+                        title: {
+                            display: false,
+                            text: 'Rata-rata Progres',
+                            color: '#fff'
+                        },
+                        ticks: {
+                            display: false 
+                        },
+                        grid: {
+                            display: false
+                        },
+                         border: {
+                            display: false 
+                         }
+                    }
+                }
+            }
+        });
+        
+        return labels; 
+    }
+
+    // ---------------------------------------------------
+    // FUNGSI RENDER VERTICAL BAR CHART (box2 - Project Count)
+    // ---------------------------------------------------
+    function renderProjectCountBarChart(sectors, sectorOrder) {
+        const ctx = document.getElementById('projectCountBarChart').getContext('2d');
+        
+        const sectorMap = sectors.reduce((acc, curr) => {
+            acc[curr.name] = { 
+                count: curr.count,
+                statusCounts: curr.statusCounts 
+            };
+            return acc;
+        }, {});
+
+        const labels = sectorOrder;
+        const data = sectorOrder.map(name => sectorMap[name] ? sectorMap[name].count : 0); 
+        
+        // Ambil data detail status untuk tooltip
+        const sectorDetails = sectorOrder.map(name => sectorMap[name] || { count: 0, statusCounts: {} });
+        
+        // Tentukan panjang maksimum label untuk Jumlah Prospek dan Status
+        const countLabel = 'Total Prospek';
+        const maxStatusLabelLength = FIXED_ORDER.status.reduce((max, status) => Math.max(max, status.length), 0);
+        const maxLabelLength = Math.max(countLabel.length, maxStatusLabelLength, 'No Document'.length); 
+
+        const barColor = 'rgba(255, 255, 255, 0.7)'; 
+        
+        if (chartInstanceCount) {
+            chartInstanceCount.destroy();
+        }
+        
+        Chart.register(ChartDataLabels); 
+
+        chartInstanceCount = new Chart(ctx, {
+            type: 'bar', 
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Jumlah Prospek',
+                    data: data,
+                    backgroundColor: barColor, 
+                    borderColor: 'rgba(25, 42, 86, 1)', 
+                    borderWidth: 1,
+                    borderRadius: 5,
+                    barPercentage: 0.8,
+                    categoryPercentage: 0.8,
+                    sectorDetails: sectorDetails
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false, 
+                indexAxis: 'x',
+                
+                // Tambahkan onClick handler
+                onClick: (event, activeElements) => {
+                    if (activeElements.length > 0) {
+                        const index = activeElements[0].index;
+                        const sectorName = labels[index];
+                        showProjectModal(sectorName, 'count');
+                    }
+                },
+                
+                layout: {
+                    padding: {
+                        top: 40 
+                    }
+                },
+                
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                         bodyFont: {
+                            family: 'monospace, sans-serif' 
+                         },
+                         callbacks: {
+                            title: function(context) {
+                                return context[0].label; 
+                            },
+                            label: function(context) {
+                                const details = context.dataset.sectorDetails[context.dataIndex];
+                                let lines = [];
+                                
+                                const totalCount = details.count.toFixed(0) + ' Prospek';
+                                const padding = getPadding(countLabel, maxLabelLength);
+                                lines.push(`${countLabel}${padding}: ${totalCount}`);
+                                
+                                lines.push(getSeparator(maxLabelLength)); 
+
+                                return lines;
+                            },
+                            afterLabel: function(context) {
+                                const details = context.dataset.sectorDetails[context.dataIndex];
+                                const statusCounts = details.statusCounts; 
+                                const sectorTotalCount = details.count;
+                                
+                                let detailLines = [];
+                                
+                                let sumKnownStatusCounts = 0;
+                                
+                                FIXED_ORDER.status.forEach(status => {
+                                    sumKnownStatusCounts += statusCounts[status] || 0;
+                                });
+
+                                const noDocumentsCount = sectorTotalCount - sumKnownStatusCounts;
+                                const noDocumentsLabel = 'No Document';
+                                
+                                const noDocumentsPadding = getPadding(noDocumentsLabel, maxLabelLength);
+                                const noDocumentsValue = noDocumentsCount > 0 ? `${noDocumentsCount} Prospek` : '-';
+                                
+                                detailLines.push(`${noDocumentsLabel}${noDocumentsPadding}: ${noDocumentsValue}`); 
+
+                                
+                                FIXED_ORDER.status.forEach(status => {
+                                    const count = statusCounts[status] || 0;
+                                    
+                                    const padding = getPadding(status, maxLabelLength);
+                                    
+                                    let value;
+                                    if (count > 0) {
+                                        value = `${count} Prospek`;
+                                    } else {
+                                        value = '-'; 
+                                    }
+                                    
+                                    detailLines.push(`${status}${padding}: ${value}`);
+                                });
+                                
+                                return detailLines;
+                            }
+                        }
+                    },
+                    datalabels: { 
+                        color: '#192a56', 
+                        backgroundColor: '#fff', 
+                        borderRadius: 50, 
+                        padding: 6,
+                        font: {
+                            weight: 'bold',
+                            size: 10
+                        },
+                        anchor: 'end', 
+                        align: 'end', 
+                        offset: 4, 
+                        formatter: function(value, context) {
+                            return value.toFixed(0); 
+                        },
+                        clip: false
+                    }
+                },
+                scales: {
+                    x: { 
+                        title: {
+                            display: false,
+                            text: 'Sektor',
+                            color: '#fff'
+                        },
+                        ticks: {
+                            color: '#fff',
+                            font: { 
+                                size: 10 
+                            }
+                        },
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: { 
+                        beginAtZero: true,
+                        title: {
+                            display: false,
+                            text: 'Jumlah Prospek',
+                            color: '#fff'
+                        },
+                        ticks: {
+                            display: false 
+                        },
+                        grid: {
+                            display: false 
+                        },
+                         border: {
+                            display: false 
+                         }
+                    }
+                }
+            }
+        });
+    }
+
+
+    // ---------------------------------------------------
+    // FUNGSI ANALISIS & KOMPUTASI DATA PROGRES (FILTERING)
+    // ---------------------------------------------------
+    function analyzeProjectData(projects) {
+        
+        const tipeFilter = document.getElementById('tipe-select').value;
+        const tahapFilter = document.getElementById('tahap-select').value;
+        const statusFilter = document.getElementById('status-select').value;
+        const completionFilter = document.getElementById('completion-select').value;
+        
+        const filteredProjects = projects.filter(project => {
+            const projectProgress = parseFloat(project.progress) || 0;
+            const projectCompletionStatus = getCompletionStatus(projectProgress, project.completion);
+            
+            const matchesTipe = tipeFilter === 'all' || 
+                                normalize(project.tipe) === normalize(tipeFilter);
+            
+            const matchesTahap = tahapFilter === 'all' || 
+                                 normalize(project.tahap) === normalize(tahapFilter);
+
+            const matchesStatus = statusFilter === 'all' || 
+                                  normalize(project.status) === normalize(statusFilter);
+                                  
+            const matchesCompletion = completionFilter === 'all' || 
+                                      normalize(projectCompletionStatus) === normalize(completionFilter);
+
+            return matchesTipe && matchesTahap && matchesStatus && matchesCompletion;
+        });
+
+        if (filteredProjects.length === 0) {
+            return { overallProgress: 0, sectorProgress: [], sectorCounts: [] }; 
+        }
+
+        const sectorMap = {};
+        let totalWeightedProgress = 0;
+        let totalWeight = 0;
+
+        filteredProjects.forEach(project => {
+            const sectorName = project.sektor || 'Uncategorized';
+            const progress = parseFloat(project.progress) || 0; 
+            const weight = parseFloat(project.bobot) || 1; 
+            const stage = project.tahap || 'Undefined'; 
+            const status = project.status || 'Undefined';
+
+            totalWeightedProgress += (progress * weight);
+            totalWeight += weight;
+
+            if (!sectorMap[sectorName]) {
+                sectorMap[sectorName] = { 
+                    weightedProgress: 0, 
+                    totalWeight: 0, 
+                    count: 0,
+                    stageCounts: {},
+                    statusCounts: {}
+                }; 
+            }
+            
+            sectorMap[sectorName].weightedProgress += (progress * weight);
+            sectorMap[sectorName].totalWeight += weight;
+            sectorMap[sectorName].count += 1; 
+            
+            sectorMap[sectorName].stageCounts[stage] = (sectorMap[sectorName].stageCounts[stage] || 0) + 1;
+            
+            sectorMap[sectorName].statusCounts[status] = (sectorMap[sectorName].statusCounts[status] || 0) + 1;
+        });
+
+        const overallProgress = totalWeight > 0 ? Math.round((totalWeightedProgress / totalWeight) * 100) / 100 : 0;
+        
+        const sectorProgress = Object.keys(sectorMap).map(name => {
+            const sectorData = sectorMap[name];
+            const progress = sectorData.totalWeight > 0 ? Math.round((sectorData.weightedProgress / sectorData.totalWeight) * 100) / 100 : 0;
+            
+            return { 
+                name, 
+                progress,
+                count: sectorData.count, 
+                stageCounts: sectorData.stageCounts 
+            };
+        });
+        
+        const sectorCounts = Object.keys(sectorMap).map(name => {
+            return { 
+                name, 
+                count: sectorMap[name].count,
+                statusCounts: sectorMap[name].statusCounts
+            };
+        });
+
+
+        return { overallProgress, sectorProgress, sectorCounts };
+    }
+
+    // ---------------------------------------------------
+    // FUNGSI UTAMA: FETCH DATA DARI BACKEND
+    // ---------------------------------------------------
+    async function fetchDataAndRender() {
+        const loadingMessage = `<p style="color: rgba(255, 255, 255, 0.7);"><i class="fas fa-spinner fa-spin"></i> Fetching prospek data...</p>`;
+        
+        const overallProgressBox = chartContainer.querySelector('.box1');
+        const projectCountBox = countChartContainer.querySelector('.box2');
+        
+        // Cek apakah canvas sudah ada, jika tidak, tambahkan kembali
+        if (!document.getElementById('sectorBarChart')) {
+             overallProgressBox.innerHTML = `<canvas id="sectorBarChart"></canvas>`;
+        }
+        if (!document.getElementById('projectCountBarChart')) {
+             projectCountBox.innerHTML = `<canvas id="projectCountBarChart"></canvas>`;
+        }
+        
+        // Tampilkan loading jika data belum ada
+        if (allProjectsData.length === 0) {
+            overallProgressBox.innerHTML = loadingMessage;
+            projectCountBox.innerHTML = loadingMessage; 
+        }
+
+        try {
+            if (allProjectsData.length === 0) {
+                 const response = await fetch(API_URL);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status} (${response.statusText})`);
+                }
+                
+                const result = await response.json();
+                
+                if (!result.success || !Array.isArray(result.projects)) {
+                    throw new Error("Invalid data structure received from API.");
+                }
+                allProjectsData = result.projects;
+                
+                populateAllDropdowns(allProjectsData);
+            }
+            
+            if (allProjectsData.length === 0) {
+                 overallProgressBox.innerHTML = `<p style="color: #f1c40f;">Tidak ada prospek ditemukan.</p>`;
+                 projectCountBox.innerHTML = `<p style="color: #f1c40f;">Tidak ada prospek ditemukan.</p>`;
+                 updateFilterStyles();
+                 return;
+            }
+            
+            const { overallProgress, sectorProgress, sectorCounts } = analyzeProjectData(allProjectsData); 
+
+            // Pastikan canvas ada sebelum render
+            overallProgressBox.innerHTML = `<canvas id="sectorBarChart"></canvas>`;
+            const sectorOrder = renderSectorBarChart(sectorProgress); 
+            
+            projectCountBox.innerHTML = `<canvas id="projectCountBarChart"></canvas>`;
+            renderProjectCountBarChart(sectorCounts, sectorOrder); 
+            
+            updateFilterStyles();
+
+        } catch (error) {
+            console.error("Error fetching or processing project data:", error);
+            const errorMessage = `<p style="color: #e74c3c;"><i class="fas fa-exclamation-triangle"></i> Gagal memuat data dari ${API_URL}. Pastikan backend berjalan di Port 3000. Detail: ${error.message}</p>`;
+            overallProgressBox.innerHTML = errorMessage;
+            projectCountBox.innerHTML = errorMessage;
+            
+            updateFilterStyles();
+        }
+    }
+    
+    fetchDataAndRender();
+    
+    document.getElementById('tipe-select').addEventListener('change', fetchDataAndRender);
+    document.getElementById('tahap-select').addEventListener('change', fetchDataAndRender);
+    document.getElementById('status-select').addEventListener('change', fetchDataAndRender);
+    document.getElementById('completion-select').addEventListener('change', fetchDataAndRender);
+
+    // Event listener untuk modal
+    document.getElementById('modalClose').addEventListener('click', closeModal);
+    
+    document.getElementById('projectModal').addEventListener('click', (e) => {
+        if (e.target.id === 'projectModal') {
+            closeModal();
+        }
+    });
+    
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeModal();
+        }
+    });
+
+
+    // ---------------------------------------------------
+    // FUNGSI EXPORT (REVISI: EXPORT PNG + NAMA FILE KOREKSI)
+    // ---------------------------------------------------
+    document.getElementById('exportButton').addEventListener('click', () => {
+        const exportButton = document.getElementById('exportButton');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const loadingBar = document.getElementById('loading-bar');
+        
+        // 1. Persiapan UI Loading
+        exportButton.disabled = true;
+        exportButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Capturing...';
+        loadingIndicator.style.display = 'flex';
+        loadingBar.style.transform = 'translateX(-100%)';
+
+        setTimeout(() => {
+            loadingBar.style.transform = 'translateX(0%)'; 
+        }, 50); 
+        
+        // Target elemen yang akan di-capture (Seluruh grid dashboard)
+        const targetElement = document.querySelector('.grid-new-layout');
+        
+        // 2. Gunakan html2canvas untuk Capture Konten
+        html2canvas(targetElement, {
+            backgroundColor: null, 
+            scale: 2 
+        }).then(canvas => {
+            // 3. Konversi Canvas menjadi Data URL
+            const imageURI = canvas.toDataURL('image/png');
+            
+            // 4. Buat Nama File: "Dashboard 2_YYMMDD.png"
+            const now = new Date();
+            const year = now.getFullYear().toString().slice(2);
+            const month = (now.getMonth() + 1).toString().padStart(2, '0');
+            const day = now.getDate().toString().padStart(2, '0');
+            
+            // Nama file yang dikoreksi
+            const filename = `Dashboard 2_${year}${month}${day}.png`; 
+
+            // 5. Buat link download otomatis
+            const a = document.createElement('a');
+            a.href = imageURI;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            // 6. Reset UI
+            setTimeout(() => {
+                loadingIndicator.style.display = 'none';
+                exportButton.disabled = false;
+                exportButton.innerHTML = '<i class="fas fa-download"></i> Export';
+            }, 500); 
+            
+        }).catch(error => {
+            console.error("Error during export:", error);
+            alert("Gagal melakukan export dashboard.");
+            
+            // Reset UI saat gagal
+            loadingIndicator.style.display = 'none';
+            exportButton.disabled = false;
+            exportButton.innerHTML = '<i class="fas fa-download"></i> Export';
+        });
+    });
+
+    // ---------------------------------------------------
+    // FUNGSI BACK
+    // ---------------------------------------------------
+    document.getElementById('backButton').addEventListener('click', () => { 
+        const mainContainer = document.querySelector('.grid-new-layout');
+        
+        mainContainer.classList.add('slide-out-right'); 
+        
+        setTimeout(() => {
+            window.location.href = 'dashboard1.html'; 
+        }, 500);
+    });
+});
+</script>
+</body>
+</html>

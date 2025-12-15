@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - Status Proyek</title>
+    <style>
+        /* === SKEMA WARNA BARU ===
+           - Biru Navy (Aksen Primer): #192a56
+           - Biru Slate (Aksen Sekunder): #4682b4
+           - Kuning/Emas (Aksen Hangat): #efb23c
+           - Hijau (Progress): #3CB371
+        ======================== */
+        * {
+            font-family: 'Poppins', sans-serif;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%; 
+            margin: 0;
+            overflow: hidden; 
+        }
+
+        body {
+            padding: 15px; 
+            color: #333;
+            display: flex; 
+            flex-direction: column; 
+            
+            background-image: url('assets/img/002_background.png'); 
+            background-size: cover; 
+            background-position: center; 
+            background-attachment: fixed; 
+            background-repeat: no-repeat;
+        }
+
+        .report-header {
+            display: flex;
+            justify-content: flex-start; 
+            align-items: center;
+            margin-bottom: 20px; 
+            flex-shrink: 0; 
+            gap: 15px;
+        }
+
+        /* REVISI: Mengubah background filter menjadi Biru Slate Transparan */
+        .filter-group select {
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 0px solid #ccc;
+            background: rgba(70, 130, 180, 0.3);
+            backdrop-filter: blur(8px);
+            color: #192a56; /* Warna teks Navy */
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        /* REVISI: Mengubah focus filter menjadi Biru Navy */
+        .filter-group select:focus {
+            border-color: #192a56; 
+            outline: none;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 25px;
+            flex-grow: 1; 
+            min-height: 0;
+        }
+
+        /* --- GLASSMORPHISM STYLE --- */
+        /* REVISI: Mengubah background glass card menjadi Biru Slate Transparan */
+        .glass-card {
+            background: rgba(70, 130, 180, 0.2); 
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px); 
+            
+            border-radius: 16px;
+            border: 0px solid rgba(255, 255, 255, 0.2);
+            
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+            
+            padding: 0; 
+            text-align: center;
+            transition: all 0.3s ease;
+            
+            height: 100%; 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+            
+            text-decoration: none; 
+            color: inherit; 
+            cursor: default; 
+        }
+
+        .glass-card:hover {
+            background: rgba(70, 130, 180, 0.4);
+            transform: translateY(-10px);
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.15);
+        }
+        /* -------------------------- */
+
+        /* REVISI: Mengganti gradien header kartu menjadi Biru Navy/Slate */
+        .card-header {
+            background: linear-gradient(90deg, #192a56, #4682b4);
+            color: white; 
+            font-size: 16px;
+            font-weight: 600;
+            padding: 10px 10px; 
+            margin-bottom: 0; 
+            border-bottom: 4px solid #a28e2a; 
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            flex-shrink: 0; 
+            
+            position: relative; 
+            padding-right: 45px; 
+        }
+        
+        /* REVISI: Mengubah warna badge menjadi warna hangat (Emas) */
+        .prospect-count-badge {
+            background: #ffffff; 
+            color: #efb23c; /* Emas */
+            font-size: 12px;
+            font-weight: 700;
+            
+            width: 28px;
+            height: 28px;
+            border-radius: 50%; 
+            
+            position: absolute; 
+            top: 50%; 
+            transform: translateY(-50%); 
+            right: 10px; 
+            
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* --- STYLE DAFTAR PROSPEK --- */
+        .prospect-item {
+            font-size: 12px; 
+            font-weight: 550;
+            /* Adjust padding-left to make space for the pin */
+            padding: 12px 10px 12px 40px !important; 
+            margin-bottom: 5px; 
+            border-radius: 6px; 
+            /* Warna border default diatur ulang di bawah (di status spesifik) */
+            border-left: 5px solid #192a56; 
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); 
+            
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            
+            transition: all 0.2s ease-in-out; 
+            cursor: pointer;
+            position: relative; 
+        }
+        
+        /* --- BARU: STYLE PIN BUNDAR (p.no) --- */
+        /* REVISI: Warna pin menggunakan Biru Navy sebagai default */
+        .prospect-pin {
+            background: #192a56; /* Biru Navy */
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+            position: absolute; 
+            left: 10px; 
+            top: 50%;
+            transform: translateY(-50%);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            z-index: 1; 
+        }
+        /* ------------------------------------ */
+
+        .card-list-container {
+            flex-grow: 1; 
+            padding: 10px; 
+            overflow-y: auto; 
+            text-align: left;
+            
+            min-height: 0;
+        }
+        
+        /* REVISI: Warna days default menggunakan Biru Slate */
+        .prospect-days {
+            font-size: 11px; 
+            font-weight: 500;
+            color: #4682b4; 
+            margin-left: 10px;
+            flex-shrink: 0; 
+        }
+
+        .prospect-item:hover {
+            transform: scale(1.05); 
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); 
+            /* REVISI: Warna hover border menjadi Biru Slate */
+            border-left-color: #4682b4 !important; 
+        }
+        
+        /* --- WARNA PROSPEK BERDASARKAN STATUS (MODIFIKASI) --- */
+
+        /* Open: #fffbe6 (Kuning Lembut) */
+        .open .prospect-item {
+            background: #fffbe6;
+            border-left-color: #f0c330;
+	        color: #856404;
+        }
+        .open .prospect-item:hover {
+            background: #fdf5c2;
+        }
+        .open .prospect-days {
+            color: #856404;
+        }
+        .open .prospect-pin {
+            background: #f0c330; /* Pin warna kuning */
+            color: #192a56;
+        }
+
+        /* Finished: #e6ffe6 (Hijau Lembut) */
+        .finished .prospect-item {
+            background: #e6ffe6;
+            border-left-color: #3CB371;
+	        color: #155724;
+        }
+        .finished .prospect-item:hover {
+            background: #d4f8d0;
+        }
+        .finished .prospect-days {
+            color: #155724;
+        }
+        .finished .prospect-pin {
+            background: #3CB371; /* Pin warna hijau */
+            color: white;
+        }
+
+
+        /* Terminated: #f8d7da (Merah Pudar) */
+        .terminated .prospect-item {
+            background: #f8d7da;
+            border-left-color: #f97682;
+	        color: #721c24;
+        }
+        .terminated .prospect-item:hover {
+            background: #ecc2c5;
+        }
+        .terminated .prospect-days {
+            color: #721c24;
+        }
+        .terminated .prospect-pin {
+            background: #f97682; /* Pin warna merah pudar */
+            color: white;
+        }
+
+        /* Rejected: #dc3545 (Merah Kuat) */
+        .rejected .prospect-item {
+            background: #dc3545;
+            border-left-color: #f30a0b;
+	        color: white;
+        }
+        .rejected .prospect-item:hover {
+            background: #c72930;
+        }
+        .rejected .prospect-days {
+            color: white; 
+        }
+        .rejected .prospect-pin {
+            background: #f30a0b; /* Pin warna merah kuat */
+            color: white;
+        }
+        
+        .loading-text {
+            text-align: center; 
+            color: #555; 
+            margin-top: 20px;
+            font-style: italic;
+        }
+
+        /* --- BARU: STYLE UNTUK OVERLAY MODAL EDIT --- */
+        #edit-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white; 
+            z-index: 1000;
+            transform: translateX(100%); /* Mulai di luar layar (kanan) */
+            transition: transform 0.5s ease-in-out; /* Animasi Slide */
+            overflow: hidden;
+        }
+
+        #edit-modal iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        /* ------------------------------------------- */
+    </style>
+</head>
+<body>
+
+    <div class="report-header">
+        <div class="filter-group">
+            <select id="sectorFilter"> 
+                <option value="all">Semua Sektor</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <select id="commodityFilter"> 
+                <option value="all">Semua Komoditas</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <select id="typeFilter"> 
+                <option value="all">Semua Tipe</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="status-grid">
+
+        <div class="glass-card open" data-sector="tech finance services">
+            <div class="card-header">
+                Open
+                <span class="prospect-count-badge" id="badgeOpen">0</span>
+            </div>
+            <div class="card-list-container" id="listOpen">
+                 <div class="loading-text">Memuat data...</div>
+            </div>
+        </div>
+
+        <div class="glass-card finished" data-sector="tech retail finance">
+            <div class="card-header">
+                Finished
+                <span class="prospect-count-badge" id="badgeFinished">0</span>
+            </div>
+            <div class="card-list-container" id="listFinished">
+                 <div class="loading-text">Memuat data...</div>
+            </div>
+        </div>
+
+        <div class="glass-card terminated" data-sector="retail services">
+            <div class="card-header">
+                Terminated
+                <span class="prospect-count-badge" id="badgeTerminated">0</span>
+            </div>
+            <div class="card-list-container" id="listTerminated">
+                 <div class="loading-text">Memuat data...</div>
+            </div>
+        </div>
+
+        <div class="glass-card rejected" data-sector="tech finance retail services">
+            <div class="card-header">
+                Rejected
+                <span class="prospect-count-badge" id="badgeRejected">0</span>
+            </div>
+            <div class="card-list-container" id="listRejected">
+                 <div class="loading-text">Memuat data...</div>
+            </div>
+        </div>
+        
+    </div>
+    
+    <script>
+        const API_URL = "http://localhost:3000/api"; 
+        let currentData = []; 
+        
+        /**
+         * Membersihkan string tanggal dari ISO Date Time penuh menjadi YYYY-MM-DD
+         */
+        function cleanDateString(isoString) {
+            if (!isoString || typeof isoString !== 'string') return '';
+            if (isoString.includes('T') && isoString.includes('-')) {
+                return isoString.split('T')[0];
+            }
+            return isoString;
+        }
+
+        /**
+         * Menghitung perbedaan hari antara tanggal mulai dan hari ini.
+         */
+        function calculateDaysDifference(startDateString) {
+            if (!startDateString) return 0;
+            
+            const cleanString = cleanDateString(startDateString);
+            if (!cleanString) return 0;
+
+            const oneDay = 24 * 60 * 60 * 1000;
+            const startDate = new Date(cleanString);
+            const today = new Date();
+            
+            startDate.setHours(0, 0, 0, 0);
+            today.setHours(0, 0, 0, 0);
+
+            const timeDifference = today.getTime() - startDate.getTime();
+            const daysDifference = Math.round(timeDifference / oneDay);
+            
+            return daysDifference > 0 ? daysDifference : 0;
+        }
+
+        /**
+         * FUNGSI BARU: Memuat reports_edit.html di dalam iframe dengan animasi slide-left.
+         */
+        function openEditModal(prospectId) {
+            // 1. Hapus modal yang sudah ada jika ada
+            let modal = document.getElementById('edit-modal');
+            if (modal) {
+                modal.remove();
+            }
+            
+            // 2. Buat elemen Modal (Full Screen Overlay)
+            modal = document.createElement('div');
+            modal.id = 'edit-modal';
+            // Style dipindahkan ke CSS untuk kejelasan, hanya transform yang diatur di sini
+            
+            // 3. Buat elemen Iframe. Asumsi data prospek memiliki properti 'id'
+            const iframe = document.createElement('iframe');
+            // Kirim ID melalui URL Query Parameter
+            iframe.src = `reports_edit.html?id=${prospectId}`; 
+            
+            // 4. Tambahkan Iframe ke Modal dan Modal ke Body
+            modal.appendChild(iframe);
+            document.body.appendChild(modal);
+
+            // 5. Memicu Animasi Slide-Left (geser ke 0)
+            setTimeout(() => {
+                modal.style.transform = 'translateX(0)'; 
+            }, 10);
+        }
+        
+        /**
+         * Fungsi utama untuk merender prospek setelah pemfilteran dan pengurutan.
+         */
+        function renderProspects(status, sector, commodity, type, data) {
+            const listElement = document.getElementById(`list${status}`);
+            const badgeElement = document.getElementById(`badge${status}`); 
+            const filterKey = status.toUpperCase();
+            const sectorKey = sector.toUpperCase();
+            const commodityKey = commodity.toUpperCase(); 
+            const typeKey = type.toUpperCase(); 
+            
+            let filteredData = data.filter(p => 
+                (p.completion || 'Open').toUpperCase() === filterKey
+            );
+            
+            // Filter berdasarkan Sektor
+            if (sectorKey !== 'ALL') {
+                 filteredData = filteredData.filter(p => 
+                    (p.sektor || '').toUpperCase() === sectorKey
+                );
+            }
+            
+            // Filter berdasarkan Komoditas
+            if (commodityKey !== 'ALL') {
+                 filteredData = filteredData.filter(p => 
+                    (p.komoditas || '').toUpperCase() === commodityKey
+                );
+            }
+            
+            // Filter berdasarkan Tipe
+            if (typeKey !== 'ALL') {
+                 filteredData = filteredData.filter(p => 
+                    (p.tipe || '').toUpperCase() === typeKey
+                );
+            }
+            
+            // =================================================================================
+            // >>> MODIFIKASI: LOGIKA PENGURUTAN BARU (sesuai permintaan user)
+            // =================================================================================
+            
+            if (status.toLowerCase() === 'open') {
+                // 1. OPEN: Urutkan dari Hari Tertinggi (Descending)
+                filteredData.sort((a, b) => {
+                    const daysA = calculateDaysDifference(a.tanggal);
+                    const daysB = calculateDaysDifference(b.tanggal);
+                    // Urutan menurun: daysB - daysA
+                    return daysB - daysA; 
+                });
+                
+            } else {
+                // 2. FINISHED, TERMINATED, REJECTED: Urutkan dari Tanggal Terbaru (Descending)
+                filteredData.sort((a, b) => {
+                    const dateA = new Date(cleanDateString(a.tanggal));
+                    const dateB = new Date(cleanDateString(b.tanggal));
+                    
+                    // Handle invalid dates (pindahkan yang invalid ke akhir)
+                    const isAValid = !isNaN(dateA);
+                    const isBValid = !isNaN(dateB);
+                    
+                    if (!isAValid) return isBValid ? 1 : 0; 
+                    if (!isBValid) return -1;
+                    
+                    // Urutan menurun (Terbaru ke Terlama): dateB - dateA
+                    return dateB.getTime() - dateA.getTime();
+                });
+            }
+
+            // =================================================================================
+            
+            listElement.innerHTML = ''; 
+
+            const prospectCount = filteredData.length; 
+
+            if (badgeElement) {
+                badgeElement.textContent = prospectCount; 
+            }
+
+            if (prospectCount === 0) {
+                listElement.innerHTML = '<div style="text-align: center; color: #777; font-size: 14px; margin-top: 20px;">Tidak ada Prospek.</div>';
+            } else {
+                const fragment = document.createDocumentFragment();
+                
+                filteredData.forEach(p => {
+                    const item = document.createElement('div');
+                    item.className = 'prospect-item';
+                    
+                    const completionStatus = p.completion || 'Open';
+                    let daysDisplay = p.days || '-'; 
+                    
+                    // Logic Days
+                    if (completionStatus.toLowerCase() === 'open') {
+                        const days = calculateDaysDifference(p.tanggal);
+                        daysDisplay = `${days} hari`; 
+                    }
+
+                    // Konten Pin (BARU)
+                    const prospectPin = document.createElement('span');
+                    prospectPin.className = 'prospect-pin';
+                    prospectPin.textContent = p.no || '-'; // Menampilkan p.no (ID Prospek)
+                    item.appendChild(prospectPin); 
+                    
+                    // Konten utama (Nama Prospek)
+                    const prospectName = document.createElement('span');
+                    prospectName.style.maxWidth = 'calc(100% - 60px)';
+                    prospectName.style.overflow = 'hidden';
+                    prospectName.style.textOverflow = 'ellipsis';
+                    prospectName.textContent = p.prospek || 'Prospek Tidak Dikenal'; 
+                    
+                    // Konten Days (Teks kecil di kanan)
+                    const prospectDays = document.createElement('span');
+                    prospectDays.className = 'prospect-days';
+                    prospectDays.textContent = daysDisplay; 
+                    
+                    item.appendChild(prospectName);
+                    item.appendChild(prospectDays);
+                    
+                    // --- MODIFIKASI INI DITAMBAHKAN ---
+                    // Tambahkan event listener untuk klik pada item prospek
+                    item.addEventListener('click', () => {
+                        // Pastikan data prospek memiliki ID unik (misalnya p.no)
+                        const prospectId = p.no || p.prospek; // Gunakan p.prospek sebagai fallback jika tidak ada ID
+                        openEditModal(prospectId); 
+                    });
+                    // ------------------------------------
+
+                    fragment.appendChild(item);
+                });
+                
+                listElement.appendChild(fragment);
+            }
+        }
+        
+        /**
+         * Mengisi dropdown filter Sektor.
+         */
+        function populateSectorFilter(data) {
+            const filter = document.getElementById('sectorFilter');
+            filter.innerHTML = '<option value="all">Semua Sektor</option>';
+            
+            const sectorMap = new Map();
+            
+            data.forEach(p => {
+                const sector = (p.sektor || '').trim();
+                if (sector) {
+                    const lowerCaseSector = sector.toLowerCase();
+                    if (!sectorMap.has(lowerCaseSector)) {
+                        sectorMap.set(lowerCaseSector, sector);
+                    }
+                }
+            });
+            
+            const sortedKeys = Array.from(sectorMap.keys()).sort();
+            
+            sortedKeys.forEach(lowerCaseSector => {
+                const originalCaseSector = sectorMap.get(lowerCaseSector);
+                
+                const option = document.createElement('option');
+                option.value = lowerCaseSector; 
+                option.textContent = originalCaseSector; 
+                
+                filter.appendChild(option);
+            });
+        }
+        
+        /**
+         * Mengisi dropdown filter Komoditas.
+         */
+        function populateCommodityFilter(data, selectedSector) {
+            const filter = document.getElementById('commodityFilter');
+            filter.innerHTML = '<option value="all">Semua Komoditas</option>';
+
+            const commodityMap = new Map();
+            const selectedSectorLower = (selectedSector || 'all').toLowerCase();
+            
+            data.forEach(p => {
+                const sector = (p.sektor || '').trim().toLowerCase();
+                const commodity = (p.komoditas || '').trim();
+                
+                if ((selectedSectorLower === 'all' || sector === selectedSectorLower) && commodity) {
+                    const lowerCaseCommodity = commodity.toLowerCase();
+                    if (!commodityMap.has(lowerCaseCommodity)) {
+                        commodityMap.set(lowerCaseCommodity, commodity);
+                    }
+                }
+            });
+            
+            const sortedKeys = Array.from(commodityMap.keys()).sort();
+            
+            sortedKeys.forEach(lowerCaseCommodity => {
+                const originalCaseCommodity = commodityMap.get(lowerCaseCommodity);
+                
+                const option = document.createElement('option');
+                option.value = lowerCaseCommodity; 
+                option.textContent = originalCaseCommodity; 
+                
+                filter.appendChild(option);
+            });
+            
+            applyFilter();
+        }
+
+        /**
+         * MENGISI DAN MENGURUTKAN DROPDOWN FILTER TIPE.
+         */
+        function populateTypeFilter(data) {
+            const filter = document.getElementById('typeFilter');
+            filter.innerHTML = '<option value="all">Semua Tipe</option>';
+
+            const TYPE_ORDER = [
+                "Organic", 
+                "Take Over", 
+                "Joint Operation", 
+                "Joint Venture", 
+                "Partnership", 
+                "Franchising", 
+                "Licensing", 
+                "Divestiture"
+            ];
+            
+            const existingTypes = new Map(); 
+            
+            data.forEach(p => {
+                const type = (p.tipe || '').trim(); 
+                if (type) {
+                    const lowerCaseType = type.toLowerCase();
+                    if (!existingTypes.has(lowerCaseType)) {
+                        existingTypes.set(type, lowerCaseType);
+                    }
+                }
+            });
+            
+            const typesToDisplay = [];
+            
+            TYPE_ORDER.forEach(orderedType => {
+                const lowerOrderedType = orderedType.toLowerCase();
+                
+                const foundEntry = Array.from(existingTypes.entries()).find(([key, value]) => value === lowerOrderedType);
+                
+                if (foundEntry) {
+                    typesToDisplay.push(foundEntry[0]); 
+                    existingTypes.delete(foundEntry[0]);
+                }
+            });
+            
+            const remainingTypes = Array.from(existingTypes.keys()).sort((a, b) => a.localeCompare(b));
+            typesToDisplay.push(...remainingTypes);
+            
+            typesToDisplay.forEach(typeText => {
+                const option = document.createElement('option');
+                option.value = typeText.toLowerCase(); 
+                option.textContent = typeText; 
+                
+                filter.appendChild(option);
+            });
+        }
+
+
+        /**
+         * Memanggil renderProjects dengan nilai filter Sektor, Komoditas, dan Tipe yang dipilih.
+         */
+        function applyFilter() {
+            const selectedSector = document.getElementById('sectorFilter').value;
+            const selectedCommodity = document.getElementById('commodityFilter').value; 
+            const selectedType = document.getElementById('typeFilter').value; 
+            
+            console.log(`Filtering for sector: ${selectedSector}, commodity: ${selectedCommodity}, and type: ${selectedType}`);
+            
+            const statuses = ['Open', 'Finished', 'Terminated', 'Rejected'];
+            
+            if (currentData.length === 0) {
+                 statuses.forEach(status => {
+                    const listElement = document.getElementById(`list${status}`);
+                    const badgeElement = document.getElementById(`badge${status}`); 
+                    if(badgeElement) badgeElement.textContent = '0'; 
+
+                    listElement.innerHTML = `<div class="loading-text">Tidak ada data untuk diproses.</div>`;
+                 });
+                 return;
+            }
+
+            statuses.forEach(status => {
+                renderProspects(status, selectedSector, selectedCommodity, selectedType, currentData);
+            });
+        }
+        
+        async function fetchProjectsAndRender() {
+            try {
+                const response = await fetch(`${API_URL}/projects`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}. Pastikan server berjalan di ${API_URL}`);
+                }
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentData = result.projects || [];
+                    console.log(`Data proyek berhasil dimuat: ${currentData.length} item.`);
+                    
+                    // Mengisi dropdown
+                    populateSectorFilter(currentData); 
+                    populateTypeFilter(currentData); 
+                    // popoulateCommodityFilter memanggil applyFilter di akhir
+                    populateCommodityFilter(currentData, 'all'); 
+                    
+                } else {
+                    console.error("Server error:", result.error);
+                }
+            } catch (error) {
+                console.error("Gagal mengambil data proyek:", error);
+                alert(`Error: ${error.message}. Gagal memuat data proyek dari backend. Cek konsol untuk detail.`);
+                applyFilter(); 
+            }
+        }
+
+        // --- FUNGSI GLOBAL UNTUK MENUTUP MODAL (DIPANGGIL DARI reports_edit.html) ---
+        // PENTING: Fungsi ini harus tersedia secara global (di window.parent dari iframe)
+        window.closeEditModal = function() {
+            const modal = document.getElementById('edit-modal');
+            if (modal) {
+                // Memicu animasi slide-right (menggeser modal keluar ke kanan: 100% dari lebar layar)
+                modal.style.transform = 'translateX(100%)'; 
+                
+                // Hapus modal setelah animasi selesai (0.5s sesuai transisi CSS)
+                setTimeout(() => {
+                    modal.remove();
+                    
+                    // Opsional: Panggil fungsi fetchProjectsAndRender() di sini 
+                    // jika Anda ingin me-refresh data laporan setelah penutupan modal.
+                    // fetchProjectsAndRender(); 
+                }, 500); // 500ms harus sama dengan durasi transisi di CSS (transition: transform 0.5s)
+            }
+        }
+        // --------------------------------------------------------------------------
+
+        document.addEventListener("DOMContentLoaded", () => {
+            fetchProjectsAndRender(); 
+            
+            document.getElementById('sectorFilter').addEventListener('change', (event) => {
+                const newSector = event.target.value;
+                populateCommodityFilter(currentData, newSector); 
+            });
+            
+            document.getElementById('commodityFilter').addEventListener('change', () => {
+                applyFilter();
+            });
+            
+            document.getElementById('typeFilter').addEventListener('change', () => {
+                applyFilter();
+            });
+        });
+    </script>
+
+</body>
+</html>

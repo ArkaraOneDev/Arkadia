@@ -1,0 +1,242 @@
+{
+  "cards": [
+    {
+      "id": "card-1",
+      "name": "Ivan Victor",
+      "title": "Chairman & President Director",
+      "img": "assets/img/person.png",
+      "top": "80px",
+      "left": "1840px",
+      "email": "",
+      "phone": ""
+    },
+    {
+      "id": "card-2",
+      "name": "Ucak",
+      "title": "Gov. Relation",
+      "img": "assets/img/person.png",
+      "top": "1860px",
+      "left": "80px",
+      "email": "",
+      "phone": ""
+    },
+    {
+      "id": "card-3",
+      "name": "Andika",
+      "title": "Gov. Relation",
+      "img": "assets/img/person.png",
+      "top": "1860px",
+      "left": "560px",
+      "email": "",
+      "phone": ""
+    },
+    {
+      "id": "card-4",
+      "name": "Alodia Fidela",
+      "title": "Legal",
+      "img": "https://i.ibb.co.com/XxZ4KZs2/f3c351690b4a.png",
+      "top": "1860px",
+      "left": "1040px",
+      "email": "",
+      "phone": ""
+    },
+    {
+      "id": "card-5",
+      "name": "Imam",
+      "title": "Corp. Affair & HSE",
+      "img": "assets/img/person.png",
+      "top": "1860px",
+      "left": "1520px",
+      "email": "",
+      "phone": ""
+    },
+    {
+      "id": "card-6",
+      "name": "Marcell",
+      "title": "Senior GA & Building",
+      "img": "assets/img/person.png",
+      "top": "1860px",
+      "left": "2000px",
+      "email": "",
+      "phone": ""
+    },
+    {
+      "id": "card-7",
+      "name": "Hanifah",
+      "title": "HRD Officer",
+      "img": "assets/img/person.png",
+      "top": "1860px",
+      "left": "2480px",
+      "email": "",
+      "phone": ""
+    },
+    {
+      "id": "card-8",
+      "name": "Rizky Kurnia Rubianto",
+      "title": "Strategic Plan & Development",
+      "img": "https://i.ibb.co.com/rKYvxGy5/7eeea4d76b86.jpg",
+      "top": "1860px",
+      "left": "2980px",
+      "email": "rizky.kurnia@arkara-energi.com",
+      "phone": "081326405800"
+    },
+    {
+      "id": "card-9",
+      "name": "Agus Maftukhin",
+      "title": "Principal Geologist",
+      "img": "https://i.ibb.co.com/0pD6LTQh/b5ef86981692.jpg",
+      "top": "1860px",
+      "left": "3500px",
+      "email": "",
+      "phone": ""
+    },
+    {
+      "id": "card-10",
+      "name": "Merry Iskandar",
+      "title": "Chief Accounting & Finance",
+      "img": "assets/img/person.png",
+      "top": "600px",
+      "left": "80px",
+      "email": "",
+      "phone": ""
+    },
+    {
+      "id": "card-11",
+      "name": "Danang Waluyajati",
+      "title": "Chief BO & Gov. Realtion",
+      "img": "assets/img/person.png",
+      "top": "600px",
+      "left": "560px",
+      "email": "",
+      "phone": ""
+    },
+    {
+      "id": "card-12",
+      "name": "Irene Gunawan",
+      "title": "Chief Business Investment & Performance",
+      "img": "https://i.ibb.co.com/vCgjjT62/478b5860ae5a.png",
+      "top": "600px",
+      "left": "1840px",
+      "email": "irene.gunawan@arkara-energi.com",
+      "phone": ""
+    },
+    {
+      "id": "card-13",
+      "name": "Vacant",
+      "title": "Business Growth",
+      "img": "https://i.ibb.co.com/MkQymGxZ/64732a645fb7.png",
+      "top": "1180px",
+      "left": "1040px",
+      "email": "",
+      "phone": ""
+    },
+    {
+      "id": "card-14",
+      "name": "Ochi",
+      "title": "BO & Building Management",
+      "img": "assets/img/person.png",
+      "top": "1180px",
+      "left": "1520px",
+      "email": "",
+      "phone": ""
+    },
+    {
+      "id": "card-15",
+      "name": "Rinaldi",
+      "title": "Head of HRGA",
+      "img": "assets/img/person.png",
+      "top": "1180px",
+      "left": "2000px",
+      "email": "",
+      "phone": ""
+    },
+    {
+      "id": "card-16",
+      "name": "Hanny Irawan",
+      "title": "Head of Operation & Development",
+      "img": "https://i.ibb.co.com/WWY2Dn3F/eb90abf7f9a0.jpg",
+      "top": "600px",
+      "left": "2980px",
+      "email": "",
+      "phone": ""
+    },
+    {
+      "id": "card-17",
+      "name": "Aldila",
+      "title": "Director",
+      "img": "assets/img/person.png",
+      "top": "280px",
+      "left": "3240px",
+      "email": "",
+      "phone": ""
+    }
+  ],
+  "cardCounter": 230,
+  "connectors": [
+    {
+      "from": "card-1",
+      "to": "card-12"
+    },
+    {
+      "from": "card-12",
+      "to": "card-15"
+    },
+    {
+      "from": "card-12",
+      "to": "card-14"
+    },
+    {
+      "from": "card-12",
+      "to": "card-13"
+    },
+    {
+      "from": "card-1",
+      "to": "card-11"
+    },
+    {
+      "from": "card-1",
+      "to": "card-10"
+    },
+    {
+      "from": "card-1",
+      "to": "card-17"
+    },
+    {
+      "from": "card-1",
+      "to": "card-16"
+    },
+    {
+      "from": "card-16",
+      "to": "card-8"
+    },
+    {
+      "from": "card-16",
+      "to": "card-9"
+    },
+    {
+      "from": "card-15",
+      "to": "card-6"
+    },
+    {
+      "from": "card-15",
+      "to": "card-7"
+    },
+    {
+      "from": "card-14",
+      "to": "card-5"
+    },
+    {
+      "from": "card-13",
+      "to": "card-4"
+    },
+    {
+      "from": "card-11",
+      "to": "card-3"
+    },
+    {
+      "from": "card-11",
+      "to": "card-2"
+    }
+  ],
+  "zoomLevel": 0.39999999999999997
+}

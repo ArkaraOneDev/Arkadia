@@ -1,0 +1,30 @@
+{
+  "User": {
+    "fullName": "Rizky",
+    "jobTitle": "Strategic Plan & Development",
+    "email": "rizky.kurnia@arkara-energi.com",
+    "phone": "081326405800",
+    "photo": null
+  },
+  "busdev1": {
+    "fullName": "Alodia Fidela",
+    "jobTitle": "Legal",
+    "email": "dela@arkara.com",
+    "phone": "081123456789",
+    "photo": "https://i.ibb.co.com/fzm58C8T/Dela.jpg"
+  },
+  "busdev": {
+    "fullName": "Irene Gunawan",
+    "jobTitle": "Chief Business Improvement & Performance",
+    "email": "irene.gunawan@arkara-energi.com",
+    "phone": "08175001160",
+    "photo": "https://i.ibb.co.com/n8DcJLHw/Irene.jpg"
+  },
+  "busdev2": {
+    "fullName": "Vacant",
+    "jobTitle": "Business Growth",
+    "email": "vacant@arkara-energi.com",
+    "phone": "081123123123",
+    "photo": "https://i.ibb.co.com/5PDS6wL/Vacant.jpg"
+  }
+}
