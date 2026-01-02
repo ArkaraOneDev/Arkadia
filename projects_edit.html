@@ -571,7 +571,7 @@ table tbody td:nth-child(9) { /* BARU */
         <select id="tipe" disabled onchange="toggleStageInputAvailability()">
           <option value="" disabled selected>-- Pilih Tipe --</option>
           <option>Organic</option>
-          <option>Take Over</option>
+          <option>Acquisition</option>
           <option>Joint Operation</option>
           <option>Joint Venture</option>
           <option>Partnership</option>
@@ -713,7 +713,7 @@ table tbody td:nth-child(9) { /* BARU */
     
     <div class="map-controls" style="padding: 0; margin-bottom: 0;">
       <div style="width: 100%;">
-        <input type="text" id="mapSearchInput" placeholder="Cari lokasi..." onkeyup="mapSearch(this.value)" list="mapSuggestionsList" style="width: 100%;">
+        <input type="text" id="mapSearchInput" placeholder="Cari lokasi atau paste koordinat (latitude, longitude)..." onkeyup="mapSearch(this.value)" list="mapSuggestionsList" style="width: 100%;">
         <datalist id="mapSuggestionsList"></datalist>
       </div>
     </div>
@@ -738,7 +738,7 @@ table tbody td:nth-child(9) { /* BARU */
 // ==========================
 // CONFIG (MODIFIKASI: IMGBB API KEY DITAMBAHKAN)
 // ==========================
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwpzUSvmXvLuNrxzosjNOs-3VNugK-5l5GF5opMaIJlrmF1UaMVxKYMqoFwx9NG4aHG/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwegEruWlTPBn_fltePzZo_6kTEreGM08miZ1cT6Cc9hSx4CsvZ8Ovv6b_XSDs0UoYH7g/exec";
 const API_URL = "https://arkadia-backend.up.railway.app/api"; 
 // BARU: Endpoint untuk Sektor & Komoditas Kustom
 const SECTOR_API_URL = `${API_URL}/sector-data`; 
@@ -927,17 +927,11 @@ function formatDate(dateString) {
   
   if (parts.length !== 3) return cleanString;
 
-  const date = new Date(parts[0], parts[1] - 1, parts[2]); 
-  
-  const days = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
-  const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
-  
-  const dayName = days[date.getDay()];
   const day = parts[2];
-  const monthName = months[date.getMonth()];
+  const month = parts[1];
   const year = parts[0];
   
-  return `${dayName}, ${day} ${monthName} ${year}`;
+  return `${day}/${month}/${year}`;
 }
 
 /**
@@ -2565,6 +2559,35 @@ function mapSearch(query) {
   const dataListElement = document.getElementById("mapSuggestionsList");
   
   dataListElement.innerHTML = '';
+  
+  // Check if input is coordinates format (e.g., "-7.694702818872565, 110.41764595403018")
+  const coordPattern = /^(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)$/;
+  const coordMatch = query.trim().match(coordPattern);
+  
+  if (coordMatch) {
+    const lat = parseFloat(coordMatch[1]);
+    const lng = parseFloat(coordMatch[2]);
+    
+    // Validate coordinate ranges
+    if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+      // Set marker and map view immediately
+      if (mapInstance) {
+        if (mapMarker) {
+          mapMarker.setLatLng([lat, lng]);
+        } else {
+          mapMarker = L.marker([lat, lng]).addTo(mapInstance);
+        }
+        
+        mapInstance.setView([lat, lng], 16);
+        
+        document.getElementById("mapLat").innerText = lat.toFixed(6);
+        document.getElementById("mapLng").innerText = lng.toFixed(6);
+      }
+      latestSearchData = [];
+      return;
+    }
+  }
+  
   if (query.length < 3) {
     latestSearchData = [];
     return;

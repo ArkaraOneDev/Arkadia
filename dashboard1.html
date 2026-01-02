@@ -29,7 +29,6 @@
         margin: 0;
         padding: 15px;
         font-family: 'Poppins', sans-serif;
-        /* Hapus overflow: hidden untuk memastikan body bisa menampung grid-new-layout yang keluar */
         overflow: hidden; 
         background-image: url('assets/img/002_background.png');
         background-size: cover;
@@ -75,12 +74,6 @@
         font-weight: 600;
         color: #333;
         font-size: 14px; 
-    }
-    /* Style untuk kontainer judul agar sebaris dengan dropdown */
-    #chart-title-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
     }
     
     /* --- FILTER STYLES (Disesuaikan untuk mendukung JS Gradient) --- */
@@ -694,7 +687,7 @@
             </div>
 
             <div class="card glass">
-                <div class="card-title">Take Over</div>
+                <div class="card-title">Acquisition</div>
                 <div class="card-value" id="total-takeover">...</div>
             </div>
 
@@ -737,7 +730,7 @@
                 <div class="card-title">Progress (%)</div>
                 <div class="card-value" id="total-progress">...</div>
             </div>
-            </div>
+        </div>
 
         <div id="map" class="glass">
 
@@ -765,27 +758,28 @@
             <button id="nextButton" class="export-button next-button">
                 Next <i class="fas fa-arrow-right"></i> 
             </button>
-            </div>
+        </div>
 
         <div class="chart-box">
-            <div id="chart-title-container">
-                <h2 id="chart-title" style="margin: 0;">Tahapan</h2>
-                <select id="chartModeSelect" style="
-                    padding: 6px 10px;
-                    font-size: 12px;
-                    border-radius: 8px;
-                    border: none;
-                    background: rgba(70, 130, 180, 0.4); 
-                    color: #333;
-                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-                    outline: none;
-                    cursor: pointer;
-                ">
-                    <option value="tahapan">Mode 1</option>
-                    <option value="status">Mode 2</option>
-                    <option value="completion">Mode 3</option>
-                </select>
-            </div>
+            <select id="chartModeSelect" style="
+                padding: 3px;
+                font-size: 14px;
+                font-weight: 600;
+                border-radius: 8px;
+                border: none;
+                background: rgba(70, 130, 180, 0.2); 
+                color: #333;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+                outline: none;
+                cursor: pointer;
+                margin-bottom: 10px;
+                width: 120px;
+                height: auto;
+            ">
+                <option value="tahapan">Tahapan</option>
+                <option value="status">Status</option>
+                <option value="completion">Completion</option>
+            </select>
             <div id="barChartContainer">
                 <canvas id="barChart"></canvas>
             </div>
@@ -805,12 +799,12 @@
                         </tr>
                     </thead>
                     <tbody id="summaryTableBody">
-                        </tbody>
+                    </tbody>
                 </table>
             </div>
         </div>
     </div>
-    </div>
+</div>
 
 <div id="projectModal" class="modal-overlay">
     <div class="modal-content">
@@ -819,9 +813,10 @@
             <button class="modal-close" id="modalClose">×</button>
         </div>
         <div id="modalBody">
-            </div>
+        </div>
     </div>
 </div>
+
 <script>
 /* -------------------------------------------------
    GLOBAL CONSTANTS AND INITIAL SETUP
@@ -836,7 +831,7 @@ Chart.register(ChartDataLabels);
 
 // Definisikan urutan tetap untuk filter Tipe, Tahap, Status, dan Completion
 const FIXED_ORDER = {
-    tipe: ['Organic', 'Take Over', 'Joint Operation', 'Joint Venture', 'Partnership', 'Franchising', 'Licensing', 'Divestiture'],
+    tipe: ['Organic', 'Acquisition', 'Joint Operation', 'Joint Venture', 'Partnership', 'Franchising', 'Licensing', 'Divestiture'],
     tahap: ['Identification', 'Engagement', 'Term Sheet', 'Due Diligence', 'Final Draft', 'Signing'],
     status: ['Proposed', 'Approved', 'Pending', 'Cancelled'], 
     completion: ['Open', 'Finished', 'Terminated', 'Rejected']
@@ -1018,7 +1013,8 @@ function showProjectModal(labelName, chartMode) {
                 <thead>
                     <tr>
                         <th>No</th>
-                        <th>Prospek</th> <th>Tipe</th>
+                        <th>Prospek</th>
+                        <th>Tipe</th>
                         <th>Tahap</th>
                         <th>Dokumen</th>
                         <th>Status</th>
@@ -1048,7 +1044,8 @@ function showProjectModal(labelName, chartMode) {
             tableHTML += `
                 <tr class="${rowClass}" onclick="${onClickHandler}">
                     <td>${index + 1}</td>
-                    <td><strong>${project.prospek || '-'}</strong></td> <td>${project.tipe || '-'}</td>
+                    <td><strong>${project.prospek || '-'}</strong></td>
+                    <td>${project.tipe || '-'}</td>
                     <td>${project.tahap || '-'}</td>
                     <td><span class="document-cell">${project.upload || '-'}</span></td>
                     <td>${project.status || '-'}</td>
@@ -1127,7 +1124,7 @@ async function fetchDataAndCalculateMetrics() {
         currentData = filteredProjects; // Simpan hasil filter untuk digunakan di chart/map
 
         const typeCounts = {
-            'organic': 0, 'take over': 0, 'joint operation': 0, 'joint venture': 0,
+            'organic': 0, 'Acquisition': 0, 'joint operation': 0, 'joint venture': 0,
             'partnership': 0, 'franchising': 0, 'licensing': 0, 'divestiture': 0
         };
         const stageCounts = {}; 
@@ -1136,7 +1133,7 @@ async function fetchDataAndCalculateMetrics() {
             const tipe = (p.tipe || '').toLowerCase().trim();
             
             if (tipe.includes('organic')) typeCounts['organic']++;
-            else if (tipe.includes('take over')) typeCounts['take over']++;
+            else if (tipe.includes('Acquisition')) typeCounts['Acquisition']++;
             else if (tipe.includes('joint operation')) typeCounts['joint operation']++;
             else if (tipe.includes('joint venture')) typeCounts['joint venture']++;
             else if (tipe.includes('partnership')) typeCounts['partnership']++;
@@ -1155,7 +1152,7 @@ async function fetchDataAndCalculateMetrics() {
 
         // Menerapkan formatCardValue
         document.getElementById('total-organic').textContent = formatCardValue(typeCounts['organic']);
-        document.getElementById('total-takeover').textContent = formatCardValue(typeCounts['take over']);
+        document.getElementById('total-takeover').textContent = formatCardValue(typeCounts['Acquisition']);
         document.getElementById('total-jointoperation').textContent = formatCardValue(typeCounts['joint operation']);
         document.getElementById('total-jointventure').textContent = formatCardValue(typeCounts['joint venture']);
         document.getElementById('total-partnership').textContent = formatCardValue(typeCounts['partnership']);
@@ -1417,7 +1414,7 @@ function updateMap(projects) {
                     
                     // ------------------ Maps Link ------------------
                     `<tr><td colspan="3"><hr style="margin: 5px 0;"></td></tr>` +
-                    `<tr><td>Google Maps</td><td>:</td><td><a href="http://maps.google.com/?q=$${lat},${lng}" target="_blank">Lihat Lokasi</a></td></tr>` +
+                    `<tr><td>Google Maps</td><td>:</td><td><a href="http://maps.google.com/?q=${lat},${lng}" target="_blank">Lihat Lokasi</a></td></tr>` +
                 `</table>`;
 
             L.marker([lat, lng], { icon: customIcon })
@@ -1465,14 +1462,12 @@ function updateChartsAndTables(projects, stageCounts) {
     let chartLabels;
     let chartData;
     let chartColors;
-    let chartTitle;
     let chartTooltipTitle;
     
     // Tentukan data berdasarkan mode dropdown
     if (chartMode === 'completion') {
         chartLabels = FIXED_ORDER.completion;
         chartData = FIXED_ORDER.completion.map(label => completionCounts[label] || 0);
-        chartTitle = 'Completion';
         chartTooltipTitle = 'Completion';
         // REVISI: Mengubah warna Completion ke varian biru (kecuali Finished/Rejected)
         chartColors = [
@@ -1484,7 +1479,6 @@ function updateChartsAndTables(projects, stageCounts) {
     } else if (chartMode === 'status') { // LOGIKA BARU UNTUK STATUS CHART
         chartLabels = FIXED_ORDER.status;
         chartData = FIXED_ORDER.status.map(label => statusCounts[label] || 0);
-        chartTitle = 'Status';
         chartTooltipTitle = 'Status';
         // REVISI: Mengubah warna Status ke varian biru/hangat
         chartColors = [
@@ -1504,7 +1498,6 @@ function updateChartsAndTables(projects, stageCounts) {
         // Map the data based on the new chartLabels order
         chartData = chartLabels.map(label => stageCounts[label] || 0);
         
-        chartTitle = 'Tahapan';
         chartTooltipTitle = 'Tahap';
 
         // REVISI: Warna Tahapan telah diganti sesuai permintaan user, ditambah warna Putih untuk "New/No Stage"
@@ -1521,11 +1514,8 @@ function updateChartsAndTables(projects, stageCounts) {
         // Pastikan urutan warna sesuai dengan chartLabels yang sudah difilter
         chartColors = chartLabels.map(label => stageColorMap[label] || 'rgba(70, 130, 180, 0.8)');
     }
-
-    // 1. Update Judul
-    document.getElementById('chart-title').textContent = chartTitle;
     
-    // 2. Hancurkan dan Buat Ulang Chart
+    // Hancurkan dan Buat Ulang Chart
     if (myBarChart) {
         myBarChart.destroy();
     }
@@ -1615,7 +1605,7 @@ function updateChartsAndTables(projects, stageCounts) {
         }
     });
     
-    // 3. Update Tabel Detail
+    // Update Tabel Detail
     const tableBody = document.getElementById('summaryTableBody');
     tableBody.innerHTML = '';
 

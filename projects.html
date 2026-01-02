@@ -442,7 +442,7 @@
       </div>
   </div>
   <script>
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbx4fQ_O8AiiimRo-ZRyXqHan0GazRHQot166bOaWTAqQLyiO5YUVua_r4-qPhB5Sk6SYw/exec";
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzr9uaNo766lXIM1mwYgKnxfGzRw9THr2t6xyOkQcGV_cZYdWfbHR0rHrCF3OGjHQYJ/exec";
     const API_URL = "https://arkadia-backend.up.railway.app/api"; 
 
     let sortDirection = 'none'; 
@@ -571,13 +571,12 @@
       if (!cleanString) return '';
       
       const parts = cleanString.split('-');
-      // Menggunakan new Date(year, monthIndex, day) untuk menghindari masalah timezone
-      const date = new Date(parts[0], parts[1] - 1, parts[2]); 
-      
-      const days = ["Min","Sen","Sel","Rab","Kam","Jum","Sab"]; 
-      const months = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"]; 
+      // Format: DD/MM/YYYY
+      const day = parts[2];
+      const month = parts[1];
+      const year = parts[0];
 
-      return `${days[date.getDay()]}, ${parts[2]} ${months[date.getMonth()]} ${parts[0]}`;
+      return `${day}/${month}/${year}`;
     }
     
     function formatCoordinate(coord) {
